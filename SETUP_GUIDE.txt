@@ -1,0 +1,92 @@
+﻿# LankaVision Pro - Setup Guide
+# CCTV & Satellite Job Management System
+
+## Files
+- index.html      - Main app (open this in browser)
+- style.css       - All styles
+- app.js          - App logic
+- firebase-config.js - Firebase connection
+
+## How to Open
+Double-click "index.html" OR open it in Chrome/Edge/Firefox.
+Needs internet connection (loads Firebase + Map libraries).
+
+## STEP 1: Create Your Admin Account
+1. Open the app in browser
+2. Click "Register"
+3. Click the "Admin" card (shield icon)
+4. Fill your name, email, password
+5. In the "Admin Setup Code" field, type: LANKAVISION2024
+6. Click "Create Admin Account"
+7. Login with your email + password
+
+## STEP 2: Firebase Indexes (First Time Setup)
+When technicians first search for jobs, Firebase may show a console error
+with a link to create an index. Click that link to auto-create it.
+
+Required indexes in Firebase Console > Firestore > Indexes:
+  Collection: jobs
+  - Fields: district (ASC), status (ASC), createdAt (DESC)
+  - Fields: district (ASC), type (ASC), status (ASC), createdAt (DESC)
+  - Fields: postedBy (ASC), createdAt (DESC)
+  - Fields: claimedBy (ASC), createdAt (DESC)
+
+## STEP 3: Firebase Security Rules (Recommended)
+Go to Firebase Console > Firestore > Rules, paste:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId;
+      allow update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+  }
+}
+
+## USER ROLES
+
+### Admin (LANKAVISION2024 code required)
+- See all jobs island-wide with phone numbers
+- Approve/reject technician applications
+- Manage all technicians and jobs
+- Delete any job
+
+### Technician
+- Must register and wait for Admin approval
+- Choose: CCTV, Satellite, or Both
+- Choose their district
+- Only sees jobs in their district matching their service type
+- Phone numbers hidden until they "Accept Job"
+
+### Customer
+- Can register or post jobs as a guest
+- Post jobs anywhere in Sri Lanka
+- Enter customer phone (hidden from technicians)
+- Track their posted jobs
+
+## JOB PRIVACY SYSTEM
+- All technicians see jobs in their district
+- Phone number is HIDDEN (shown as 07X XXX XXXX)
+- When a technician clicks "Accept Job" → phone number revealed
+- Admin ALWAYS sees all phone numbers
+
+## MAP USAGE
+- Uses OpenStreetMap (completely free, no API key needed)
+- When posting a job: select district first (map zooms in)
+- Then click on map to drop a pin at exact location
+- Technicians can "View Map" and "Open in Google Maps"
+
+## ADMIN SETUP CODE
+Keep this code secret - it creates admin accounts:
+  LANKAVISION2024
+
+## Support
+App built with Firebase + OpenStreetMap + Vanilla JS
+Firebase Project: srmobile-6091e

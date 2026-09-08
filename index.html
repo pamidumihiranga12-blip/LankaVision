@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LankaVision Pro – CCTV & Satellite Job Platform</title>
+  <meta name="description" content="Sri Lanka's #1 CCTV and Satellite technician job management platform. Connect customers with skilled technicians across all 25 districts." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css?v=4" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ====== LOADING OVERLAY (CSS-only dismiss, always on top) ====== -->
+  <div id="screen-loading" style="
+    position:fixed;inset:0;z-index:9999;
+    background:radial-gradient(ellipse at 50% 40%,#0d1b2a 0%,#080c14 100%);
+    display:flex;align-items:center;justify-content:center;
+    animation:splashOut 0.5s ease 1.5s forwards;
+    pointer-events:auto;">
+    <div class="loading-wrapper">
+      <div class="logo-anim"><i class="fas fa-satellite-dish"></i></div>
+      <h2 class="brand-name">LankaVision Pro</h2>
+      <p class="brand-sub">CCTV &amp; Satellite Job Platform</p>
+      <div class="loading-bar"><div class="loading-progress"></div></div>
+    </div>
+  </div>
+
+  <!-- ====== LANDING ====== -->
+  <div id="screen-landing" class="screen active">
+    <nav class="landing-nav">
+      <div class="nav-brand"><i class="fas fa-satellite-dish"></i><span>LankaVision Pro</span></div>
+      <div class="nav-actions">
+        <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-login')"><i class="fas fa-sign-in-alt"></i> Login</button>
+        <button class="btn btn-primary btn-sm" onclick="showRegisterOptions()"><i class="fas fa-user-plus"></i> Register</button>
+      </div>
+    </nav>
+    <section class="hero-section">
+      <div class="hero-content">
+        <div class="hero-badge"><i class="fas fa-map-marker-alt"></i> Lanka-Wide Coverage</div>
+        <h1 class="hero-title">Sri Lanka's #1<br><span class="gradient-text">CCTV & Satellite</span><br>Job Platform</h1>
+        <p class="hero-subtitle">CCTV සහ Satellite Technician ලාව Customer ලා සමඟ real-time හි සම්බන්ධ කරන ශ්‍රී ලංකාවේ #1 platform.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-large" onclick="showScreen('screen-post-job')"><i class="fas fa-plus"></i> Post a Job</button>
+          <button class="btn btn-outline btn-large" onclick="showRegisterOptions()"><i class="fas fa-tools"></i> Join as Technician</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><span class="hs-num">25</span><span class="hs-lbl">Districts</span></div>
+          <div class="hero-stat"><span class="hs-num">24/7</span><span class="hs-lbl">Service</span></div>
+          <div class="hero-stat"><span class="hs-num">🔒</span><span class="hs-lbl">Privacy Safe</span></div>
+        </div>
+      </div>
+      <div class="hero-visual" style="display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:32px">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-l);padding:20px 28px;display:flex;align-items:center;gap:14px;font-weight:600;animation:float 3.5s ease-in-out infinite">
+          <i class="fas fa-video" style="font-size:1.8rem;color:var(--cctv)"></i><span>CCTV Installation</span>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-l);padding:20px 28px;display:flex;align-items:center;gap:14px;font-weight:600;animation:float 3.5s ease-in-out infinite 1.5s">
+          <i class="fas fa-satellite-dish" style="font-size:1.8rem;color:var(--satellite)"></i><span>Satellite Setup</span>
+        </div>
+      </div>
+    </section>
+    <section class="features-section">
+      <div class="feature-card"><div class="feature-icon"><i class="fas fa-map-marked-alt"></i></div><h3>District Smart</h3><p>ඔබේ district එකේ jobs පමණක් technician ලාට පෙනේ.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fas fa-shield-alt"></i></div><h3>Phone Privacy</h3><p>Job Accept කරන තෙක් customer ගේ phone number සැඟවී ඇත.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fas fa-map-marker-alt"></i></div><h3>Google Maps</h3><p>Job location pin කර Google Maps හරහා directly navigate කරන්න.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fab fa-whatsapp"></i></div><h3>WhatsApp Direct</h3><p>Job accept කළ පසු customer ගේ WhatsApp chat direct open වේ.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fas fa-bolt"></i></div><h3>Real-time</h3><p>Firebase හරහා island-wide instant job updates.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fas fa-user-shield"></i></div><h3>Admin Control</h3><p>Admin විසින් සියලූ jobs edit කිරීම, manage කිරීම කළ හැකිය.</p></div>
+    </section>
+  </div>
+
+  <!-- ====== LOGIN ====== -->
+  <div id="screen-login" class="screen">
+    <div class="auth-screen">
+      <div class="auth-brand" onclick="showScreen('screen-landing')"><i class="fas fa-satellite-dish"></i><span>LankaVision Pro</span></div>
+      <div class="auth-card">
+        <h2>Welcome Back 👋</h2>
+        <p class="auth-sub">ඔබේ account එකට login කරන්න</p>
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label><i class="fas fa-envelope"></i> Email</label>
+            <input type="email" id="login-email" placeholder="your@email.com" required />
+          </div>
+          <div class="form-group pwd-group">
+            <label><i class="fas fa-lock"></i> Password</label>
+            <input type="password" id="login-password" placeholder="Password" required />
+            <button type="button" class="pwd-toggle" onclick="togglePwd('login-password',this)"><i class="fas fa-eye"></i></button>
+          </div>
+          <div id="login-error" class="error-msg hidden"></div>
+          <button type="submit" class="btn btn-primary btn-full" id="login-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
+        </form>
+        <div class="auth-footer">
+          <p>Account නැද්ද? <a onclick="showRegisterOptions()">Register කරන්න</a></p>
+          <p style="margin-top:8px"><a onclick="showScreen('screen-landing')">← Back to Home</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== REGISTER ====== -->
+  <div id="screen-register" class="screen">
+    <div class="auth-screen">
+      <div class="auth-brand" onclick="showScreen('screen-landing')"><i class="fas fa-satellite-dish"></i><span>LankaVision Pro</span></div>
+
+      <!-- Role Select -->
+      <div id="reg-role-select" class="role-select-wrap">
+        <h2 style="text-align:center;margin-bottom:6px">Create Account</h2>
+        <p class="auth-sub" style="text-align:center;margin-bottom:20px">ඔබේ account type එක තෝරන්න</p>
+        <div class="role-cards">
+          <div class="role-card" onclick="showRegisterForm('customer')">
+            <i class="fas fa-user"></i>
+            <div><h3>Customer</h3><p>Job post කිරීමට සහ track කිරීමට</p></div>
+          </div>
+          <div class="role-card" onclick="showRegisterForm('technician')">
+            <i class="fas fa-tools"></i>
+            <div><h3>Technician</h3><p>CCTV / Satellite jobs ලබා ගැනීමට</p></div>
+          </div>
+          <div class="role-card" onclick="showRegisterForm('admin')">
+            <i class="fas fa-shield-alt"></i>
+            <div><h3>Admin</h3><p>System manage කිරීමට</p></div>
+          </div>
+        </div>
+        <div class="auth-footer"><p>Account ඇද්ද? <a onclick="showScreen('screen-login')">Login</a></p><p style="margin-top:8px"><a onclick="showScreen('screen-landing')">← Back</a></p></div>
+      </div>
+
+      <!-- Customer Form -->
+      <div id="reg-cust-form" class="auth-card hidden">
+        <div class="back-link" onclick="showRegisterRoleSelect()"><i class="fas fa-arrow-left"></i> Back</div>
+        <h2>Customer Registration</h2><p class="auth-sub">ඔබේ customer account හදාගන්න</p>
+        <form onsubmit="handleCustomerRegister(event)">
+          <div class="form-group"><label><i class="fas fa-user"></i> Full Name</label><input type="text" id="cust-name" placeholder="ඔබේ සම්පූර්ණ නම" required /></div>
+          <div class="form-group"><label><i class="fas fa-phone"></i> Phone Number</label><input type="tel" id="cust-phone" placeholder="07X XXX XXXX" required /></div>
+          <div class="form-group"><label><i class="fas fa-envelope"></i> Email</label><input type="email" id="cust-email" placeholder="your@email.com" required /></div>
+          <div class="form-group pwd-group"><label><i class="fas fa-lock"></i> Password</label><input type="password" id="cust-password" placeholder="Min 6 characters" required /><button type="button" class="pwd-toggle" onclick="togglePwd('cust-password',this)"><i class="fas fa-eye"></i></button></div>
+          <div id="cust-error" class="error-msg hidden"></div>
+          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-user-plus"></i> Account හදන්න</button>
+        </form>
+      </div>
+
+      <!-- Technician Form -->
+      <div id="reg-tech-form" class="auth-card hidden">
+        <div class="back-link" onclick="showRegisterRoleSelect()"><i class="fas fa-arrow-left"></i> Back</div>
+        <h2>Technician Registration</h2><p class="auth-sub">Technician network එකට join වන්න</p>
+        <form onsubmit="handleTechRegister(event)">
+          <div class="form-group"><label><i class="fas fa-user"></i> Full Name</label><input type="text" id="tech-name" placeholder="ඔබේ සම්පූර්ණ නම" required /></div>
+          <div class="form-group"><label><i class="fas fa-phone"></i> Phone Number</label><input type="tel" id="tech-phone" placeholder="07X XXX XXXX" required /></div>
+          <div class="form-group"><label><i class="fas fa-envelope"></i> Email</label><input type="email" id="tech-email" placeholder="your@email.com" required /></div>
+          <div class="form-group pwd-group"><label><i class="fas fa-lock"></i> Password</label><input type="password" id="tech-password" placeholder="Min 6 characters" required /><button type="button" class="pwd-toggle" onclick="togglePwd('tech-password',this)"><i class="fas fa-eye"></i></button></div>
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i> ඔබේ District</label>
+            <select id="tech-district" required><option value="">District තෝරන්න</option></select>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-tools"></i> Service Type</label>
+            <div class="type-select">
+              <label class="type-opt"><input type="radio" name="svc-type" value="CCTV" required /><span><i class="fas fa-video"></i> CCTV</span></label>
+              <label class="type-opt"><input type="radio" name="svc-type" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
+              <label class="type-opt"><input type="radio" name="svc-type" value="Both" /><span><i class="fas fa-tools"></i> Both</span></label>
+            </div>
+          </div>
+          <div id="tech-error" class="error-msg hidden"></div>
+          <div class="info-box"><i class="fas fa-info-circle"></i> ඔබේ account Admin විසින් approve කළ පසු jobs access කළ හැකිය. (24-48 hrs)</div>
+          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-paper-plane"></i> Application Submit කරන්න</button>
+        </form>
+      </div>
+
+      <!-- Admin Form -->
+      <div id="reg-admin-form" class="auth-card hidden">
+        <div class="back-link" onclick="showRegisterRoleSelect()"><i class="fas fa-arrow-left"></i> Back</div>
+        <h2>Admin Registration</h2><p class="auth-sub">System administrator setup</p>
+        <form onsubmit="handleAdminRegister(event)">
+          <div class="form-group"><label><i class="fas fa-user"></i> Full Name</label><input type="text" id="admin-name" placeholder="Admin name" required /></div>
+          <div class="form-group"><label><i class="fas fa-envelope"></i> Email</label><input type="email" id="admin-email" placeholder="admin@email.com" required /></div>
+          <div class="form-group pwd-group"><label><i class="fas fa-lock"></i> Password</label><input type="password" id="admin-password" placeholder="Min 6 characters" required /><button type="button" class="pwd-toggle" onclick="togglePwd('admin-password',this)"><i class="fas fa-eye"></i></button></div>
+          <div class="form-group"><label><i class="fas fa-key"></i> Admin Setup Code</label><input type="text" id="admin-code" placeholder="Setup code ඇතුළු කරන්න" required /></div>
+          <div id="admin-error" class="error-msg hidden"></div>
+          <div class="info-box" style="background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.3);color:var(--accent)"><i class="fas fa-exclamation-triangle"></i> Admin code: System owner ගෙන් ලබා ගන්න.</div>
+          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-shield-alt"></i> Admin Account හදන්න</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== PENDING ====== -->
+  <div id="screen-pending" class="screen">
+    <div class="centered-screen">
+      <div class="big-icon pulsing" style="color:var(--warning)"><i class="fas fa-clock"></i></div>
+      <h2>Review ලෙස Pending</h2>
+      <p style="color:var(--txt2);max-width:320px">ඔබේ technician application admin team විසින් review කෙරෙමින් ඇත. Approve වූ පසු login කළ හැකිය. (24–48 hrs)</p>
+      <div class="info-pill"><i class="fas fa-envelope"></i> Admin ගෙන් confirm වීමට බලාසිටින්න</div>
+      <button class="btn btn-outline" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </div>
+
+  <!-- ====== POST JOB ====== -->
+  <div id="screen-post-job" class="screen">
+    <div class="page-header">
+      <div class="page-header-left">
+        <button class="icon-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+        <span><i class="fas fa-plus-circle" style="color:var(--primary-l)"></i> Job Post කරන්න</span>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="form-card">
+        <h2><i class="fas fa-briefcase" style="color:var(--primary-l)"></i> New Job Request</h2>
+        <form id="post-job-form" onsubmit="handlePostJob(event)">
+
+          <!-- Guest info -->
+          <div id="guest-section" class="hidden">
+            <div class="sec-title">ඔබේ Information</div>
+            <div class="form-group"><label><i class="fas fa-user"></i> ඔබේ නම</label><input type="text" id="guest-name" placeholder="ඔබේ නම" /></div>
+            <div class="form-group"><label><i class="fas fa-phone"></i> ඔබේ Phone</label><input type="tel" id="guest-phone" placeholder="07X XXX XXXX" /></div>
+          </div>
+
+          <div class="sec-title">Job Details</div>
+          <div class="form-group">
+            <label><i class="fas fa-tools"></i> Job Type</label>
+            <div class="type-select">
+              <label class="type-opt"><input type="radio" name="job-type" value="CCTV" required /><span><i class="fas fa-video"></i> CCTV</span></label>
+              <label class="type-opt"><input type="radio" name="job-type" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
+            </div>
+          </div>
+          <div class="form-group"><label><i class="fas fa-heading"></i> Job Title</label><input type="text" id="job-title" placeholder="e.g. CCTV installation at my shop" required /></div>
+          <div class="form-group"><label><i class="fas fa-align-left"></i> Description</label><textarea id="job-desc" rows="3" placeholder="Job ගැන detail ලියන්න..." required></textarea></div>
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i> District</label>
+            <select id="job-district" required onchange="onDistrictChange()"><option value="">District තෝරන්න</option></select>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-map"></i> Map Pin – Exact Location</label>
+            <p class="map-hint"><i class="fas fa-hand-pointer"></i> Map එකේ click කර exact location mark කරන්න</p>
+            <div id="post-job-map" class="map-box"></div>
+            <div id="loc-display" class="loc-display hidden"><i class="fas fa-check-circle"></i> <span id="loc-text">Location selected</span></div>
+          </div>
+
+          <div class="sec-title">Customer Contact</div>
+          <div class="form-group"><label><i class="fas fa-user"></i> Customer Name <small style="color:var(--txt3)">(optional)</small></label><input type="text" id="cust-name-job" placeholder="Customer ගේ නම (optional)" /></div>
+          <div class="form-group">
+            <label><i class="fas fa-phone"></i> Customer Phone Number <span style="color:var(--danger)">*</span></label>
+            <input type="tel" id="cust-phone-job" placeholder="07X XXX XXXX" required />
+            <small class="field-note"><i class="fas fa-lock"></i> Technician job accept කරන තෙක් phone number සැඟවී ඇත 🔒</small>
+          </div>
+
+          <div id="post-job-error" class="error-msg hidden"></div>
+          <button type="submit" class="btn btn-primary btn-full" id="post-job-btn"><i class="fas fa-paper-plane"></i> Job Post කරන්න</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== DASHBOARD ====== -->
+  <div id="screen-dashboard" class="screen">
+    <nav class="app-nav">
+      <div class="nav-brand"><i class="fas fa-satellite-dish"></i><span>LankaVision</span></div>
+      <div class="nav-user">
+        <span id="nav-user-name" class="nav-name"></span>
+        <div class="menu-wrap">
+          <button class="icon-btn" id="menu-btn" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+          <div id="nav-dropdown" class="nav-dropdown hidden">
+            <a id="dd-my-jobs" onclick="goToMyJobs()"><i class="fas fa-briefcase"></i> My Jobs</a>
+            <a onclick="goToProfile()"><i class="fas fa-user"></i> Profile</a>
+            <a onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="dash-tabs" id="dash-tabs"></div>
+    <div class="dash-content" id="dash-content"></div>
+    <button class="fab hidden" id="fab-post" onclick="showScreen('screen-post-job')"><i class="fas fa-plus"></i></button>
+  </div>
+
+  <!-- ====== ADMIN ====== -->
+  <div id="screen-admin" class="screen">
+    <nav class="app-nav">
+      <div class="nav-brand"><i class="fas fa-satellite-dish"></i><span>Admin Panel</span></div>
+      <div class="nav-user">
+        <span class="admin-pill"><i class="fas fa-shield-alt"></i> Admin</span>
+        <button class="btn btn-ghost btn-sm" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+    </nav>
+    <div class="admin-tabs">
+      <button class="tab-btn active" data-tab="overview" onclick="showAdminTab('overview')"><i class="fas fa-chart-pie"></i> Overview</button>
+      <button class="tab-btn" data-tab="pending" onclick="showAdminTab('pending')"><i class="fas fa-clock"></i> Pending <span class="badge" id="pending-count">0</span></button>
+      <button class="tab-btn" data-tab="jobs" onclick="showAdminTab('jobs')"><i class="fas fa-briefcase"></i> All Jobs</button>
+      <button class="tab-btn" data-tab="technicians" onclick="showAdminTab('technicians')"><i class="fas fa-users"></i> Technicians</button>
+    </div>
+    <div class="admin-content">
+
+      <!-- Overview -->
+      <div id="atab-overview" class="atab active">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-icon" style="color:#f59e0b"><i class="fas fa-clock"></i></div><div><div class="sn" id="st-pending">0</div><div class="sl">Pending Techs</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#10b981"><i class="fas fa-briefcase"></i></div><div><div class="sn" id="st-open">0</div><div class="sl">Open Jobs</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#3b82f6"><i class="fas fa-users"></i></div><div><div class="sn" id="st-techs">0</div><div class="sl">Active Techs</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#8b5cf6"><i class="fas fa-check-circle"></i></div><div><div class="sn" id="st-done">0</div><div class="sl">Completed</div></div></div>
+        </div>
+        <div class="panel" id="recent-jobs-panel"><h3 class="panel-title"><i class="fas fa-list"></i> Recent Jobs</h3><div id="recent-jobs-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div></div>
+      </div>
+
+      <!-- Pending -->
+      <div id="atab-pending" class="atab">
+        <div id="pending-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+      </div>
+
+      <!-- All Jobs -->
+      <div id="atab-jobs" class="atab">
+        <div class="filter-bar">
+          <select id="adm-filter-status" onchange="filterAdminJobs()"><option value="all">All Status</option><option value="open">Open</option><option value="claimed">Claimed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select>
+          <select id="adm-filter-type" onchange="filterAdminJobs()"><option value="all">All Types</option><option value="CCTV">CCTV</option><option value="Satellite">Satellite</option></select>
+          <select id="adm-filter-district" onchange="filterAdminJobs()"><option value="all">All Districts</option></select>
+        </div>
+        <div id="admin-jobs-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+      </div>
+
+      <!-- Technicians -->
+      <div id="atab-technicians" class="atab">
+        <div class="filter-bar">
+          <select id="adm-tech-filter" onchange="filterTechnicians()"><option value="all">All Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+          <select id="adm-tech-svc" onchange="filterTechnicians()"><option value="all">All Types</option><option value="CCTV">CCTV</option><option value="Satellite">Satellite</option><option value="Both">Both</option></select>
+        </div>
+        <div id="technicians-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== JOB DETAIL MODAL ====== -->
+  <div id="modal-job" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('modal-job')"></div>
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-job')"><i class="fas fa-times"></i></button>
+      <div id="modal-job-body"></div>
+    </div>
+  </div>
+
+  <!-- ====== ADMIN EDIT JOB MODAL ====== -->
+  <div id="modal-edit-job" class="modal edit-modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('modal-edit-job')"></div>
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-edit-job')"><i class="fas fa-times"></i></button>
+      <h2 style="margin-bottom:20px"><i class="fas fa-edit" style="color:var(--primary-l)"></i> Job Edit කරන්න</h2>
+      <form id="edit-job-form" onsubmit="handleEditJobSubmit(event)">
+        <input type="hidden" id="edit-job-id" />
+        <div class="form-group"><label><i class="fas fa-heading"></i> Job Title</label><input type="text" id="edit-title" required /></div>
+        <div class="form-group">
+          <label><i class="fas fa-tools"></i> Job Type</label>
+          <div class="type-select">
+            <label class="type-opt"><input type="radio" name="edit-job-type" value="CCTV" /><span><i class="fas fa-video"></i> CCTV</span></label>
+            <label class="type-opt"><input type="radio" name="edit-job-type" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
+          </div>
+        </div>
+        <div class="form-group"><label><i class="fas fa-align-left"></i> Description</label><textarea id="edit-desc" rows="3" required></textarea></div>
+        <div class="form-group">
+          <label><i class="fas fa-map-marker-alt"></i> District</label>
+          <select id="edit-district" required><option value="">Select District</option></select>
+        </div>
+        <div class="form-group"><label><i class="fas fa-user"></i> Customer Name</label><input type="text" id="edit-cust-name" /></div>
+        <div class="form-group"><label><i class="fas fa-phone"></i> Customer Phone</label><input type="tel" id="edit-cust-phone" /></div>
+        <div class="form-group">
+          <label><i class="fas fa-info-circle"></i> Status</label>
+          <select id="edit-status">
+            <option value="open">Open</option>
+            <option value="claimed">Claimed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div id="edit-job-error" class="error-msg hidden"></div>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-edit-job')">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-full" id="edit-job-btn"><i class="fas fa-save"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====== ADMIN EDIT TECH MODAL ====== -->
+  <div id="modal-edit-tech" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('modal-edit-tech')"></div>
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('modal-edit-tech')"><i class="fas fa-times"></i></button>
+      <h2 style="margin-bottom:20px"><i class="fas fa-user-edit" style="color:var(--primary-l)"></i> Technician Edit කරන්න</h2>
+      <form id="edit-tech-form" onsubmit="handleEditTechSubmit(event)">
+        <input type="hidden" id="edit-tech-id" />
+        <div class="form-group"><label><i class="fas fa-user"></i> Name</label><input type="text" id="edit-tech-name" required /></div>
+        <div class="form-group"><label><i class="fas fa-phone"></i> Phone</label><input type="tel" id="edit-tech-phone" /></div>
+        <div class="form-group">
+          <label><i class="fas fa-map-marker-alt"></i> District</label>
+          <select id="edit-tech-district"><option value="">Select District</option></select>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-tools"></i> Service Type</label>
+          <div class="type-select">
+            <label class="type-opt"><input type="radio" name="edit-svc" value="CCTV" /><span><i class="fas fa-video"></i> CCTV</span></label>
+            <label class="type-opt"><input type="radio" name="edit-svc" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
+            <label class="type-opt"><input type="radio" name="edit-svc" value="Both" /><span><i class="fas fa-tools"></i> Both</span></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-circle"></i> Status</label>
+          <select id="edit-tech-status">
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div id="edit-tech-error" class="error-msg hidden"></div>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-edit-tech')">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-save"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====== TOAST ====== -->
+  <div id="toast-wrap"></div>
+
+</div>
+
+<!-- Vendor SDKs (Local) -->
+<script src="leaflet.js"></script>
+<script src="firebase-app-compat.js"></script>
+<script src="firebase-auth-compat.js"></script>
+<script src="firebase-firestore-compat.js"></script>
+
+<!-- App Logic -->
+<script src="firebase-config.js?v=4"></script>
+<script src="app.js?v=4"></script>
+
+<!-- Guaranteed loading overlay removal after 2s -->
+<script>
+  // Remove splash overlay after 2s max (CSS already fades it at 1.5s)
+  setTimeout(function() {
+    var s = document.getElementById('screen-loading');
+    if (s) s.remove();
+  }, 2100);
+</script>
+</body>
+</html>
