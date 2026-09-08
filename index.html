@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
 <div id="app">
@@ -213,6 +213,7 @@
             <div class="sec-title">ඔබේ Information</div>
             <div class="form-group"><label><i class="fas fa-user"></i> ඔබේ නම</label><input type="text" id="guest-name" placeholder="ඔබේ නම" /></div>
             <div class="form-group"><label><i class="fas fa-phone"></i> ඔබේ Phone</label><input type="tel" id="guest-phone" placeholder="07X XXX XXXX" /></div>
+            <div class="form-group"><label><i class="fas fa-envelope"></i> ඔබේ Email <small style="color:var(--txt3)">(optional - Email updates සඳහා)</small></label><input type="email" id="guest-email" placeholder="your@email.com" /></div>
           </div>
 
           <div class="sec-title">Job Details</div>
@@ -441,8 +442,8 @@
 <script src="firebase-firestore-compat.js"></script>
 
 <!-- App Logic -->
-<script src="firebase-config.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="firebase-config.js?v=6"></script>
+<script src="app.js?v=6"></script>
 
 <!-- Guaranteed loading overlay removal after 2s -->
 <script>

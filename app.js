@@ -168,6 +168,303 @@ let allTechs        = [];
 let appInitialized  = false;
 let authResolved    = false;
 
+// ── EMAIL NOTIFICATIONS (via LankaVision SMTP) ────────────────
+const ADMIN_EMAIL = 'lankavision@smartzonelk.lk';
+
+async function sendEmailNotification({ to, subject, html, text }) {
+  if (!to) return;
+  try {
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, subject, html, text })
+    });
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.warn('[EMAIL ERROR]', err);
+    return { success: false, error: err.message };
+  }
+}
+
+function emailWrapper(title, contentHtml) {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #080c14; margin: 0; padding: 24px 12px; color: #f1f5f9; }
+      .email-container { max-width: 580px; margin: 0 auto; background: #111827; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+      .email-header { background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); padding: 26px 20px; text-align: center; }
+      .email-brand { font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; margin: 0; }
+      .email-sub { color: #dbeafe; font-size: 13px; margin: 4px 0 0; }
+      .email-body { padding: 28px 24px; color: #e2e8f0; line-height: 1.6; font-size: 14.5px; }
+      .detail-card { background: #0c1220; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 18px; margin: 20px 0; }
+      .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px; }
+      .row:last-child { border-bottom: none; }
+      .lbl { color: #94a3b8; font-weight: 500; }
+      .val { color: #ffffff; font-weight: 700; text-align: right; }
+      .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+      .badge-cctv { background: rgba(6,182,212,0.2); color: #22d3ee; }
+      .badge-sat { background: rgba(245,158,11,0.2); color: #fbbf24; }
+      .email-footer { padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid rgba(255,255,255,0.07); background: #0b101b; }
+      .btn-link { display: inline-block; background: #2563eb; color: #ffffff !important; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; margin-top: 14px; }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="email-header">
+        <h1 class="email-brand">📡 LankaVision Pro</h1>
+        <p class="email-sub">CCTV & Satellite Job Platform Sri Lanka</p>
+      </div>
+      <div class="email-body">
+        ${contentHtml}
+      </div>
+      <div class="email-footer">
+        © 2026 LankaVision Pro. Smart Zone LK.<br>
+        Island-wide CCTV & Satellite Technician Network.<br>
+        Support: <a href="mailto:lankavision@smartzonelk.lk" style="color:#60a5fa">lankavision@smartzonelk.lk</a>
+      </div>
+    </div>
+  </body>
+  </html>`;
+}
+
+// Trigger 1: New Job Posted -> Notify Admin, District Technicians, and Customer
+async function notifyNewJobPosted(job) {
+  const loc = job.city ? `${job.district}, ${job.city}` : job.district;
+  const badgeClass = job.type === 'CCTV' ? 'badge-cctv' : 'badge-sat';
+
+  // 1. To Admin
+  const adminHtml = emailWrapper('New Job Posted', `
+    <h2 style="color:#60a5fa;margin-top:0;font-size:18px">🔔 New Job Posted!</h2>
+    <p>පද්ධතියට අලුත් Job එකක් post කර ඇත. විස්තර පහත දැක්වේ:</p>
+    <div class="detail-card">
+      <div class="row"><span class="lbl">Job Title</span><span class="val">${esc(job.title)}</span></div>
+      <div class="row"><span class="lbl">Service Type</span><span class="val"><span class="badge ${badgeClass}">${esc(job.type)}</span></span></div>
+      <div class="row"><span class="lbl">Location</span><span class="val">${esc(loc)}</span></div>
+      <div class="row"><span class="lbl">Customer Name</span><span class="val">${esc(job.customerName || 'N/A')}</span></div>
+      <div class="row"><span class="lbl">Customer Phone</span><span class="val" style="color:#34d399;font-family:monospace">${esc(job.customerPhone)}</span></div>
+      ${job.customerEmail ? `<div class="row"><span class="lbl">Customer Email</span><span class="val">${esc(job.customerEmail)}</span></div>` : ''}
+    </div>
+    <p style="color:#94a3b8;font-size:13px;line-height:1.5"><strong>Description:</strong> ${esc(job.description)}</p>
+    <div style="text-align:center;margin-top:20px">
+      <a href="http://localhost:8080/index.html" class="btn-link">Open Admin Panel</a>
+    </div>
+  `);
+
+  sendEmailNotification({
+    to: ADMIN_EMAIL,
+    subject: `🔔 New Job: ${job.title} (${loc})`,
+    html: adminHtml,
+    text: `New Job: ${job.title} in ${loc}. Type: ${job.type}. Phone: ${job.customerPhone}`
+  });
+
+  // 2. To Customer (if email provided)
+  if (job.customerEmail) {
+    const custHtml = emailWrapper('Job Received', `
+      <h2 style="color:#34d399;margin-top:0;font-size:18px">✅ Job Request Received!</h2>
+      <p>ආයුබෝවන් <strong>${esc(job.customerName || 'Customer')}</strong>, ඔබගේ Job Request එක සාර්ථකව පද්ධතියට ලැබී ඇත.</p>
+      <div class="detail-card">
+        <div class="row"><span class="lbl">Job Title</span><span class="val">${esc(job.title)}</span></div>
+        <div class="row"><span class="lbl">Service</span><span class="val"><span class="badge ${badgeClass}">${esc(job.type)}</span></span></div>
+        <div class="row"><span class="lbl">Location</span><span class="val">${esc(loc)}</span></div>
+      </div>
+      <p>ඔබගේ ප්‍රදේශයේ (${esc(job.district)}) සිටින සුදුසුකම්ලත් Technicians ලාව මේ වන විටත් දැනුවත් කර ඇත. Technician කෙනෙක් Job එක භාරගත් (Accept කළ) විගස ඔබට Email මගින් දන්වනු ලැබේ.</p>
+    `);
+    sendEmailNotification({
+      to: job.customerEmail,
+      subject: `✅ Job Received: ${job.title} - LankaVision Pro`,
+      html: custHtml,
+      text: `Your job request for ${job.title} in ${loc} was received.`
+    });
+  }
+
+  // 3. To District Technicians (approved & matching type)
+  try {
+    const snap = await db.collection('users')
+      .where('role', '==', 'technician')
+      .where('status', '==', 'approved')
+      .where('district', '==', job.district)
+      .get();
+
+    snap.forEach(d => {
+      const t = d.data();
+      if (t.email && (t.serviceType === 'Both' || t.serviceType === job.type)) {
+        const techHtml = emailWrapper('New Job Available', `
+          <h2 style="color:#fbbf24;margin-top:0;font-size:18px">⚡ ඔබේ ප්‍රදේශයේ නව Job එකක්!</h2>
+          <p>ආයුබෝවන් <strong>${esc(t.name)}</strong>, ඔබගේ District එකේ (${esc(job.district)}) අලුත් ${esc(job.type)} Job එකක් post කර ඇත.</p>
+          <div class="detail-card">
+            <div class="row"><span class="lbl">Job Title</span><span class="val">${esc(job.title)}</span></div>
+            <div class="row"><span class="lbl">Location</span><span class="val">${esc(loc)}</span></div>
+            <div class="row"><span class="lbl">Service</span><span class="val"><span class="badge ${badgeClass}">${esc(job.type)}</span></span></div>
+          </div>
+          <p style="color:#94a3b8;font-size:13px">Job එක Accept කිරීමට වහාම LankaVision Pro app එකට log වන්න.</p>
+          <div style="text-align:center;margin-top:18px">
+            <a href="http://localhost:8080/index.html" class="btn-link">View & Accept Job</a>
+          </div>
+        `);
+        sendEmailNotification({
+          to: t.email,
+          subject: `⚡ New Job in ${loc}: ${job.title}`,
+          html: techHtml,
+          text: `New Job in ${loc}: ${job.title}. Login to LankaVision Pro to accept.`
+        });
+      }
+    });
+  } catch (err) {
+    console.warn('Technician notification error:', err);
+  }
+}
+
+// Trigger 2: Technician Registers -> Notify Admin & Technician
+async function notifyTechRegistered(tech) {
+  // 1. To Admin
+  const adminHtml = emailWrapper('New Technician Application', `
+    <h2 style="color:#60a5fa;margin-top:0;font-size:18px">👤 New Technician Registration!</h2>
+    <p>නව Technician කෙනෙක් system එකට register වී ඇත. Review කර approve කරන්න.</p>
+    <div class="detail-card">
+      <div class="row"><span class="lbl">Name</span><span class="val">${esc(tech.name)}</span></div>
+      <div class="row"><span class="lbl">Phone</span><span class="val" style="color:#34d399;font-family:monospace">${esc(tech.phone)}</span></div>
+      <div class="row"><span class="lbl">Email</span><span class="val">${esc(tech.email)}</span></div>
+      <div class="row"><span class="lbl">District</span><span class="val">${esc(tech.district)}</span></div>
+      <div class="row"><span class="lbl">Service</span><span class="val">${esc(tech.serviceType)}</span></div>
+    </div>
+    <div style="text-align:center;margin-top:18px">
+      <a href="http://localhost:8080/index.html" class="btn-link">Review in Admin Panel</a>
+    </div>
+  `);
+  sendEmailNotification({
+    to: ADMIN_EMAIL,
+    subject: `👤 New Technician Application: ${tech.name} (${tech.district})`,
+    html: adminHtml,
+    text: `New Technician: ${tech.name}, ${tech.phone}, District: ${tech.district}`
+  });
+
+  // 2. To Technician
+  if (tech.email) {
+    const techHtml = emailWrapper('Application Received', `
+      <h2 style="color:#fbbf24;margin-top:0;font-size:18px">⏳ Application Received!</h2>
+      <p>ආයුබෝවන් <strong>${esc(tech.name)}</strong>, LankaVision Pro Technician ජාලය හා එක්වීමට ඉල්ලුම් කළාට ස්තූතියි.</p>
+      <div class="detail-card">
+        <div class="row"><span class="lbl">District</span><span class="val">${esc(tech.district)}</span></div>
+        <div class="row"><span class="lbl">Service</span><span class="val">${esc(tech.serviceType)}</span></div>
+        <div class="row"><span class="lbl">Status</span><span class="val" style="color:#fbbf24">Pending Admin Review</span></div>
+      </div>
+      <p>ඔබගේ තොරතුරු Admin විසින් review කර පැය 24–48ක් ඇතුළත approve කරනු ඇත. Approve වූ විගස ඔබට confirmation email එකක් ලැබෙනු ඇත.</p>
+    `);
+    sendEmailNotification({
+      to: tech.email,
+      subject: `⏳ Application Received - LankaVision Pro`,
+      html: techHtml,
+      text: `Application received. Pending admin review.`
+    });
+  }
+}
+
+// Trigger 3: Technician Approved -> Notify Technician
+async function notifyTechApproved(tech) {
+  if (!tech || !tech.email) return;
+  const html = emailWrapper('Account Approved', `
+    <h2 style="color:#34d399;margin-top:0;font-size:18px">🎉 Congratulations! Account Approved!</h2>
+    <p>ආයුබෝවන් <strong>${esc(tech.name)}</strong>, ඔබගේ Technician ගිණුම Admin විසින් සාර්ථකව Approve කර ඇත!</p>
+    <div class="detail-card">
+      <div class="row"><span class="lbl">District</span><span class="val">${esc(tech.district)}</span></div>
+      <div class="row"><span class="lbl">Service</span><span class="val">${esc(tech.serviceType)}</span></div>
+      <div class="row"><span class="lbl">Status</span><span class="val" style="color:#34d399">✅ Active / Approved</span></div>
+    </div>
+    <p>ඔබට දැන් LankaVision Pro වෙත login වී ඔබගේ District එකේ CCTV සහ Satellite Jobs භාරගත (Accept කළ) හැකිය.</p>
+    <div style="text-align:center;margin-top:18px">
+      <a href="http://localhost:8080/index.html" class="btn-link">Login & View Jobs</a>
+    </div>
+  `);
+  sendEmailNotification({
+    to: tech.email,
+    subject: `🎉 Congratulations! Your Account is Approved - LankaVision Pro`,
+    html,
+    text: `Your technician account is approved. Login to view jobs.`
+  });
+}
+
+// Trigger 4: Job Claimed / Accepted -> Notify Customer & Admin
+async function notifyJobClaimed(job, tech) {
+  const loc = job.city ? `${job.district}, ${job.city}` : job.district;
+
+  // 1. To Customer
+  let custEmail = job.customerEmail || '';
+  if (!custEmail && job.postedBy && job.postedBy !== 'guest') {
+    try {
+      const uDoc = await db.collection('users').doc(job.postedBy).get();
+      if (uDoc.exists) custEmail = uDoc.data().email || '';
+    } catch (e) {}
+  }
+
+  if (custEmail) {
+    const custHtml = emailWrapper('Technician Assigned', `
+      <h2 style="color:#34d399;margin-top:0;font-size:18px">🤝 Technician Accepted Your Job!</h2>
+      <p>ආයුබෝවන් <strong>${esc(job.customerName || 'Customer')}</strong>, ඔබගේ Job එක සඳහා Technician කෙනෙක් පත් විය.</p>
+      <div class="detail-card">
+        <div class="row"><span class="lbl">Job Title</span><span class="val">${esc(job.title)}</span></div>
+        <div class="row"><span class="lbl">Technician</span><span class="val" style="color:#60a5fa">${esc(tech.name)}</span></div>
+        <div class="row"><span class="lbl">Technician Phone</span><span class="val" style="color:#34d399;font-family:monospace">${esc(tech.phone || 'N/A')}</span></div>
+      </div>
+      <p>Technician ඔබව ඉක්මනින් දුරකථනයෙන් සම්බන්ධ කර ගනු ඇත. ඔබටද ඉහත අංකයෙන් Technician ඇමතිය හැක.</p>
+    `);
+    sendEmailNotification({
+      to: custEmail,
+      subject: `🤝 Technician Assigned: ${job.title} - LankaVision Pro`,
+      html: custHtml,
+      text: `Technician ${tech.name} (${tech.phone}) accepted your job: ${job.title}`
+    });
+  }
+
+  // 2. To Admin
+  const adminHtml = emailWrapper('Job Claimed', `
+    <h2 style="color:#fbbf24;margin-top:0;font-size:18px">📋 Job Claimed!</h2>
+    <p>Technician කෙනෙක් Job එකක් භාරගෙන (claim කර) ඇත.</p>
+    <div class="detail-card">
+      <div class="row"><span class="lbl">Job Title</span><span class="val">${esc(job.title)}</span></div>
+      <div class="row"><span class="lbl">Location</span><span class="val">${esc(loc)}</span></div>
+      <div class="row"><span class="lbl">Technician</span><span class="val" style="color:#60a5fa">${esc(tech.name)} (${esc(tech.phone || '')})</span></div>
+      <div class="row"><span class="lbl">Customer</span><span class="val">${esc(job.customerName || '')} (${esc(job.customerPhone || '')})</span></div>
+    </div>
+  `);
+  sendEmailNotification({
+    to: ADMIN_EMAIL,
+    subject: `📋 Job Claimed: ${job.title} by ${tech.name}`,
+    html: adminHtml,
+    text: `Job ${job.title} claimed by ${tech.name} (${tech.phone})`
+  });
+}
+
+// Trigger 5: Job Completed -> Notify Customer
+async function notifyJobCompleted(job) {
+  let custEmail = job.customerEmail || '';
+  if (!custEmail && job.postedBy && job.postedBy !== 'guest') {
+    try {
+      const uDoc = await db.collection('users').doc(job.postedBy).get();
+      if (uDoc.exists) custEmail = uDoc.data().email || '';
+    } catch (e) {}
+  }
+
+  if (custEmail) {
+    const custHtml = emailWrapper('Job Completed', `
+      <h2 style="color:#a855f7;margin-top:0;font-size:18px">⭐ Job Completed!</h2>
+      <p>ආයුබෝවන් <strong>${esc(job.customerName || 'Customer')}</strong>, ඔබගේ <strong>${esc(job.title)}</strong> job එක සාර්ථකව අවසන් කළ බව සටහන් විය.</p>
+      <p>LankaVision Pro සේවාව භාවිත කළාට ස්තූතියි! තවත් CCTV හෝ Satellite සේවාවක් අවශ්‍ය නම් ඕනෑම වෙලාවක අප හා සම්බන්ධ වන්න.</p>
+    `);
+    sendEmailNotification({
+      to: custEmail,
+      subject: `⭐ Job Completed: ${job.title} - LankaVision Pro`,
+      html: custHtml,
+      text: `Your job ${job.title} has been marked completed. Thank you for choosing LankaVision Pro.`
+    });
+  }
+}
+
 // ── INIT ───────────────────────────────────────────────────────
 function initApp() {
   if (appInitialized) return;
@@ -370,6 +667,7 @@ async function handleTechRegister(e) {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('Application submit කළා! Admin approve වෙනතුරු wait කරන්න.', 'success');
+    notifyTechRegistered({ name, phone, email, district, serviceType });
   } catch (err) {
     errEl.textContent = authErr(err.code);
     errEl.classList.remove('hidden');
@@ -645,6 +943,7 @@ async function claimJob(jobId, e) {
     if (!doc.exists || doc.data().status !== 'open') {
       showToast('Job no longer available', 'error'); return;
     }
+    const jobData = doc.data();
 
     await ref.update({
       status: 'claimed',
@@ -657,6 +956,8 @@ async function claimJob(jobId, e) {
     showToast('Job Accept! 🎉 Phone number reveal වෙලා!', 'success');
     openJobModal(jobId);
     if (document.getElementById('tech-avail')) loadTechJobs();
+
+    notifyJobClaimed(jobData, currentUserData);
   } catch (err) {
     console.error(err);
     showToast('Failed to accept job. Try again.', 'error');
@@ -665,12 +966,19 @@ async function claimJob(jobId, e) {
 
 async function markComplete(jobId) {
   try {
+    const doc = await db.collection('jobs').doc(jobId).get();
+    const jobData = doc.exists ? doc.data() : null;
+
     await db.collection('jobs').doc(jobId).update({
       status: 'completed',
       completedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('Job complete! ✅', 'success');
     if (document.getElementById('tech-claims')) loadTechClaims();
+
+    if (jobData) {
+      notifyJobCompleted(jobData);
+    }
   } catch (err) { showToast('Failed to update', 'error'); }
 }
 
@@ -1021,6 +1329,8 @@ async function handlePostJob(e) {
   }
   const custName  = document.getElementById('cust-name-job').value.trim();
   const custPhone = document.getElementById('cust-phone-job').value.trim();
+  const guestEmail = document.getElementById('guest-email')?.value.trim() || '';
+  const customerEmail = currentUser?.email || guestEmail;
   const errEl = document.getElementById('post-job-error');
   errEl.classList.add('hidden');
 
@@ -1043,19 +1353,23 @@ async function handlePostJob(e) {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
 
   try {
-    await db.collection('jobs').add({
+    const newJobData = {
       title, description: desc, type: jobType, district,
       city: city || '',
       location: { lat: selectedLoc.lat, lng: selectedLoc.lng },
       customerName:  custName || posterName,
       customerPhone: custPhone,
+      customerEmail: customerEmail || '',
       postedBy, postedByName: posterName,
       status: 'open',
       claimedBy: null, claimedByName: null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+
+    await db.collection('jobs').add(newJobData);
 
     showToast('Job post කළා! 🎉', 'success');
+    notifyNewJobPosted(newJobData);
     e.target.reset();
     selectedLoc = null;
     document.getElementById('job-city-group')?.classList.add('hidden');
@@ -1260,10 +1574,17 @@ function techCardHtml(id, t, context) {
 
 async function approveTech(uid) {
   try {
+    const doc = await db.collection('users').doc(uid).get();
+    const techData = doc.exists ? doc.data() : null;
+
     await db.collection('users').doc(uid).update({ status: 'approved', approvedAt: firebase.firestore.FieldValue.serverTimestamp() });
     showToast('Technician approved! ✅', 'success');
     document.getElementById(`tc-${uid}`)?.remove();
     loadAdminStats(); loadAllTechs();
+
+    if (techData && techData.email) {
+      notifyTechApproved(techData);
+    }
   } catch (err) { showToast('Failed to approve', 'error'); }
 }
 
