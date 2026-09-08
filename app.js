@@ -350,7 +350,7 @@ async function notifyNewJobPosted(job) {
       if (!isHome && !isNeighbor) return;
 
       let distanceKm = null;
-      const techCoords = DISTRICT_COORDS[t.district];
+      const techCoords = (t.city && CITY_COORDS[t.city]) || (t.district && DISTRICT_COORDS[t.district]);
       if (techCoords && jobLat && jobLng) {
         distanceKm = calcDistanceKm(techCoords[0], techCoords[1], jobLat, jobLng);
       }
@@ -360,13 +360,14 @@ async function notifyNewJobPosted(job) {
         return;
       }
 
+      const techLoc = t.city ? `${t.district}, ${t.city}` : t.district;
       const distText = distanceKm ? ` (~${distanceKm} km දුර)` : '';
       const headline = isHome
         ? `⚡ ඔබේ ප්‍රදේශයේ (${jobDistrict}) නව Job එකක්!`
         : `🚗 ඔබේ ප්‍රදේශයට ළඟම (${loc}) නව Job එකක්!${distText}`;
       const introText = isHome
-        ? `ආයුබෝවන් <strong>${esc(t.name)}</strong>, ඔබගේ District එකේ (${esc(jobDistrict)}) අලුත් ${esc(job.type)} Job එකක් post කර ඇත.`
-        : `ආයුබෝවන් <strong>${esc(t.name)}</strong>, ඔබ සිටින දිස්ත්‍රික්කයට (${esc(t.district)}) ආසන්නව පිහිටි <strong>${esc(loc)}</strong> හි අලුත් ${esc(job.type)} Job එකක් post කර ඇත.${distanceKm ? `<br><strong>ආසන්න දුර:</strong> ~${distanceKm} km` : ''}`;
+        ? `ආයුබෝවන් <strong>${esc(t.name)}</strong>, ඔබගේ ප්‍රදේශයේ (${esc(techLoc)}) අලුත් ${esc(job.type)} Job එකක් post කර ඇත.`
+        : `ආයුබෝවන් <strong>${esc(t.name)}</strong>, ඔබ සිටින ප්‍රදේශයට (${esc(techLoc)}) ආසන්නව පිහිටි <strong>${esc(loc)}</strong> හි අලුත් ${esc(job.type)} Job එකක් post කර ඇත.${distanceKm ? `<br><strong>ආසන්න දුර:</strong> ~${distanceKm} km` : ''}`;
 
       const techHtml = emailWrapper('New Job Available', `
         <h2 style="color:${isHome ? '#fbbf24' : '#60a5fa'};margin-top:0;font-size:18px">${headline}</h2>
@@ -398,6 +399,8 @@ async function notifyNewJobPosted(job) {
 
 // Trigger 2: Technician Registers -> Notify Admin & Technician
 async function notifyTechRegistered(tech) {
+  const techLoc = tech.city ? `${tech.district}, ${tech.city}` : tech.district;
+
   // 1. To Admin
   const adminHtml = emailWrapper('New Technician Application', `
     <h2 style="color:#60a5fa;margin-top:0;font-size:18px">👤 New Technician Registration!</h2>
@@ -406,7 +409,7 @@ async function notifyTechRegistered(tech) {
       <div class="row"><span class="lbl">Name</span><span class="val">${esc(tech.name)}</span></div>
       <div class="row"><span class="lbl">Phone</span><span class="val" style="color:#34d399;font-family:monospace">${esc(tech.phone)}</span></div>
       <div class="row"><span class="lbl">Email</span><span class="val">${esc(tech.email)}</span></div>
-      <div class="row"><span class="lbl">District</span><span class="val">${esc(tech.district)}</span></div>
+      <div class="row"><span class="lbl">District / City</span><span class="val">${esc(techLoc)}</span></div>
       <div class="row"><span class="lbl">Service</span><span class="val">${esc(tech.serviceType)}</span></div>
     </div>
     <div style="text-align:center;margin-top:18px">
@@ -415,9 +418,9 @@ async function notifyTechRegistered(tech) {
   `);
   sendEmailNotification({
     to: ADMIN_EMAIL,
-    subject: `👤 New Technician Application: ${tech.name} (${tech.district})`,
+    subject: `👤 New Technician Application: ${tech.name} (${techLoc})`,
     html: adminHtml,
-    text: `New Technician: ${tech.name}, ${tech.phone}, District: ${tech.district}`
+    text: `New Technician: ${tech.name}, ${tech.phone}, Location: ${techLoc}`
   });
 
   // 2. To Technician
@@ -426,7 +429,7 @@ async function notifyTechRegistered(tech) {
       <h2 style="color:#fbbf24;margin-top:0;font-size:18px">⏳ Application Received!</h2>
       <p>ආයුබෝවන් <strong>${esc(tech.name)}</strong>, LankaVision Pro Technician ජාලය හා එක්වීමට ඉල්ලුම් කළාට ස්තූතියි.</p>
       <div class="detail-card">
-        <div class="row"><span class="lbl">District</span><span class="val">${esc(tech.district)}</span></div>
+        <div class="row"><span class="lbl">District / City</span><span class="val">${esc(techLoc)}</span></div>
         <div class="row"><span class="lbl">Service</span><span class="val">${esc(tech.serviceType)}</span></div>
         <div class="row"><span class="lbl">Status</span><span class="val" style="color:#fbbf24">Pending Admin Review</span></div>
       </div>
@@ -436,7 +439,7 @@ async function notifyTechRegistered(tech) {
       to: tech.email,
       subject: `⏳ Application Received - LankaVision Pro`,
       html: techHtml,
-      text: `Application received. Pending admin review.`
+      text: `Application received. Location: ${techLoc}. Pending admin review.`
     });
   }
 }
@@ -444,15 +447,16 @@ async function notifyTechRegistered(tech) {
 // Trigger 3: Technician Approved -> Notify Technician
 async function notifyTechApproved(tech) {
   if (!tech || !tech.email) return;
+  const techLoc = tech.city ? `${tech.district}, ${tech.city}` : tech.district;
   const html = emailWrapper('Account Approved', `
     <h2 style="color:#34d399;margin-top:0;font-size:18px">🎉 Congratulations! Account Approved!</h2>
     <p>ආයුබෝවන් <strong>${esc(tech.name)}</strong>, ඔබගේ Technician ගිණුම Admin විසින් සාර්ථකව Approve කර ඇත!</p>
     <div class="detail-card">
-      <div class="row"><span class="lbl">District</span><span class="val">${esc(tech.district)}</span></div>
+      <div class="row"><span class="lbl">District / City</span><span class="val">${esc(techLoc)}</span></div>
       <div class="row"><span class="lbl">Service</span><span class="val">${esc(tech.serviceType)}</span></div>
       <div class="row"><span class="lbl">Status</span><span class="val" style="color:#34d399">✅ Active / Approved</span></div>
     </div>
-    <p>ඔබට දැන් LankaVision Pro වෙත login වී ඔබගේ District එකේ CCTV සහ Satellite Jobs භාරගත (Accept කළ) හැකිය.</p>
+    <p>ඔබට දැන් LankaVision Pro වෙත login වී ඔබගේ District එකේ සහ ළඟම ප්‍රදේශ වල CCTV සහ Satellite Jobs භාරගත (Accept කළ) හැකිය.</p>
     <div style="text-align:center;margin-top:18px">
       <a href="http://localhost:8080/index.html" class="btn-link">Login & View Jobs</a>
     </div>
@@ -767,6 +771,11 @@ async function handleTechRegister(e) {
   const email = document.getElementById('tech-email').value.trim();
   const password = document.getElementById('tech-password').value;
   const district = document.getElementById('tech-district').value;
+  const citySelect = document.getElementById('tech-city');
+  let city = citySelect?.value || '';
+  if (city === '__other__') {
+    city = document.getElementById('tech-city-custom')?.value.trim() || '';
+  }
   const serviceType = document.querySelector('input[name="svc-type"]:checked')?.value;
   const errEl = document.getElementById('tech-error');
   errEl.classList.add('hidden');
@@ -778,11 +787,11 @@ async function handleTechRegister(e) {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     await db.collection('users').doc(cred.user.uid).set({
       name, phone, email, role: 'technician',
-      district, serviceType, status: 'pending',
+      district, city, serviceType, status: 'pending',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('Application submit කළා! Admin approve වෙනතුරු wait කරන්න.', 'success');
-    notifyTechRegistered({ name, phone, email, district, serviceType });
+    notifyTechRegistered({ name, phone, email, district, city, serviceType });
   } catch (err) {
     errEl.textContent = authErr(err.code);
     errEl.classList.remove('hidden');
@@ -882,7 +891,7 @@ function showTechTab(tab) {
           <h2 style="font-size:1rem;font-weight:800;margin:0"><i class="fas fa-map-marker-alt" style="color:var(--primary-l)"></i> Available Jobs</h2>
           <p style="font-size:.78rem;color:var(--txt3);margin-top:2px">
             <span class="type-badge ${esc(currentUserData.serviceType)}">${esc(currentUserData.serviceType)}</span>
-            · Base: <strong>${esc(currentUserData.district)}</strong>
+            · Base: <strong>${esc(currentUserData.city ? `${currentUserData.district}, ${currentUserData.city}` : currentUserData.district)}</strong>
           </p>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -908,7 +917,8 @@ async function loadTechJobs() {
   try {
     const scope = document.getElementById('tech-scope-filter')?.value || 'all_nearby';
     const techDistrict = currentUserData.district;
-    const techCoords = DISTRICT_COORDS[techDistrict];
+    const techCity = currentUserData.city;
+    const techCoords = (techCity && CITY_COORDS[techCity]) || (techDistrict && DISTRICT_COORDS[techDistrict]);
 
     // Fetch open jobs
     const snap = await db.collection('jobs')
@@ -1293,6 +1303,7 @@ async function openEditTechModal(uid) {
     document.getElementById('edit-tech-name').value = t.name || '';
     document.getElementById('edit-tech-phone').value = t.phone || '';
     document.getElementById('edit-tech-district').value = t.district || '';
+    onEditTechDistrictChange(t.city || '');
     document.getElementById('edit-tech-status').value = t.status || 'pending';
 
     const svcRadio = document.querySelector(`input[name="edit-svc"][value="${t.serviceType}"]`);
@@ -1309,6 +1320,11 @@ async function handleEditTechSubmit(e) {
   const name = document.getElementById('edit-tech-name').value.trim();
   const phone = document.getElementById('edit-tech-phone').value.trim();
   const district = document.getElementById('edit-tech-district').value;
+  const editCitySelect = document.getElementById('edit-tech-city');
+  let city = editCitySelect?.value || '';
+  if (city === '__other__') {
+    city = document.getElementById('edit-tech-city-custom')?.value.trim() || '';
+  }
   const serviceType = document.querySelector('input[name="edit-svc"]:checked')?.value;
   const status = document.getElementById('edit-tech-status').value;
   const errEl = document.getElementById('edit-tech-error');
@@ -1318,7 +1334,7 @@ async function handleEditTechSubmit(e) {
 
   try {
     await db.collection('users').doc(uid).update({
-      name, phone, district, serviceType, status,
+      name, phone, district, city, serviceType, status,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('Technician update කළා! ✅', 'success');
@@ -1412,6 +1428,108 @@ function onCityChange() {
   const c = citySelect.value;
   if (c && CITY_COORDS[c] && postJobMap) {
     postJobMap.setView(CITY_COORDS[c], 13);
+  }
+}
+
+function onTechDistrictChange() {
+  const d = document.getElementById('tech-district').value;
+  const group = document.getElementById('tech-city-group');
+  const citySelect = document.getElementById('tech-city');
+  const customInput = document.getElementById('tech-city-custom');
+
+  if (d && DISTRICT_CITIES[d]) {
+    citySelect.innerHTML = '<option value="">City / Town තෝරන්න</option>';
+    DISTRICT_CITIES[d].forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      citySelect.appendChild(opt);
+    });
+    const otherOpt = document.createElement('option');
+    otherOpt.value = '__other__';
+    otherOpt.textContent = '✏️ වෙනත් (Other Town)...';
+    citySelect.appendChild(otherOpt);
+
+    group?.classList.remove('hidden');
+    citySelect.value = '';
+    customInput?.classList.add('hidden');
+    if (customInput) customInput.value = '';
+  } else {
+    group?.classList.add('hidden');
+    customInput?.classList.add('hidden');
+    if (citySelect) citySelect.innerHTML = '<option value="">City / Town තෝරන්න</option>';
+  }
+}
+
+function onTechCityChange() {
+  const citySelect = document.getElementById('tech-city');
+  const customInput = document.getElementById('tech-city-custom');
+  if (!citySelect) return;
+
+  if (citySelect.value === '__other__') {
+    customInput?.classList.remove('hidden');
+    customInput?.focus();
+  } else {
+    customInput?.classList.add('hidden');
+    if (customInput) customInput.value = '';
+  }
+}
+
+function onEditTechDistrictChange(selectedCity = '') {
+  const d = document.getElementById('edit-tech-district').value;
+  const group = document.getElementById('edit-tech-city-group');
+  const citySelect = document.getElementById('edit-tech-city');
+  const customInput = document.getElementById('edit-tech-city-custom');
+
+  if (d && DISTRICT_CITIES[d]) {
+    citySelect.innerHTML = '<option value="">Select City / Town</option>';
+    let cityFound = false;
+    DISTRICT_CITIES[d].forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      citySelect.appendChild(opt);
+      if (c === selectedCity) cityFound = true;
+    });
+    const otherOpt = document.createElement('option');
+    otherOpt.value = '__other__';
+    otherOpt.textContent = '✏️ Other...';
+    citySelect.appendChild(otherOpt);
+
+    group?.classList.remove('hidden');
+
+    if (selectedCity) {
+      if (cityFound) {
+        citySelect.value = selectedCity;
+        customInput?.classList.add('hidden');
+      } else {
+        citySelect.value = '__other__';
+        customInput?.classList.remove('hidden');
+        if (customInput) customInput.value = selectedCity;
+      }
+    } else {
+      citySelect.value = '';
+      customInput?.classList.add('hidden');
+      if (customInput) customInput.value = '';
+    }
+  } else {
+    group?.classList.add('hidden');
+    customInput?.classList.add('hidden');
+    if (citySelect) citySelect.innerHTML = '<option value="">Select City / Town</option>';
+  }
+}
+
+function onEditTechCityChange() {
+  const citySelect = document.getElementById('edit-tech-city');
+  const customInput = document.getElementById('edit-tech-city-custom');
+  if (!citySelect) return;
+
+  if (citySelect.value === '__other__') {
+    customInput?.classList.remove('hidden');
+    customInput?.focus();
+  } else {
+    customInput?.classList.add('hidden');
+    if (customInput) customInput.value = '';
   }
 }
 
@@ -1727,7 +1845,7 @@ function techCardHtml(id, t, context) {
         <div class="tech-meta">
           <span><i class="fas fa-phone"></i> ${esc(t.phone)}</span>
           <span><i class="fas fa-envelope"></i> ${esc(t.email)}</span>
-          <span><i class="fas fa-map-marker-alt"></i> ${esc(t.district)}</span>
+          <span><i class="fas fa-map-marker-alt"></i> ${esc(t.city ? `${t.district}, ${t.city}` : t.district)}</span>
           <span class="type-badge ${esc(t.serviceType)}" style="font-size:.7rem;padding:2px 8px">${esc(t.serviceType)}</span>
         </div>
         <div style="font-size:.7rem;color:var(--txt3);margin-top:3px">Applied: ${timeAgo(t.createdAt?.toDate?.())}</div>
@@ -1973,7 +2091,7 @@ function renderProfileCard() {
       <div class="profile-row"><label><i class="fas fa-envelope"></i> Email</label><span>${esc(u.email)}</span></div>
       ${u.phone ? `<div class="profile-row"><label><i class="fas fa-phone"></i> Phone</label><span>${esc(u.phone)}</span></div>` : ''}
       <div class="profile-row"><label><i class="fas fa-user-tag"></i> Role</label><span style="text-transform:capitalize">${esc(u.role)}</span></div>
-      ${u.district ? `<div class="profile-row"><label><i class="fas fa-map-marker-alt"></i> District</label><span>${esc(u.district)}</span></div>` : ''}
+      ${u.district ? `<div class="profile-row"><label><i class="fas fa-map-marker-alt"></i> District / City</label><span>${esc(u.city ? `${u.district}, ${u.city}` : u.district)}</span></div>` : ''}
       ${u.serviceType ? `<div class="profile-row"><label><i class="fas fa-tools"></i> Service</label><span class="type-badge ${esc(u.serviceType)}" style="font-size:.85rem">${esc(u.serviceType)}</span></div>` : ''}
       ${u.status ? `<div class="profile-row"><label><i class="fas fa-circle"></i> Status</label><span style="color:${statusColor};font-weight:700">${u.status}</span></div>` : ''}
       <div style="margin-top:20px"><button class="btn btn-outline btn-full" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>

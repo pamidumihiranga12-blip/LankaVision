@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=9" />
+  <link rel="stylesheet" href="style.css?v=10" />
 </head>
 <body>
 <div id="app">
@@ -146,8 +146,15 @@
           <div class="form-group"><label><i class="fas fa-envelope"></i> Email</label><input type="email" id="tech-email" placeholder="your@email.com" required /></div>
           <div class="form-group pwd-group"><label><i class="fas fa-lock"></i> Password</label><input type="password" id="tech-password" placeholder="Min 6 characters" required /><button type="button" class="pwd-toggle" onclick="togglePwd('tech-password',this)"><i class="fas fa-eye"></i></button></div>
           <div class="form-group">
-            <label><i class="fas fa-map-marker-alt"></i> ඔබේ District</label>
-            <select id="tech-district" required><option value="">District තෝරන්න</option></select>
+            <label><i class="fas fa-map-marker-alt"></i> ඔබේ District (දිස්ත්‍රික්කය)</label>
+            <select id="tech-district" required onchange="onTechDistrictChange()"><option value="">District තෝරන්න</option></select>
+          </div>
+          <div class="form-group hidden" id="tech-city-group">
+            <label><i class="fas fa-city"></i> City / Town (ළඟම නගරය)</label>
+            <select id="tech-city" onchange="onTechCityChange()">
+              <option value="">City / Town තෝරන්න</option>
+            </select>
+            <input type="text" id="tech-city-custom" class="hidden" placeholder="නගරයේ නම ලියන්න (වෙනත් නම්)" style="margin-top:8px" />
           </div>
           <div class="form-group">
             <label><i class="fas fa-tools"></i> Service Type</label>
@@ -394,7 +401,14 @@
         <div class="form-group"><label><i class="fas fa-phone"></i> Phone</label><input type="tel" id="edit-tech-phone" /></div>
         <div class="form-group">
           <label><i class="fas fa-map-marker-alt"></i> District</label>
-          <select id="edit-tech-district"><option value="">Select District</option></select>
+          <select id="edit-tech-district" onchange="onEditTechDistrictChange()"><option value="">Select District</option></select>
+        </div>
+        <div class="form-group hidden" id="edit-tech-city-group">
+          <label><i class="fas fa-city"></i> City / Town</label>
+          <select id="edit-tech-city" onchange="onEditTechCityChange()">
+            <option value="">Select City / Town</option>
+          </select>
+          <input type="text" id="edit-tech-city-custom" class="hidden" placeholder="Other city name..." style="margin-top:8px" />
         </div>
         <div class="form-group">
           <label><i class="fas fa-tools"></i> Service Type</label>
@@ -463,8 +477,8 @@
 <script src="firebase-firestore-compat.js"></script>
 
 <!-- App Logic -->
-<script src="firebase-config.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="firebase-config.js?v=10"></script>
+<script src="app.js?v=10"></script>
 
 <!-- Guaranteed loading overlay removal after 2s -->
 <script>
