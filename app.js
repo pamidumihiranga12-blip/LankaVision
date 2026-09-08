@@ -157,6 +157,48 @@ const CITY_COORDS = {
   'Bandarawela': [6.8259, 80.9982]
 };
 
+// ── NEIGHBORING DISTRICTS (ශ්‍රී ලංකාවේ මායිම් දිස්ත්‍රික්ක) ──
+const NEARBY_DISTRICTS = {
+  'Ampara': ['Batticaloa', 'Polonnaruwa', 'Badulla', 'Monaragala'],
+  'Anuradhapura': ['Vavuniya', 'Mannar', 'Puttalam', 'Kurunegala', 'Matale', 'Polonnaruwa', 'Mullaitivu', 'Trincomalee'],
+  'Badulla': ['Nuwara Eliya', 'Kandy', 'Matale', 'Polonnaruwa', 'Ampara', 'Monaragala', 'Ratnapura'],
+  'Batticaloa': ['Polonnaruwa', 'Ampara', 'Trincomalee'],
+  'Colombo': ['Gampaha', 'Kalutara', 'Kegalle'],
+  'Galle': ['Kalutara', 'Matara', 'Ratnapura'],
+  'Gampaha': ['Colombo', 'Kalutara', 'Kegalle', 'Kurunegala', 'Puttalam'],
+  'Hambantota': ['Matara', 'Monaragala', 'Ratnapura'],
+  'Jaffna': ['Kilinochchi'],
+  'Kalutara': ['Colombo', 'Galle', 'Ratnapura'],
+  'Kandy': ['Matale', 'Nuwara Eliya', 'Kegalle', 'Kurunegala', 'Badulla'],
+  'Kegalle': ['Gampaha', 'Colombo', 'Ratnapura', 'Kandy', 'Nuwara Eliya', 'Kurunegala'],
+  'Kilinochchi': ['Jaffna', 'Mullaitivu', 'Mannar'],
+  'Kurunegala': ['Gampaha', 'Puttalam', 'Anuradhapura', 'Matale', 'Kandy', 'Kegalle'],
+  'Mannar': ['Kilinochchi', 'Mullaitivu', 'Vavuniya', 'Anuradhapura', 'Puttalam'],
+  'Matale': ['Kandy', 'Anuradhapura', 'Polonnaruwa', 'Kurunegala', 'Badulla'],
+  'Matara': ['Galle', 'Hambantota', 'Ratnapura'],
+  'Monaragala': ['Badulla', 'Ampara', 'Hambantota', 'Ratnapura'],
+  'Mullaitivu': ['Kilinochchi', 'Mannar', 'Vavuniya', 'Trincomalee'],
+  'Nuwara Eliya': ['Kandy', 'Badulla', 'Kegalle', 'Ratnapura'],
+  'Polonnaruwa': ['Anuradhapura', 'Matale', 'Badulla', 'Batticaloa', 'Ampara'],
+  'Puttalam': ['Kurunegala', 'Gampaha', 'Anuradhapura', 'Mannar'],
+  'Ratnapura': ['Kalutara', 'Colombo', 'Kegalle', 'Nuwara Eliya', 'Badulla', 'Monaragala', 'Hambantota', 'Galle', 'Matara'],
+  'Trincomalee': ['Mullaitivu', 'Vavuniya', 'Anuradhapura', 'Polonnaruwa', 'Batticaloa'],
+  'Vavuniya': ['Mannar', 'Anuradhapura', 'Trincomalee', 'Mullaitivu']
+};
+
+function calcDistanceKm(lat1, lon1, lat2, lon2) {
+  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return null;
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c);
+}
+
 // ── STATE ──────────────────────────────────────────────────────
 let currentUser     = null;
 let currentUserData = null;
@@ -283,37 +325,71 @@ async function notifyNewJobPosted(job) {
     });
   }
 
-  // 3. To District Technicians (approved & matching type)
+  // 3. To Technicians (Home District + Nearby Border Districts within ~60km)
   try {
     const snap = await db.collection('users')
       .where('role', '==', 'technician')
       .where('status', '==', 'approved')
-      .where('district', '==', job.district)
       .get();
+
+    const jobDistrict = job.district;
+    const nearbyDistricts = NEARBY_DISTRICTS[jobDistrict] || [];
+    const jobLat = job.location?.lat || (job.city && CITY_COORDS[job.city]?.[0]) || (jobDistrict && DISTRICT_COORDS[jobDistrict]?.[0]);
+    const jobLng = job.location?.lng || (job.city && CITY_COORDS[job.city]?.[1]) || (jobDistrict && DISTRICT_COORDS[jobDistrict]?.[1]);
 
     snap.forEach(d => {
       const t = d.data();
-      if (t.email && (t.serviceType === 'Both' || t.serviceType === job.type)) {
-        const techHtml = emailWrapper('New Job Available', `
-          <h2 style="color:#fbbf24;margin-top:0;font-size:18px">⚡ ඔබේ ප්‍රදේශයේ නව Job එකක්!</h2>
-          <p>ආයුබෝවන් <strong>${esc(t.name)}</strong>, ඔබගේ District එකේ (${esc(job.district)}) අලුත් ${esc(job.type)} Job එකක් post කර ඇත.</p>
-          <div class="detail-card">
-            <div class="row"><span class="lbl">Job Title</span><span class="val">${esc(job.title)}</span></div>
-            <div class="row"><span class="lbl">Location</span><span class="val">${esc(loc)}</span></div>
-            <div class="row"><span class="lbl">Service</span><span class="val"><span class="badge ${badgeClass}">${esc(job.type)}</span></span></div>
-          </div>
-          <p style="color:#94a3b8;font-size:13px">Job එක Accept කිරීමට වහාම LankaVision Pro app එකට log වන්න.</p>
-          <div style="text-align:center;margin-top:18px">
-            <a href="http://localhost:8080/index.html" class="btn-link">View & Accept Job</a>
-          </div>
-        `);
-        sendEmailNotification({
-          to: t.email,
-          subject: `⚡ New Job in ${loc}: ${job.title}`,
-          html: techHtml,
-          text: `New Job in ${loc}: ${job.title}. Login to LankaVision Pro to accept.`
-        });
+      if (!t.email) return;
+
+      // Check service type match
+      if (t.serviceType !== 'Both' && t.serviceType !== job.type) return;
+
+      const isHome = t.district === jobDistrict;
+      const isNeighbor = nearbyDistricts.includes(t.district);
+
+      if (!isHome && !isNeighbor) return;
+
+      let distanceKm = null;
+      const techCoords = DISTRICT_COORDS[t.district];
+      if (techCoords && jobLat && jobLng) {
+        distanceKm = calcDistanceKm(techCoords[0], techCoords[1], jobLat, jobLng);
       }
+
+      // If neighboring district, only notify if within 60 km
+      if (!isHome && distanceKm !== null && distanceKm > 60) {
+        return;
+      }
+
+      const distText = distanceKm ? ` (~${distanceKm} km දුර)` : '';
+      const headline = isHome
+        ? `⚡ ඔබේ ප්‍රදේශයේ (${jobDistrict}) නව Job එකක්!`
+        : `🚗 ඔබේ ප්‍රදේශයට ළඟම (${loc}) නව Job එකක්!${distText}`;
+      const introText = isHome
+        ? `ආයුබෝවන් <strong>${esc(t.name)}</strong>, ඔබගේ District එකේ (${esc(jobDistrict)}) අලුත් ${esc(job.type)} Job එකක් post කර ඇත.`
+        : `ආයුබෝවන් <strong>${esc(t.name)}</strong>, ඔබ සිටින දිස්ත්‍රික්කයට (${esc(t.district)}) ආසන්නව පිහිටි <strong>${esc(loc)}</strong> හි අලුත් ${esc(job.type)} Job එකක් post කර ඇත.${distanceKm ? `<br><strong>ආසන්න දුර:</strong> ~${distanceKm} km` : ''}`;
+
+      const techHtml = emailWrapper('New Job Available', `
+        <h2 style="color:${isHome ? '#fbbf24' : '#60a5fa'};margin-top:0;font-size:18px">${headline}</h2>
+        <p>${introText}</p>
+        <div class="detail-card">
+          <div class="row"><span class="lbl">Job Title</span><span class="val">${esc(job.title)}</span></div>
+          <div class="row"><span class="lbl">Location</span><span class="val">${esc(loc)}</span></div>
+          <div class="row"><span class="lbl">Area Status</span><span class="val"><span class="badge ${isHome ? 'badge-sat' : 'badge-cctv'}">${isHome ? 'ඔබේ දිස්ත්‍රික්කය' : 'ළඟම ප්‍රදේශය'}</span></span></div>
+          ${distanceKm ? `<div class="row"><span class="lbl">Estimated Distance</span><span class="val">~${distanceKm} km</span></div>` : ''}
+          <div class="row"><span class="lbl">Service</span><span class="val"><span class="badge ${badgeClass}">${esc(job.type)}</span></span></div>
+        </div>
+        <p style="color:#94a3b8;font-size:13px">Job එක Accept කිරීමට වහාම LankaVision Pro app එකට log වන්න.</p>
+        <div style="text-align:center;margin-top:18px">
+          <a href="http://localhost:8080/index.html" class="btn-link">View & Accept Job</a>
+        </div>
+      `);
+
+      sendEmailNotification({
+        to: t.email,
+        subject: `${isHome ? '⚡' : '🚗'} New Job in ${loc}: ${job.title}`,
+        html: techHtml,
+        text: `New Job in ${loc}: ${job.title}. Service: ${job.type}.${distanceKm ? ` Distance: ~${distanceKm} km.` : ''} Login to accept.`
+      });
     });
   } catch (err) {
     console.warn('Technician notification error:', err);
@@ -801,10 +877,19 @@ function showTechTab(tab) {
   const c = document.getElementById('dash-content');
   if (tab === 'avail') {
     c.innerHTML = `
-      <div class="filter-bar">
-        <div style="flex:1">
-          <h2 style="font-size:1rem;font-weight:800;margin:0"><i class="fas fa-map-marker-alt" style="color:var(--primary-l)"></i> Jobs in ${esc(currentUserData.district)}</h2>
-          <p style="font-size:.78rem;color:var(--txt3);margin-top:2px"><span class="type-badge ${esc(currentUserData.serviceType)}">${esc(currentUserData.serviceType)}</span> jobs · ඔබේ district only</p>
+      <div class="filter-bar" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+          <h2 style="font-size:1rem;font-weight:800;margin:0"><i class="fas fa-map-marker-alt" style="color:var(--primary-l)"></i> Available Jobs</h2>
+          <p style="font-size:.78rem;color:var(--txt3);margin-top:2px">
+            <span class="type-badge ${esc(currentUserData.serviceType)}">${esc(currentUserData.serviceType)}</span>
+            · Base: <strong>${esc(currentUserData.district)}</strong>
+          </p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select id="tech-scope-filter" onchange="loadTechJobs()" style="background:var(--card);border:1px solid var(--border);color:var(--txt);padding:7px 14px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer">
+            <option value="all_nearby" selected>🌐 ඔබේ දිස්ත්‍රික්කය + ළඟම ප්‍රදේශ (Nearby)</option>
+            <option value="my_district">📍 මගේ දිස්ත්‍රික්කය පමණක් (${esc(currentUserData.district)})</option>
+          </select>
         </div>
       </div>
       <div id="tech-avail" class="jobs-grid"><div class="empty-state" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>`;
@@ -821,9 +906,12 @@ function showTechTab(tab) {
 
 async function loadTechJobs() {
   try {
-    // Index-free: fetch all open jobs in district, filter by type in JS
+    const scope = document.getElementById('tech-scope-filter')?.value || 'all_nearby';
+    const techDistrict = currentUserData.district;
+    const techCoords = DISTRICT_COORDS[techDistrict];
+
+    // Fetch open jobs
     const snap = await db.collection('jobs')
-      .where('district', '==', currentUserData.district)
       .where('status', '==', 'open')
       .get();
 
@@ -834,13 +922,58 @@ async function loadTechJobs() {
       docs = docs.filter(j => j.type === currentUserData.serviceType);
     }
 
-    // Sort by createdAt desc (client-side)
-    docs.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    const nearbyDistricts = NEARBY_DISTRICTS[techDistrict] || [];
+
+    // Filter by location scope
+    docs = docs.filter(j => {
+      // 1. Same district is always included
+      if (j.district === techDistrict) return true;
+
+      // If user selected "my_district only", exclude outside jobs
+      if (scope === 'my_district') return false;
+
+      // 2. Must be an adjacent neighboring district
+      if (!nearbyDistricts.includes(j.district)) return false;
+
+      // 3. Distance check: if coords available, must be within ~65 km
+      const jobLat = j.location?.lat || (j.city && CITY_COORDS[j.city]?.[0]) || (j.district && DISTRICT_COORDS[j.district]?.[0]);
+      const jobLng = j.location?.lng || (j.city && CITY_COORDS[j.city]?.[1]) || (j.district && DISTRICT_COORDS[j.district]?.[1]);
+
+      if (techCoords && jobLat && jobLng) {
+        const dist = calcDistanceKm(techCoords[0], techCoords[1], jobLat, jobLng);
+        j._distanceKm = dist;
+        return dist !== null ? dist <= 65 : true;
+      }
+
+      return true;
+    });
+
+    // Compute distance for any remaining jobs for sorting & badge display
+    docs.forEach(j => {
+      if (j._distanceKm === undefined) {
+        const jobLat = j.location?.lat || (j.city && CITY_COORDS[j.city]?.[0]) || (j.district && DISTRICT_COORDS[j.district]?.[0]);
+        const jobLng = j.location?.lng || (j.city && CITY_COORDS[j.city]?.[1]) || (j.district && DISTRICT_COORDS[j.district]?.[1]);
+        if (techCoords && jobLat && jobLng) {
+          j._distanceKm = calcDistanceKm(techCoords[0], techCoords[1], jobLat, jobLng);
+        }
+      }
+    });
+
+    // Sort: Same district first, then by distance / date
+    docs.sort((a, b) => {
+      const aSame = a.district === techDistrict ? 0 : 1;
+      const bSame = b.district === techDistrict ? 0 : 1;
+      if (aSame !== bSame) return aSame - bSame;
+      if (a._distanceKm != null && b._distanceKm != null && a._distanceKm !== b._distanceKm) {
+        return a._distanceKm - b._distanceKm;
+      }
+      return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+    });
 
     const el = document.getElementById('tech-avail');
     if (!el) return;
     if (!docs.length) {
-      el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-search"></i><p>ඔබේ area හි open jobs නැත.</p></div>`;
+      el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-search"></i><p>ඔබේ ප්‍රදේශයේ හෝ ළඟම ප්‍රදේශවල open jobs නැත.</p></div>`;
       return;
     }
     el.innerHTML = docs.map(j => jobCard(j.id, j, 'tech')).join('');
@@ -871,6 +1004,16 @@ function jobCard(id, job, view) {
   const ago = timeAgo(job.createdAt?.toDate?.());
   const myJob = job.claimedBy === currentUser?.uid;
   const showPhone = view === 'customer' || view === 'tech-claimed' || myJob || view === 'admin';
+
+  let locationBadge = '';
+  if (view === 'tech' && currentUserData?.role === 'technician') {
+    const isHome = job.district === currentUserData.district;
+    if (isHome) {
+      locationBadge = `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;font-size:.72rem;padding:2px 8px;border-radius:6px"><i class="fas fa-map-pin"></i> ඔබේ දිස්ත්‍රික්කය</span>`;
+    } else {
+      locationBadge = `<span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;font-size:.72rem;padding:2px 8px;border-radius:6px"><i class="fas fa-car-side"></i> ළඟම ප්‍රදේශය${job._distanceKm ? ` (~${job._distanceKm} km)` : ''}</span>`;
+    }
+  }
 
   const phoneHtml = showPhone
     ? `<div class="jc-phone" style="border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.05)">
@@ -908,13 +1051,17 @@ function jobCard(id, job, view) {
   return `
   <div class="job-card type-${esc(job.type)}" id="jc-${id}">
     <div class="jc-header">
-      <span class="type-badge ${esc(job.type)}"><i class="fas fa-${job.type === 'CCTV' ? 'video' : 'satellite-dish'}"></i> ${esc(job.type)}</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span class="type-badge ${esc(job.type)}"><i class="fas fa-${job.type === 'CCTV' ? 'video' : 'satellite-dish'}"></i> ${esc(job.type)}</span>
+        ${locationBadge}
+      </div>
       <span class="status-badge s-${esc(job.status)}">${statusLabel(job.status)}</span>
     </div>
     <div class="jc-title">${esc(job.title)}</div>
     <div class="jc-desc">${esc(job.description)}</div>
     <div class="jc-meta">
       <span class="meta-item"><i class="fas fa-map-marker-alt"></i>${esc(job.city ? `${job.district}, ${job.city}` : job.district)}</span>
+      ${job._distanceKm && (!currentUserData || job.district !== currentUserData.district) ? `<span class="meta-item" style="color:var(--primary-l)"><i class="fas fa-route"></i>~${job._distanceKm} km දුර</span>` : ''}
       <span class="meta-item"><i class="fas fa-user"></i>${esc(job.customerName || 'Customer')}</span>
       <span class="meta-item"><i class="fas fa-clock"></i>${ago}</span>
       ${job.claimedByName ? `<span class="meta-item"><i class="fas fa-tools"></i>${esc(job.claimedByName)}</span>` : ''}
