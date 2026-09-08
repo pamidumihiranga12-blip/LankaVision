@@ -253,6 +253,15 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .tech-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:.76rem;color:var(--txt3)}
 .tech-actions{display:flex;gap:8px;flex-wrap:wrap}
 
+/* ── ADMIN CARDS ── */
+.admin-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-l);padding:16px 20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:var(--ease)}
+.admin-card:hover{border-color:rgba(255,255,255,0.14)}
+.admin-card.is-main{border-color:rgba(251,191,36,0.4);background:linear-gradient(135deg,rgba(251,191,36,0.06) 0%,var(--bg2) 100%)}
+.admin-av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:800;color:#fff;flex-shrink:0}
+.admin-card.is-main .admin-av{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 0 16px rgba(245,158,11,0.35)}
+.admin-title{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.admin-meta{font-size:.78rem;color:var(--txt3);margin-top:4px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+
 /* ── JOB MODAL ── */
 .modal{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center}
 @media(min-width:560px){.modal{align-items:center}}

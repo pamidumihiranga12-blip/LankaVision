@@ -102,6 +102,42 @@ class LankaVisionRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self._send_json_response(400, {"success": False, "error": "Invalid JSON"})
             except Exception as e:
                 self._send_json_response(500, {"success": False, "error": str(e)})
+
+        elif self.path == "/api/create-admin":
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+
+            try:
+                data = json.loads(body)
+                email = data.get("email", "").strip()
+                password = data.get("password", "").strip()
+
+                if not email or not password or len(password) < 6:
+                    self._send_json_response(400, {"success": False, "error": "Email and password (min 6 chars) required."})
+                    return
+
+                # Create in Firebase Auth via Google Identity Toolkit REST API
+                api_key = "AIzaSyDaKFHWjMFfabGw0l1NILs_kb8hF5FCRhU"
+                import urllib.request
+                import urllib.error
+
+                req_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={api_key}"
+                req_data = json.dumps({"email": email, "password": password, "returnSecureToken": True}).encode("utf-8")
+                req = urllib.request.Request(req_url, data=req_data, headers={"Content-Type": "application/json"})
+
+                try:
+                    with urllib.request.urlopen(req) as resp:
+                        fb_res = json.loads(resp.read().decode("utf-8"))
+                        uid = fb_res.get("localId")
+                        self._send_json_response(200, {"success": True, "uid": uid})
+                except urllib.error.HTTPError as he:
+                    err_body = json.loads(he.read().decode("utf-8"))
+                    msg = err_body.get("error", {}).get("message", "Failed to create user in Firebase Auth")
+                    self._send_json_response(400, {"success": False, "error": msg})
+
+            except Exception as e:
+                self._send_json_response(500, {"success": False, "error": str(e)})
+
         else:
             self.send_error(404, "Endpoint not found")
 

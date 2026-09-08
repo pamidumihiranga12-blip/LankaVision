@@ -3,7 +3,7 @@
 // Complete Application Logic
 // =============================================================
 
-const ADMIN_CODE = 'LANKAVISION2024';
+const MAIN_ADMIN_EMAIL = 'lankavisionadmin@gmail.com';
 
 const SL_DISTRICTS = [
   'Ampara','Anuradhapura','Badulla','Batticaloa','Colombo',
@@ -674,34 +674,6 @@ async function handleTechRegister(e) {
   }
 }
 
-async function handleAdminRegister(e) {
-  e.preventDefault();
-  const name = document.getElementById('admin-name').value.trim();
-  const email = document.getElementById('admin-email').value.trim();
-  const password = document.getElementById('admin-password').value;
-  const code = document.getElementById('admin-code').value.trim();
-  const errEl = document.getElementById('admin-error');
-  errEl.classList.add('hidden');
-
-  if (code !== ADMIN_CODE) {
-    errEl.textContent = 'Admin code invalid.';
-    errEl.classList.remove('hidden');
-    return;
-  }
-
-  try {
-    const cred = await auth.createUserWithEmailAndPassword(email, password);
-    await db.collection('users').doc(cred.user.uid).set({
-      name, email, role: 'admin',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    showToast('Admin account හදාගත්තා! 🎉', 'success');
-  } catch (err) {
-    errEl.textContent = authErr(err.code);
-    errEl.classList.remove('hidden');
-  }
-}
-
 async function handleLogout() {
   await auth.signOut();
   currentUser = null; currentUserData = null;
@@ -712,13 +684,12 @@ async function handleLogout() {
 function showRegisterOptions() { showScreen('screen-register'); showRegisterRoleSelect(); }
 function showRegisterRoleSelect() {
   document.getElementById('reg-role-select').classList.remove('hidden');
-  ['reg-cust-form','reg-tech-form','reg-admin-form'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+  ['reg-cust-form','reg-tech-form'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
 }
 function showRegisterForm(type) {
   document.getElementById('reg-role-select').classList.add('hidden');
   document.getElementById('reg-cust-form').classList.toggle('hidden', type !== 'customer');
   document.getElementById('reg-tech-form').classList.toggle('hidden', type !== 'technician');
-  document.getElementById('reg-admin-form').classList.toggle('hidden', type !== 'admin');
 }
 
 // ── CUSTOMER DASHBOARD ────────────────────────────────────────
@@ -1392,10 +1363,18 @@ async function handlePostJob(e) {
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────
 function initAdminDashboard() {
+  const isMain = (currentUser?.email === MAIN_ADMIN_EMAIL) || !!currentUserData?.isMainAdmin;
+  const pill = document.querySelector('.admin-pill');
+  if (pill) {
+    pill.innerHTML = isMain 
+      ? '<i class="fas fa-crown" style="color:#fbbf24"></i> Main Admin' 
+      : '<i class="fas fa-shield-alt"></i> Admin';
+  }
   loadAdminStats();
   loadPendingTechs();
   loadAllJobsAdmin();
   loadAllTechs();
+  loadAllAdmins();
   showAdminTab('overview');
 }
 
@@ -1620,6 +1599,179 @@ function showAdminTab(tab) {
   document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.atab').forEach(c => c.classList.remove('active'));
   document.getElementById(`atab-${tab}`)?.classList.add('active');
+  if (tab === 'admins') {
+    loadAllAdmins();
+  }
+}
+
+// ── ADMIN MANAGEMENT ──────────────────────────────────────────
+async function loadAllAdmins() {
+  const el = document.getElementById('admins-list');
+  if (!el) return;
+  try {
+    const snap = await db.collection('users').where('role', '==', 'admin').get();
+    let admins = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Sort: Main Admin first, then alphabetical or by date
+    admins.sort((a, b) => {
+      const aIsMain = (a.email === MAIN_ADMIN_EMAIL || a.isMainAdmin) ? 1 : 0;
+      const bIsMain = (b.email === MAIN_ADMIN_EMAIL || b.isMainAdmin) ? 1 : 0;
+      if (aIsMain !== bIsMain) return bIsMain - aIsMain;
+      return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+    });
+
+    if (!admins.length) {
+      el.innerHTML = '<div class="empty-state"><i class="fas fa-users-cog"></i><p>Admins නැත</p></div>';
+      return;
+    }
+
+    el.innerHTML = admins.map(a => {
+      const isMain = a.email === MAIN_ADMIN_EMAIL || a.isMainAdmin;
+      const isSelf = currentUser && (a.id === currentUser.uid || a.email === currentUser.email);
+      const roleBadge = isMain
+        ? `<span class="badge" style="background:rgba(245,158,11,0.18);color:#fbbf24;border:1px solid rgba(245,158,11,0.4);font-size:.74rem;padding:3px 10px"><i class="fas fa-crown"></i> Main Admin</span>`
+        : `<span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);font-size:.74rem;padding:3px 10px"><i class="fas fa-shield-alt"></i> Sub-Admin</span>`;
+
+      let actionBtn = '';
+      if (isMain) {
+        actionBtn = `<span style="font-size:.75rem;color:#f59e0b;font-weight:700;display:flex;align-items:center;gap:5px"><i class="fas fa-lock"></i> Protected</span>`;
+      } else if (isSelf) {
+        actionBtn = `<span style="font-size:.75rem;color:var(--txt3);font-weight:600">(ඔබගේ ගිණුම)</span>`;
+      } else {
+        actionBtn = `<button class="btn btn-danger btn-sm" onclick="deleteAdminUser('${a.id}','${esc(a.email)}')"><i class="fas fa-trash"></i> Remove</button>`;
+      }
+
+      return `
+        <div class="admin-card ${isMain ? 'is-main' : ''}">
+          <div style="display:flex;align-items:center;gap:14px;min-width:0">
+            <div class="admin-av">${isMain ? '👑' : (a.name || 'A').charAt(0).toUpperCase()}</div>
+            <div style="min-width:0">
+              <div class="admin-title">
+                <span>${esc(a.name || 'Admin')}</span>
+                ${roleBadge}
+              </div>
+              <div class="admin-meta">
+                <span><i class="fas fa-envelope"></i> ${esc(a.email)}</span>
+                ${a.createdAt ? `<span><i class="fas fa-calendar-alt"></i> Added: ${timeAgo(a.createdAt?.toDate?.())}</span>` : ''}
+                ${a.createdBy ? `<span><i class="fas fa-user-plus"></i> By: ${esc(a.createdBy)}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <div>${actionBtn}</div>
+        </div>`;
+    }).join('');
+  } catch (err) {
+    console.error('loadAllAdmins error:', err);
+    el.innerHTML = `<div class="empty-state" style="color:var(--danger)"><i class="fas fa-exclamation-triangle"></i><p>Admins load error: ${esc(err.message)}</p></div>`;
+  }
+}
+
+function openCreateAdminModal() {
+  document.getElementById('create-admin-form')?.reset();
+  document.getElementById('create-admin-error')?.classList.add('hidden');
+  document.getElementById('modal-create-admin')?.classList.remove('hidden');
+}
+
+async function handleCreateAdminSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('new-admin-name').value.trim();
+  const email = document.getElementById('new-admin-email').value.trim();
+  const password = document.getElementById('new-admin-password').value;
+  const errEl = document.getElementById('create-admin-error');
+  const btn = document.getElementById('create-admin-btn');
+  errEl.classList.add('hidden');
+
+  if (!name || !email || !password) {
+    errEl.textContent = 'සියලු තොරතුරු ඇතුලත් කරන්න.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (password.length < 6) {
+    errEl.textContent = 'Password එක අවම වශයෙන් characters 6ක් විය යුතුය.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> සාදමින් පවතී...';
+
+  try {
+    const res = await fetch('/api/create-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Admin ගිණුම සෑදීම අසාර්ථක විය.');
+    }
+
+    const newUid = data.uid;
+
+    // Save to Firestore under users/{uid}
+    await db.collection('users').doc(newUid).set({
+      name,
+      email,
+      role: 'admin',
+      isMainAdmin: false,
+      createdBy: currentUser?.email || 'lankavisionadmin@gmail.com',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    showToast(`නව Admin (${email}) සාර්ථකව සාදන ලදී! 🎉`, 'success');
+
+    // Send Welcome Email
+    sendEmailNotification({
+      to: email,
+      subject: '🛡️ LankaVision Pro Admin Access Granted',
+      html: emailWrapper('Admin Account Created', `
+        <h2 style="color:#60a5fa;margin-top:0">🛡️ New Admin Account</h2>
+        <p>ආයුබෝවන් <strong>${esc(name)}</strong>, ඔබව LankaVision Pro පද්ධතියේ Administrator කෙනෙකු ලෙස පත් කර ඇත.</p>
+        <div class="detail-card">
+          <div class="row"><span class="lbl">Email</span><span class="val">${esc(email)}</span></div>
+          <div class="row"><span class="lbl">Password</span><span class="val" style="font-family:monospace;color:#38bdf8">${esc(password)}</span></div>
+          <div class="row"><span class="lbl">Role</span><span class="val">Administrator</span></div>
+        </div>
+        <p style="color:#94a3b8;font-size:13px">පද්ධතියට Log වී ඔබගේ කළමනාකරණ කටයුතු සිදු කළ හැකිය.</p>
+        <div style="text-align:center;margin-top:20px">
+          <a href="http://localhost:8080/index.html" class="btn-link">Login to Admin Panel</a>
+        </div>
+      `),
+      text: `Your LankaVision Pro Admin account has been created. Email: ${email}, Password: ${password}`
+    });
+
+    closeModal('modal-create-admin');
+    loadAllAdmins();
+  } catch (err) {
+    console.error('handleCreateAdminSubmit error:', err);
+    errEl.textContent = err.message || 'Error occurred while creating admin.';
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check"></i> Account එක හදන්න';
+  }
+}
+
+async function deleteAdminUser(uid, email) {
+  if (email === MAIN_ADMIN_EMAIL) {
+    showToast('Main Admin account එක delete කළ නොහැක!', 'error');
+    return;
+  }
+  if (currentUser && (uid === currentUser.uid || email === currentUser.email)) {
+    showToast('ඔබගේම Admin ගිණුම delete කළ නොහැක.', 'error');
+    return;
+  }
+  if (!confirm(`Admin ගිණුම (${email}) පද්ධතියෙන් ඉවත් කිරීමට අවශ්‍යද?`)) return;
+
+  try {
+    await db.collection('users').doc(uid).delete();
+    showToast('Admin ගිණුම ඉවත් කරන ලදී.', 'info');
+    loadAllAdmins();
+  } catch (err) {
+    console.error('deleteAdminUser error:', err);
+    showToast('Admin ඉවත් කිරීම අසාර්ථකයි: ' + err.message, 'error');
+  }
 }
 
 // ── PROFILE ───────────────────────────────────────────────────
