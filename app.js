@@ -29,6 +29,134 @@ const DISTRICT_COORDS = {
   'Vavuniya':[8.7514,80.4972]
 };
 
+const DISTRICT_CITIES = {
+  'Ampara': [
+    'Ampara','Akkaraipattu','Kalmunai','Sammanthurai','Pottuvil',
+    'Dehiattakandiya','Uhana','Mahaoya','Damana','Padiyathalawa','Sainthamaruthu'
+  ],
+  'Anuradhapura': [
+    'Anuradhapura','Padaviya','Kekirawa','Medawachchiya','Eppawala',
+    'Galenbindunuwewa','Mihintale','Nochchiyagama','Thalawa','Tambuttegama',
+    'Habarana','Kahatagasdigiliya','Horowpathana','Galnewa','Ipalogama',
+    'Kebithigollewa','Rajanganaya','Rambewa','Thirappane'
+  ],
+  'Badulla': [
+    'Badulla','Bandarawela','Hali Ela','Ella','Haputale',
+    'Welimada','Mahiyanganaya','Passara','Diyatalawa','Demodara'
+  ],
+  'Batticaloa': [
+    'Batticaloa','Eravur','Kattankudy','Valachchenai','Kaluwanchikudy',
+    'Vakarai','Chenkalady','Oddamavadi'
+  ],
+  'Colombo': [
+    'Colombo 1-15','Dehiwala','Mount Lavinia','Moratuwa','Kotte',
+    'Maharagama','Kesbewa','Homagama','Nugegoda','Kotikawatta',
+    'Mulleriyawa','Kolonnawa','Malabe','Kaduwela','Piliyandala',
+    'Battaramulla','Rajagiriya','Athurugiriya','Padukka','Hanwella','Boralesgamuwa'
+  ],
+  'Galle': [
+    'Galle','Karapitiya','Ambalangoda','Hikkaduwa','Elpitiya',
+    'Bentota','Baddegama','Ahangama','Habaraduwa','Neluwa','Batapola'
+  ],
+  'Gampaha': [
+    'Gampaha','Negombo','Kelaniya','Wattala','Ja-Ela',
+    'Kandana','Minuwangoda','Katunayake','Ragama','Divulapitiya',
+    'Mirigama','Kiribathgoda','Kadawatha','Veyangoda','Nittambuwa'
+  ],
+  'Hambantota': [
+    'Hambantota','Tangalle','Beliatta','Tissamaharama','Ambalantota',
+    'Walasmulla','Weeraketiya','Middeniya','Suriyawewa'
+  ],
+  'Jaffna': [
+    'Jaffna','Nallur','Chavakachcheri','Point Pedro','Karainagar',
+    'Velanai','Chunnakam','Manipay','Kopay','Tellippalai'
+  ],
+  'Kalutara': [
+    'Kalutara','Panadura','Horana','Beruwala','Aluthgama',
+    'Matugama','Wadduwa','Bandaragama','Ingiriya','Bulathsinhala'
+  ],
+  'Kandy': [
+    'Kandy','Peradeniya','Katugastota','Gampola','Nawalapitiya',
+    'Kundasale','Digana','Akurana','Teldeniya','Gelioya',
+    'Pilimathalawa','Wattegama'
+  ],
+  'Kegalle': [
+    'Kegalle','Mawanella','Warakapola','Rambukkana','Ruwanwella',
+    'Dehiowita','Deraniyagala','Yatiyantota','Galigamuwa'
+  ],
+  'Kilinochchi': [
+    'Kilinochchi','Paranthan','Pallai','Pooneryn','Kandavalai'
+  ],
+  'Kurunegala': [
+    'Kurunegala','Kuliyapitiya','Narammala','Wariyapola','Pannala',
+    'Giriulla','Polgahawela','Ibbagamuwa','Alawwa','Mawathagama',
+    'Nikaweratiya','Maho','Galgamuwa'
+  ],
+  'Mannar': [
+    'Mannar','Pesalai','Thalaimannar','Murunkan','Madhu','Nanaddan'
+  ],
+  'Matale': [
+    'Matale','Dambulla','Galewela','Sigiriya','Ukuwela',
+    'Rattota','Naula','Yatawatta'
+  ],
+  'Matara': [
+    'Matara','Weligama','Akuressa','Dikwella','Deniyaya',
+    'Hakmana','Kamburupitiya','Devinuwara','Gandara'
+  ],
+  'Monaragala': [
+    'Monaragala','Wellawaya','Buttala','Bibile','Kataragama',
+    'Siyambalanduwa','Medagama'
+  ],
+  'Mullaitivu': [
+    'Mullaitivu','Puthukkudiyiruppu','Oddusuddan','Mankulam','Mallavi'
+  ],
+  'Nuwara Eliya': [
+    'Nuwara Eliya','Hatton','Talawakelle','Kotagala','Ginigathena',
+    'Maskeliya','Ragala','Walapane','Norwood'
+  ],
+  'Polonnaruwa': [
+    'Polonnaruwa','Kaduruwela','Hingurakgoda','Medirigiriya','Aralaganwila',
+    'Welikanda','Dimbulagala','Giritale'
+  ],
+  'Puttalam': [
+    'Puttalam','Chilaw','Wennappuwa','Marawila','Dankotuwa',
+    'Anamaduwa','Nattandiya','Kalpitiya','Mahawewa'
+  ],
+  'Ratnapura': [
+    'Ratnapura','Embilipitiya','Balangoda','Pelmadulla','Kuruwita',
+    'Kahawatta','Eheliyagoda','Godakawela','Nivithigala'
+  ],
+  'Trincomalee': [
+    'Trincomalee','Kinniya','Kantale','Muttur','Nilaveli',
+    'Kuchchaveli','Serunuwara'
+  ],
+  'Vavuniya': [
+    'Vavuniya','Cheddikulam','Nedunkeni','Omanthai'
+  ]
+};
+
+const CITY_COORDS = {
+  'Padaviya': [8.8784, 80.7580],
+  'Anuradhapura': [8.3114, 80.4037],
+  'Kekirawa': [8.0441, 80.5960],
+  'Medawachchiya': [8.5434, 80.4958],
+  'Eppawala': [8.1408, 80.4136],
+  'Mihintale': [8.3512, 80.5042],
+  'Tambuttegama': [8.1561, 80.3019],
+  'Habarana': [8.0338, 80.7511],
+  'Horowpathana': [8.5556, 80.8667],
+  'Galenbindunuwewa': [8.3846, 80.6587],
+  'Dehiwala': [6.8533, 79.8656],
+  'Moratuwa': [6.7730, 79.8816],
+  'Negombo': [7.2008, 79.8736],
+  'Panadura': [6.7130, 79.9074],
+  'Horana': [6.7153, 80.0631],
+  'Dambulla': [7.8742, 80.6511],
+  'Chilaw': [7.5758, 79.7953],
+  'Tangalle': [6.0240, 80.7941],
+  'Bandarawela': [6.8259, 80.9982]
+};
+
 // ── STATE ──────────────────────────────────────────────────────
 let currentUser     = null;
 let currentUserData = null;
@@ -478,7 +606,7 @@ function jobCard(id, job, view) {
     <div class="jc-title">${esc(job.title)}</div>
     <div class="jc-desc">${esc(job.description)}</div>
     <div class="jc-meta">
-      <span class="meta-item"><i class="fas fa-map-marker-alt"></i>${esc(job.district)}</span>
+      <span class="meta-item"><i class="fas fa-map-marker-alt"></i>${esc(job.city ? `${job.district}, ${job.city}` : job.district)}</span>
       <span class="meta-item"><i class="fas fa-user"></i>${esc(job.customerName || 'Customer')}</span>
       <span class="meta-item"><i class="fas fa-clock"></i>${ago}</span>
       ${job.claimedByName ? `<span class="meta-item"><i class="fas fa-tools"></i>${esc(job.claimedByName)}</span>` : ''}
@@ -589,7 +717,7 @@ async function openJobModal(jobId) {
       <div style="display:grid;gap:10px">
         <div class="detail-box"><div class="dl">Description</div><div class="dv">${esc(job.description)}</div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="detail-box"><div class="dl">District</div><div class="dv">${esc(job.district)}</div></div>
+          <div class="detail-box"><div class="dl">District / City</div><div class="dv">${esc(job.city ? `${job.district}, ${job.city}` : job.district)}</div></div>
           <div class="detail-box"><div class="dl">Customer</div><div class="dv">${esc(job.customerName || 'N/A')}</div></div>
         </div>
         <div class="detail-box" style="background:${showPhone ? 'rgba(16,185,129,.07)' : 'rgba(255,255,255,.03)'};border-color:${showPhone ? 'rgba(16,185,129,.2)' : 'var(--border)'}">
@@ -631,6 +759,7 @@ async function openEditJobModal(jobId) {
     document.getElementById('edit-title').value = j.title || '';
     document.getElementById('edit-desc').value = j.description || '';
     document.getElementById('edit-district').value = j.district || '';
+    onEditDistrictChange(j.city || '');
     document.getElementById('edit-cust-name').value = j.customerName || '';
     document.getElementById('edit-cust-phone').value = j.customerPhone || '';
     document.getElementById('edit-status').value = j.status || 'open';
@@ -649,6 +778,11 @@ async function handleEditJobSubmit(e) {
   const title = document.getElementById('edit-title').value.trim();
   const desc  = document.getElementById('edit-desc').value.trim();
   const district = document.getElementById('edit-district').value;
+  const editCitySelect = document.getElementById('edit-city');
+  let city = editCitySelect?.value || '';
+  if (city === '__other__') {
+    city = document.getElementById('edit-city-custom')?.value.trim() || '';
+  }
   const custName  = document.getElementById('edit-cust-name').value.trim();
   const custPhone = document.getElementById('edit-cust-phone').value.trim();
   const status    = document.getElementById('edit-status').value;
@@ -666,6 +800,7 @@ async function handleEditJobSubmit(e) {
   try {
     await db.collection('jobs').doc(jobId).update({
       title, description: desc, type: jobType, district,
+      city: city || '',
       customerName: custName, customerPhone: custPhone,
       status, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -764,8 +899,112 @@ function initPostJobMap() {
 
 function onDistrictChange() {
   const d = document.getElementById('job-district').value;
+  const group = document.getElementById('job-city-group');
+  const citySelect = document.getElementById('job-city');
+  const customInput = document.getElementById('job-city-custom');
+
   if (d && DISTRICT_COORDS[d] && postJobMap) {
     postJobMap.setView(DISTRICT_COORDS[d], 11);
+  }
+
+  if (d && DISTRICT_CITIES[d]) {
+    citySelect.innerHTML = '<option value="">City / Town තෝරන්න</option>';
+    DISTRICT_CITIES[d].forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      citySelect.appendChild(opt);
+    });
+    const otherOpt = document.createElement('option');
+    otherOpt.value = '__other__';
+    otherOpt.textContent = '✏️ වෙනත් (Other Town)...';
+    citySelect.appendChild(otherOpt);
+
+    group?.classList.remove('hidden');
+    citySelect.value = '';
+    customInput?.classList.add('hidden');
+    if (customInput) customInput.value = '';
+  } else {
+    group?.classList.add('hidden');
+    customInput?.classList.add('hidden');
+    if (citySelect) citySelect.innerHTML = '<option value="">City / Town තෝරන්න</option>';
+  }
+}
+
+function onCityChange() {
+  const citySelect = document.getElementById('job-city');
+  const customInput = document.getElementById('job-city-custom');
+  if (!citySelect) return;
+
+  if (citySelect.value === '__other__') {
+    customInput?.classList.remove('hidden');
+    customInput?.focus();
+  } else {
+    customInput?.classList.add('hidden');
+    if (customInput) customInput.value = '';
+  }
+
+  const c = citySelect.value;
+  if (c && CITY_COORDS[c] && postJobMap) {
+    postJobMap.setView(CITY_COORDS[c], 13);
+  }
+}
+
+function onEditDistrictChange(selectedCity = '') {
+  const d = document.getElementById('edit-district').value;
+  const group = document.getElementById('edit-city-group');
+  const citySelect = document.getElementById('edit-city');
+  const customInput = document.getElementById('edit-city-custom');
+
+  if (d && DISTRICT_CITIES[d]) {
+    citySelect.innerHTML = '<option value="">Select City / Town</option>';
+    let cityFound = false;
+    DISTRICT_CITIES[d].forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      citySelect.appendChild(opt);
+      if (c === selectedCity) cityFound = true;
+    });
+    const otherOpt = document.createElement('option');
+    otherOpt.value = '__other__';
+    otherOpt.textContent = '✏️ Other...';
+    citySelect.appendChild(otherOpt);
+
+    group?.classList.remove('hidden');
+
+    if (selectedCity) {
+      if (cityFound) {
+        citySelect.value = selectedCity;
+        customInput?.classList.add('hidden');
+      } else {
+        citySelect.value = '__other__';
+        customInput?.classList.remove('hidden');
+        if (customInput) customInput.value = selectedCity;
+      }
+    } else {
+      citySelect.value = '';
+      customInput?.classList.add('hidden');
+      if (customInput) customInput.value = '';
+    }
+  } else {
+    group?.classList.add('hidden');
+    customInput?.classList.add('hidden');
+    if (citySelect) citySelect.innerHTML = '<option value="">Select City / Town</option>';
+  }
+}
+
+function onEditCityChange() {
+  const citySelect = document.getElementById('edit-city');
+  const customInput = document.getElementById('edit-city-custom');
+  if (!citySelect) return;
+
+  if (citySelect.value === '__other__') {
+    customInput?.classList.remove('hidden');
+    customInput?.focus();
+  } else {
+    customInput?.classList.add('hidden');
+    if (customInput) customInput.value = '';
   }
 }
 
@@ -775,6 +1014,11 @@ async function handlePostJob(e) {
   const title     = document.getElementById('job-title').value.trim();
   const desc      = document.getElementById('job-desc').value.trim();
   const district  = document.getElementById('job-district').value;
+  const citySelect = document.getElementById('job-city');
+  let city = citySelect?.value || '';
+  if (city === '__other__') {
+    city = document.getElementById('job-city-custom')?.value.trim() || '';
+  }
   const custName  = document.getElementById('cust-name-job').value.trim();
   const custPhone = document.getElementById('cust-phone-job').value.trim();
   const errEl = document.getElementById('post-job-error');
@@ -801,6 +1045,7 @@ async function handlePostJob(e) {
   try {
     await db.collection('jobs').add({
       title, description: desc, type: jobType, district,
+      city: city || '',
       location: { lat: selectedLoc.lat, lng: selectedLoc.lng },
       customerName:  custName || posterName,
       customerPhone: custPhone,
@@ -813,6 +1058,8 @@ async function handlePostJob(e) {
     showToast('Job post කළා! 🎉', 'success');
     e.target.reset();
     selectedLoc = null;
+    document.getElementById('job-city-group')?.classList.add('hidden');
+    document.getElementById('job-city-custom')?.classList.add('hidden');
     document.getElementById('loc-display')?.classList.add('hidden');
     setTimeout(goBack, 800);
   } catch (err) {
@@ -866,7 +1113,7 @@ async function loadAdminStats() {
           <div class="recent-row-title">${esc(j.title)}</div>
           <div class="recent-row-meta">
             <span class="type-badge ${esc(j.type)}" style="font-size:.7rem;padding:2px 8px">${esc(j.type)}</span>
-            ${esc(j.district)} · ${timeAgo(j.createdAt?.toDate?.())}
+            ${esc(j.city ? `${j.district}, ${j.city}` : j.district)} · ${timeAgo(j.createdAt?.toDate?.())}
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -924,7 +1171,7 @@ function renderAdminJobs(jobs) {
       </div>
       <div>
         <span class="type-badge ${esc(j.type)}" style="font-size:.73rem">${esc(j.type)}</span>
-        <div style="font-size:.73rem;color:var(--txt3);margin-top:3px">${esc(j.district)}</div>
+        <div style="font-size:.73rem;color:var(--txt3);margin-top:3px">${esc(j.city ? `${j.district}, ${j.city}` : j.district)}</div>
       </div>
       <div>
         <span class="status-badge s-${esc(j.status)}">${statusLabel(j.status)}</span>

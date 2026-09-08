@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
 <div id="app">
@@ -226,8 +226,15 @@
           <div class="form-group"><label><i class="fas fa-heading"></i> Job Title</label><input type="text" id="job-title" placeholder="e.g. CCTV installation at my shop" required /></div>
           <div class="form-group"><label><i class="fas fa-align-left"></i> Description</label><textarea id="job-desc" rows="3" placeholder="Job ගැන detail ලියන්න..." required></textarea></div>
           <div class="form-group">
-            <label><i class="fas fa-map-marker-alt"></i> District</label>
+            <label><i class="fas fa-map-marker-alt"></i> District (දිස්ත්‍රික්කය)</label>
             <select id="job-district" required onchange="onDistrictChange()"><option value="">District තෝරන්න</option></select>
+          </div>
+          <div class="form-group hidden" id="job-city-group">
+            <label><i class="fas fa-city"></i> City / Town (නගරය)</label>
+            <select id="job-city" onchange="onCityChange()">
+              <option value="">City / Town තෝරන්න</option>
+            </select>
+            <input type="text" id="job-city-custom" class="hidden" placeholder="නගරයේ නම ලියන්න (වෙනත් නම්)" style="margin-top:8px" />
           </div>
           <div class="form-group">
             <label><i class="fas fa-map"></i> Map Pin – Exact Location</label>
@@ -354,7 +361,14 @@
         <div class="form-group"><label><i class="fas fa-align-left"></i> Description</label><textarea id="edit-desc" rows="3" required></textarea></div>
         <div class="form-group">
           <label><i class="fas fa-map-marker-alt"></i> District</label>
-          <select id="edit-district" required><option value="">Select District</option></select>
+          <select id="edit-district" required onchange="onEditDistrictChange()"><option value="">Select District</option></select>
+        </div>
+        <div class="form-group hidden" id="edit-city-group">
+          <label><i class="fas fa-city"></i> City / Town (නගරය)</label>
+          <select id="edit-city" onchange="onEditCityChange()">
+            <option value="">Select City / Town</option>
+          </select>
+          <input type="text" id="edit-city-custom" class="hidden" placeholder="නගරයේ නම ලියන්න" style="margin-top:8px" />
         </div>
         <div class="form-group"><label><i class="fas fa-user"></i> Customer Name</label><input type="text" id="edit-cust-name" /></div>
         <div class="form-group"><label><i class="fas fa-phone"></i> Customer Phone</label><input type="tel" id="edit-cust-phone" /></div>
@@ -427,8 +441,8 @@
 <script src="firebase-firestore-compat.js"></script>
 
 <!-- App Logic -->
-<script src="firebase-config.js?v=4"></script>
-<script src="app.js?v=4"></script>
+<script src="firebase-config.js?v=5"></script>
+<script src="app.js?v=5"></script>
 
 <!-- Guaranteed loading overlay removal after 2s -->
 <script>
