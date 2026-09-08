@@ -11,8 +11,16 @@ import smtplib
 import threading
 import os
 import sys
+
+# Ensure UTF-8 encoding on Windows console/log streams
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.header import Header
 
 PORT = 8080
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
@@ -37,9 +45,13 @@ def send_smtp_email(to_addresses, subject, html_content, text_content=""):
         return False, "No valid recipient email addresses provided."
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"{SMTP_CONFIG['sender_name']} <{SMTP_CONFIG['from_email']}>"
+    msg["Subject"] = Header(subject, "utf-8").encode()
+    sender_header = Header(SMTP_CONFIG["sender_name"], "utf-8").encode()
+    msg["From"] = f"{sender_header} <{SMTP_CONFIG['from_email']}>"
     msg["To"] = ", ".join(valid_recipients)
+
+    msg["Reply-To"] = SMTP_CONFIG["from_email"]
+    msg["X-Mailer"] = "LankaVision Pro"
 
     if text_content:
         msg.attach(MIMEText(text_content, "plain", "utf-8"))
@@ -50,12 +62,20 @@ def send_smtp_email(to_addresses, subject, html_content, text_content=""):
     try:
         with smtplib.SMTP_SSL(SMTP_CONFIG["server"], SMTP_CONFIG["port"], context=context, timeout=15) as server:
             server.login(SMTP_CONFIG["user"], SMTP_CONFIG["password"])
-            server.sendmail(SMTP_CONFIG["from_email"], valid_recipients, msg.as_string())
-        print(f"[EMAIL] Sent successfully to: {valid_recipients} | Subject: {subject}")
-        return True, "Email sent successfully"
+            server.sendmail(SMTP_CONFIG["from_email"], valid_recipients, msg.as_bytes())
     except Exception as err:
-        print(f"[EMAIL ERROR] Failed sending to {valid_recipients}: {err}")
+        try:
+            print(f"[EMAIL ERROR] Failed sending to {valid_recipients}: {err}", flush=True)
+        except Exception:
+            pass
         return False, str(err)
+
+    try:
+        print(f"[EMAIL] Sent successfully to: {valid_recipients} | Subject: {subject}", flush=True)
+    except Exception:
+        pass
+    return True, "Email sent successfully"
+
 
 
 class LankaVisionRequestHandler(http.server.SimpleHTTPRequestHandler):

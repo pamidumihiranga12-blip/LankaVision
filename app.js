@@ -211,7 +211,24 @@ let appInitialized  = false;
 let authResolved    = false;
 
 // ── EMAIL NOTIFICATIONS (via LankaVision SMTP) ────────────────
-const ADMIN_EMAIL = 'lankavision@smartzonelk.lk';
+const ADMIN_EMAIL = 'lankavisionadmin@gmail.com';
+const BACKUP_ADMIN_EMAIL = 'lankavision@smartzonelk.lk';
+
+async function getAllAdminEmails() {
+  const list = new Set([ADMIN_EMAIL, BACKUP_ADMIN_EMAIL]);
+  try {
+    if (typeof db !== 'undefined') {
+      const snap = await db.collection('users').where('role', '==', 'admin').get();
+      snap.forEach(d => {
+        const em = d.data()?.email;
+        if (em && em.includes('@')) list.add(em.trim().toLowerCase());
+      });
+    }
+  } catch (err) {
+    console.warn('[ADMIN EMAILS ERROR]', err);
+  }
+  return Array.from(list);
+}
 
 async function sendEmailNotification({ to, subject, html, text }) {
   if (!to) return;
@@ -226,6 +243,41 @@ async function sendEmailNotification({ to, subject, html, text }) {
   } catch (err) {
     console.warn('[EMAIL ERROR]', err);
     return { success: false, error: err.message };
+  }
+}
+
+async function sendAdminTestEmail() {
+  showToast('Test Email එක යවමින් පවතී... 📨', 'info');
+  try {
+    const adminRecipients = await getAllAdminEmails();
+    const res = await sendEmailNotification({
+      to: adminRecipients,
+      subject: '🧪 LankaVision Pro - Admin Email System Test',
+      html: emailWrapper('Admin System Test', `
+        <h2 style="color:#60a5fa;margin-top:0">🧪 Admin Email System Working!</h2>
+        <p>ආයුබෝවන් Administrator, මෙය LankaVision Pro පද්ධතියෙන් සාර්ථකව නිකුත් කරන ලද පරීක්ෂණ ඊමේල් පණිවිඩයකි (Test Email).</p>
+        <div class="detail-card">
+          <div class="row"><span class="lbl">Recipients</span><span class="val" style="color:#38bdf8">${esc(adminRecipients.join(', '))}</span></div>
+          <div class="row"><span class="lbl">Server</span><span class="val">smtp.smartzonelk.lk (Port 465)</span></div>
+          <div class="row"><span class="lbl">Status</span><span class="val" style="color:#34d399">✅ Active &amp; Connected</span></div>
+          <div class="row"><span class="lbl">Time</span><span class="val">${new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' })}</span></div>
+        </div>
+        <p style="color:#94a3b8;font-size:13px">ඔබට මෙම ඊමේල් පණිවිඩය ලැබුණේ නම්, නව Jobs, Technicians ලියාපදිංචි වීම් ආදී සියලුම Admin Alerts නිවැරදිව ලැබෙනු ඇත.</p>
+        <div style="text-align:center;margin-top:18px">
+          <a href="http://localhost:8080/index.html" class="btn-link">Open Admin Panel</a>
+        </div>
+      `),
+      text: `LankaVision Pro Admin Email Test. System verified for ${adminRecipients.join(', ')}`
+    });
+
+    if (res && res.success) {
+      showToast(`Test Email සාර්ථකව යවන ලදී! (${MAIN_ADMIN_EMAIL} Inbox/Spam check කරන්න) 🎉`, 'success');
+    } else {
+      showToast('Email යැවීම අසාර්ථක විය: ' + (res?.error || 'Unknown error'), 'error');
+    }
+  } catch (err) {
+    console.error('sendAdminTestEmail error:', err);
+    showToast('Error: ' + err.message, 'error');
   }
 }
 
@@ -298,8 +350,9 @@ async function notifyNewJobPosted(job) {
     </div>
   `);
 
+  const adminRecipients = await getAllAdminEmails();
   sendEmailNotification({
-    to: ADMIN_EMAIL,
+    to: adminRecipients,
     subject: `🔔 New Job: ${job.title} (${loc})`,
     html: adminHtml,
     text: `New Job: ${job.title} in ${loc}. Type: ${job.type}. Phone: ${job.customerPhone}`
@@ -416,8 +469,9 @@ async function notifyTechRegistered(tech) {
       <a href="http://localhost:8080/index.html" class="btn-link">Review in Admin Panel</a>
     </div>
   `);
+  const adminRecipients = await getAllAdminEmails();
   sendEmailNotification({
-    to: ADMIN_EMAIL,
+    to: adminRecipients,
     subject: `👤 New Technician Application: ${tech.name} (${techLoc})`,
     html: adminHtml,
     text: `New Technician: ${tech.name}, ${tech.phone}, Location: ${techLoc}`
@@ -512,8 +566,9 @@ async function notifyJobClaimed(job, tech) {
       <div class="row"><span class="lbl">Customer</span><span class="val">${esc(job.customerName || '')} (${esc(job.customerPhone || '')})</span></div>
     </div>
   `);
+  const adminRecipients = await getAllAdminEmails();
   sendEmailNotification({
-    to: ADMIN_EMAIL,
+    to: adminRecipients,
     subject: `📋 Job Claimed: ${job.title} by ${tech.name}`,
     html: adminHtml,
     text: `Job ${job.title} claimed by ${tech.name} (${tech.phone})`
