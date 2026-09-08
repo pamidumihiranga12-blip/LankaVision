@@ -21,6 +21,7 @@ if hasattr(sys.stderr, "reconfigure"):
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.header import Header
+import email.utils
 
 PORT = 8080
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
@@ -49,9 +50,12 @@ def send_smtp_email(to_addresses, subject, html_content, text_content=""):
     sender_header = Header(SMTP_CONFIG["sender_name"], "utf-8").encode()
     msg["From"] = f"{sender_header} <{SMTP_CONFIG['from_email']}>"
     msg["To"] = ", ".join(valid_recipients)
-
+    msg["Date"] = email.utils.formatdate(localtime=True)
+    msg["Message-ID"] = email.utils.make_msgid(domain="smartzonelk.lk")
     msg["Reply-To"] = SMTP_CONFIG["from_email"]
-    msg["X-Mailer"] = "LankaVision Pro"
+    msg["X-Mailer"] = "LankaVision Pro Mailer"
+    msg["Auto-Submitted"] = "auto-generated"
+    msg["X-Auto-Response-Suppress"] = "All"
 
     if text_content:
         msg.attach(MIMEText(text_content, "plain", "utf-8"))
