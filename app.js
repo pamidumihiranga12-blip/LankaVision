@@ -211,23 +211,12 @@ let appInitialized  = false;
 let authResolved    = false;
 
 // ── EMAIL NOTIFICATIONS (via LankaVision SMTP) ────────────────
-const ADMIN_EMAIL = 'lankavisionadmin@gmail.com';
 const BACKUP_ADMIN_EMAIL = 'lankavision@smartzonelk.lk';
+const ADMIN_EMAIL = MAIN_ADMIN_EMAIL;
+const ADMIN_EMAILS = [MAIN_ADMIN_EMAIL, BACKUP_ADMIN_EMAIL];
 
-async function getAllAdminEmails() {
-  const list = new Set([ADMIN_EMAIL, BACKUP_ADMIN_EMAIL]);
-  try {
-    if (typeof db !== 'undefined') {
-      const snap = await db.collection('users').where('role', '==', 'admin').get();
-      snap.forEach(d => {
-        const em = d.data()?.email;
-        if (em && em.includes('@')) list.add(em.trim().toLowerCase());
-      });
-    }
-  } catch (err) {
-    console.warn('[ADMIN EMAILS ERROR]', err);
-  }
-  return Array.from(list);
+function getAllAdminEmails() {
+  return ADMIN_EMAILS;
 }
 
 async function sendEmailNotification({ to, subject, html, text }) {
@@ -350,9 +339,8 @@ async function notifyNewJobPosted(job) {
     </div>
   `);
 
-  const adminRecipients = await getAllAdminEmails();
   sendEmailNotification({
-    to: adminRecipients,
+    to: ADMIN_EMAILS,
     subject: `🔔 New Job: ${job.title} (${loc})`,
     html: adminHtml,
     text: `New Job: ${job.title} in ${loc}. Type: ${job.type}. Phone: ${job.customerPhone}`
@@ -452,49 +440,54 @@ async function notifyNewJobPosted(job) {
 
 // Trigger 2: Technician Registers -> Notify Admin & Technician
 async function notifyTechRegistered(tech) {
-  const techLoc = tech.city ? `${tech.district}, ${tech.city}` : tech.district;
+  try {
+    const techLoc = tech.city ? `${tech.district}, ${tech.city}` : tech.district;
+    console.log('[NOTIFY] Dispatching registration emails for:', tech.name, techLoc);
 
-  // 1. To Admin
-  const adminHtml = emailWrapper('New Technician Application', `
-    <h2 style="color:#60a5fa;margin-top:0;font-size:18px">👤 New Technician Registration!</h2>
-    <p>නව Technician කෙනෙක් system එකට register වී ඇත. Review කර approve කරන්න.</p>
-    <div class="detail-card">
-      <div class="row"><span class="lbl">Name</span><span class="val">${esc(tech.name)}</span></div>
-      <div class="row"><span class="lbl">Phone</span><span class="val" style="color:#34d399;font-family:monospace">${esc(tech.phone)}</span></div>
-      <div class="row"><span class="lbl">Email</span><span class="val">${esc(tech.email)}</span></div>
-      <div class="row"><span class="lbl">District / City</span><span class="val">${esc(techLoc)}</span></div>
-      <div class="row"><span class="lbl">Service</span><span class="val">${esc(tech.serviceType)}</span></div>
-    </div>
-    <div style="text-align:center;margin-top:18px">
-      <a href="http://localhost:8080/index.html" class="btn-link">Review in Admin Panel</a>
-    </div>
-  `);
-  const adminRecipients = await getAllAdminEmails();
-  sendEmailNotification({
-    to: adminRecipients,
-    subject: `👤 New Technician Application: ${tech.name} (${techLoc})`,
-    html: adminHtml,
-    text: `New Technician: ${tech.name}, ${tech.phone}, Location: ${techLoc}`
-  });
-
-  // 2. To Technician
-  if (tech.email) {
-    const techHtml = emailWrapper('Application Received', `
-      <h2 style="color:#fbbf24;margin-top:0;font-size:18px">⏳ Application Received!</h2>
-      <p>ආයුබෝවන් <strong>${esc(tech.name)}</strong>, LankaVision Pro Technician ජාලය හා එක්වීමට ඉල්ලුම් කළාට ස්තූතියි.</p>
+    // 1. To Admin
+    const adminHtml = emailWrapper('New Technician Application', `
+      <h2 style="color:#60a5fa;margin-top:0;font-size:18px">👤 New Technician Registration!</h2>
+      <p>නව Technician කෙනෙක් system එකට register වී ඇත. Review කර approve කරන්න.</p>
       <div class="detail-card">
+        <div class="row"><span class="lbl">Name</span><span class="val">${esc(tech.name)}</span></div>
+        <div class="row"><span class="lbl">Phone</span><span class="val" style="color:#34d399;font-family:monospace">${esc(tech.phone)}</span></div>
+        <div class="row"><span class="lbl">Email</span><span class="val">${esc(tech.email)}</span></div>
         <div class="row"><span class="lbl">District / City</span><span class="val">${esc(techLoc)}</span></div>
         <div class="row"><span class="lbl">Service</span><span class="val">${esc(tech.serviceType)}</span></div>
-        <div class="row"><span class="lbl">Status</span><span class="val" style="color:#fbbf24">Pending Admin Review</span></div>
       </div>
-      <p>ඔබගේ තොරතුරු Admin විසින් review කර පැය 24–48ක් ඇතුළත approve කරනු ඇත. Approve වූ විගස ඔබට confirmation email එකක් ලැබෙනු ඇත.</p>
+      <div style="text-align:center;margin-top:18px">
+        <a href="http://localhost:8080/index.html" class="btn-link">Review in Admin Panel</a>
+      </div>
     `);
+
     sendEmailNotification({
-      to: tech.email,
-      subject: `⏳ Application Received - LankaVision Pro`,
-      html: techHtml,
-      text: `Application received. Location: ${techLoc}. Pending admin review.`
+      to: ADMIN_EMAILS,
+      subject: `👤 New Technician Application: ${tech.name} (${techLoc})`,
+      html: adminHtml,
+      text: `New Technician: ${tech.name}, ${tech.phone}, Location: ${techLoc}`
     });
+
+    // 2. To Technician
+    if (tech.email) {
+      const techHtml = emailWrapper('Application Received', `
+        <h2 style="color:#fbbf24;margin-top:0;font-size:18px">⏳ Application Received!</h2>
+        <p>ආයුබෝවන් <strong>${esc(tech.name)}</strong>, LankaVision Pro Technician ජාලය හා එක්වීමට ඉල්ලුම් කළාට ස්තූතියි.</p>
+        <div class="detail-card">
+          <div class="row"><span class="lbl">District / City</span><span class="val">${esc(techLoc)}</span></div>
+          <div class="row"><span class="lbl">Service</span><span class="val">${esc(tech.serviceType)}</span></div>
+          <div class="row"><span class="lbl">Status</span><span class="val" style="color:#fbbf24">Pending Admin Review</span></div>
+        </div>
+        <p>ඔබගේ තොරතුරු Admin විසින් review කර පැය 24–48ක් ඇතුළත approve කරනු ඇත. Approve වූ විගස ඔබට confirmation email එකක් ලැබෙනු ඇත.</p>
+      `);
+      sendEmailNotification({
+        to: tech.email,
+        subject: `⏳ Application Received - LankaVision Pro`,
+        html: techHtml,
+        text: `Application received. Location: ${techLoc}. Pending admin review.`
+      });
+    }
+  } catch (err) {
+    console.error('[NOTIFY TECH ERROR]', err);
   }
 }
 
@@ -566,9 +559,8 @@ async function notifyJobClaimed(job, tech) {
       <div class="row"><span class="lbl">Customer</span><span class="val">${esc(job.customerName || '')} (${esc(job.customerPhone || '')})</span></div>
     </div>
   `);
-  const adminRecipients = await getAllAdminEmails();
   sendEmailNotification({
-    to: adminRecipients,
+    to: ADMIN_EMAILS,
     subject: `📋 Job Claimed: ${job.title} by ${tech.name}`,
     html: adminHtml,
     text: `Job ${job.title} claimed by ${tech.name} (${tech.phone})`
@@ -846,8 +838,9 @@ async function handleTechRegister(e) {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('Application submit කළා! Admin approve වෙනතුරු wait කරන්න.', 'success');
-    notifyTechRegistered({ name, phone, email, district, city, serviceType });
+    await notifyTechRegistered({ name, phone, email, district, city, serviceType });
   } catch (err) {
+    console.error('handleTechRegister error:', err);
     errEl.textContent = authErr(err.code);
     errEl.classList.remove('hidden');
   }
