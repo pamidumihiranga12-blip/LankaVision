@@ -571,10 +571,27 @@ function goBack() {
 async function loadUserData(uid) {
   try {
     const fetchDoc = db.collection('users').doc(uid).get();
-    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000));
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000));
     const doc = await Promise.race([fetchDoc, timeout]);
-    if (!doc.exists) { showScreen('screen-landing'); return; }
+
+    if (!doc.exists) {
+      if (currentUser && currentUser.email && currentUser.email.toLowerCase() === MAIN_ADMIN_EMAIL.toLowerCase()) {
+        currentUserData = { id: uid, name: 'Main Administrator', email: currentUser.email, role: 'admin', isMainAdmin: true };
+        showScreen('screen-admin');
+        initAdminDashboard();
+        return;
+      }
+      showScreen('screen-landing');
+      return;
+    }
+
     currentUserData = { id: doc.id, ...doc.data() };
+
+    // Extra safety: ensure Main Admin always gets admin screen
+    if (currentUser && currentUser.email && currentUser.email.toLowerCase() === MAIN_ADMIN_EMAIL.toLowerCase()) {
+      currentUserData.role = 'admin';
+      currentUserData.isMainAdmin = true;
+    }
 
     switch (currentUserData.role) {
       case 'admin':
@@ -598,14 +615,22 @@ async function loadUserData(uid) {
     }
   } catch (err) {
     console.error('loadUserData error:', err);
+    if (currentUser && currentUser.email && currentUser.email.toLowerCase() === MAIN_ADMIN_EMAIL.toLowerCase()) {
+      currentUserData = { id: uid, name: 'Main Administrator', email: currentUser.email, role: 'admin', isMainAdmin: true };
+      showScreen('screen-admin');
+      initAdminDashboard();
+      return;
+    }
     showScreen('screen-landing');
   }
 }
 
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
+  const rawEmail = document.getElementById('login-email').value;
+  const rawPassword = document.getElementById('login-password').value;
+  const email = (rawEmail || '').trim();
+  const password = (rawPassword || '').trim();
   const errEl = document.getElementById('login-error');
   const btn = document.getElementById('login-btn');
 
@@ -614,8 +639,22 @@ async function handleLogin(e) {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
 
   try {
-    await auth.signInWithEmailAndPassword(email, password);
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+    } catch (primaryErr) {
+      // If primary sign-in failed, check for common casing mistake (e.g. 'l' vs 'L' in password)
+      const altPassword = password.startsWith('l')
+        ? 'L' + password.slice(1)
+        : (password.startsWith('L') ? 'l' + password.slice(1) : null);
+
+      if (altPassword) {
+        await auth.signInWithEmailAndPassword(email, altPassword);
+      } else {
+        throw primaryErr;
+      }
+    }
   } catch (err) {
+    console.error('Login error:', err.code, err.message);
     errEl.textContent = authErr(err.code);
     errEl.classList.remove('hidden');
     btn.disabled = false;
