@@ -581,15 +581,27 @@ async function notifyJobCompleted(job) {
 
   if (custEmail) {
     const custHtml = emailWrapper('Job Completed', `
-      <h2 style="color:#a855f7;margin-top:0;font-size:18px">⭐ Job Completed!</h2>
-      <p>ආයුබෝවන් <strong>${esc(job.customerName || 'Customer')}</strong>, ඔබගේ <strong>${esc(job.title)}</strong> job එක සාර්ථකව අවසන් කළ බව සටහන් විය.</p>
-      <p>LankaVision Pro සේවාව භාවිත කළාට ස්තූතියි! තවත් CCTV හෝ Satellite සේවාවක් අවශ්‍ය නම් ඕනෑම වෙලාවක අප හා සම්බන්ධ වන්න.</p>
+      <h2 style="color:#10b981;margin-top:0;font-size:18px">🎉 Job Completed Successfully!</h2>
+      <p>ආයුබෝවන් <strong>${esc(job.customerName || 'Customer')}</strong>, ඔබගේ <strong>${esc(job.title)}</strong> job එක Technician විසින් සාර්ථකව අවසන් කර ඇත.</p>
+      ${job.claimedByName ? `<p style="font-size:14px"><strong>භාරගත් Technician:</strong> ${esc(job.claimedByName)}</p>` : ''}
+      ${job.completionPhoto ? `
+      <div style="margin:16px 0;text-align:center">
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:6px">📸 Work Completion Proof (වැඩ අවසන් කළ ඡායාරූපය):</div>
+        <img src="${job.completionPhoto}" style="max-width:100%;max-height:280px;border-radius:10px;border:2px solid #10b981" alt="Work Completion Proof" />
+      </div>` : ''}
+      ${job.completionNotes ? `<p style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px;font-size:13px"><strong>Technician Notes:</strong> ${esc(job.completionNotes)}</p>` : ''}
+      <div style="text-align:center;margin:20px 0;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:16px">
+        <h3 style="color:#fbbf24;margin-top:0;font-size:16px">⭐ Technician සඳහා Rating & Review ලබා දෙන්න</h3>
+        <p style="font-size:13px;color:#94a3b8;margin-bottom:12px">කරුණාකර LankaVision Pro වෙත පිවිස Technician හට තරු 1-5 අතර Rating එකක් සහ ඔබගේ අදහස් (Feedback) ලබා දෙන්න.</p>
+        <a href="http://localhost:8080/index.html" style="display:inline-block;background:#f59e0b;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Review Technician Now</a>
+      </div>
+      <p>LankaVision Pro සේවාව භාවිත කළාට ස්තූතියි!</p>
     `);
     sendEmailNotification({
       to: custEmail,
-      subject: `⭐ Job Completed: ${job.title} - LankaVision Pro`,
+      subject: `✅ Job Completed: ${job.title} - LankaVision Pro`,
       html: custHtml,
-      text: `Your job ${job.title} has been marked completed. Thank you for choosing LankaVision Pro.`
+      text: `Your job ${job.title} has been completed. Review the work proof photo and rate your technician on LankaVision Pro.`
     });
   }
 }
@@ -682,6 +694,7 @@ function showScreen(id) {
   if (id !== 'screen-register') {
     stopTechCamera();
   }
+  stopWorkCamera();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(id);
   if (el) { el.classList.add('active'); }
@@ -969,6 +982,355 @@ function previewPhoto(url, title) {
     capEl.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> Verified Live Selfie · Camera එකෙන්ම ලබාගත් ඡායාරූපයකි';
   }
   modal.classList.remove('hidden');
+}
+
+// ── WORK COMPLETION LIVE CAMERA CAPTURE ───────────────────────
+let workCameraStream = null;
+let workCameraFacingMode = 'environment'; // default rear camera for physical equipment
+let capturedWorkPhotoDataUrl = null;
+let activeCompletingJobId = null;
+
+function openCompleteJobModal(jobId) {
+  activeCompletingJobId = jobId;
+  capturedWorkPhotoDataUrl = null;
+  document.getElementById('complete-target-job-id').value = jobId;
+  document.getElementById('complete-job-notes').value = '';
+  document.getElementById('work-proof-error')?.classList.add('hidden');
+
+  const previewImg = document.getElementById('work-proof-preview-img');
+  if (previewImg) previewImg.src = '';
+  document.getElementById('work-preview-wrap')?.classList.add('hidden');
+  document.getElementById('work-camera-wrap')?.classList.add('hidden');
+  document.getElementById('work-idle')?.classList.remove('hidden');
+
+  document.getElementById('modal-complete-job').classList.remove('hidden');
+  startWorkCamera();
+}
+
+function closeCompleteJobModal() {
+  stopWorkCamera();
+  activeCompletingJobId = null;
+  capturedWorkPhotoDataUrl = null;
+  document.getElementById('modal-complete-job')?.classList.add('hidden');
+}
+
+async function startWorkCamera() {
+  const errEl = document.getElementById('work-proof-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (errEl) {
+      errEl.textContent = 'ඔබගේ Browser එක කැමරා භාවිතයට සහය නොදක්වයි.';
+      errEl.classList.remove('hidden');
+    }
+    showToast('Camera not supported', 'error');
+    return;
+  }
+
+  stopWorkCamera();
+
+  const constraints = {
+    video: {
+      facingMode: workCameraFacingMode,
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    },
+    audio: false
+  };
+
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch(e1) {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
+
+    workCameraStream = stream;
+    const video = document.getElementById('work-proof-video');
+    if (video) {
+      video.srcObject = stream;
+      await video.play().catch(() => {});
+    }
+
+    document.getElementById('work-idle')?.classList.add('hidden');
+    document.getElementById('work-camera-wrap')?.classList.remove('hidden');
+    document.getElementById('work-preview-wrap')?.classList.add('hidden');
+  } catch (err) {
+    console.error('Work camera error:', err);
+    if (errEl) {
+      errEl.textContent = 'කැමරාව On කිරීමට අවසර නොලැබුණි (Permission Denied). කරුණාකර Camera access ලබා දෙන්න.';
+      errEl.classList.remove('hidden');
+    }
+  }
+}
+
+function stopWorkCamera() {
+  if (workCameraStream) {
+    workCameraStream.getTracks().forEach(track => {
+      try { track.stop(); } catch(e) {}
+    });
+    workCameraStream = null;
+  }
+  const video = document.getElementById('work-proof-video');
+  if (video) video.srcObject = null;
+}
+
+async function switchWorkCamera() {
+  workCameraFacingMode = (workCameraFacingMode === 'environment') ? 'user' : 'environment';
+  await startWorkCamera();
+}
+
+function captureWorkProof() {
+  const video = document.getElementById('work-proof-video');
+  const canvas = document.getElementById('work-proof-canvas');
+  const errEl = document.getElementById('work-proof-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!video || !canvas || !video.videoWidth) {
+    showToast('Camera not ready', 'error');
+    return;
+  }
+
+  const targetW = 640;
+  const targetH = Math.round((video.videoHeight / video.videoWidth) * targetW) || 480;
+  canvas.width = targetW;
+  canvas.height = targetH;
+
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, targetW, targetH);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+  capturedWorkPhotoDataUrl = dataUrl;
+
+  const previewImg = document.getElementById('work-proof-preview-img');
+  if (previewImg) previewImg.src = dataUrl;
+
+  stopWorkCamera();
+
+  document.getElementById('work-camera-wrap')?.classList.add('hidden');
+  document.getElementById('work-idle')?.classList.add('hidden');
+  document.getElementById('work-preview-wrap')?.classList.remove('hidden');
+
+  showToast('Work Proof Photo Capture කළා! 📸', 'success');
+}
+
+function retakeWorkProof() {
+  capturedWorkPhotoDataUrl = null;
+  const previewImg = document.getElementById('work-proof-preview-img');
+  if (previewImg) previewImg.src = '';
+  document.getElementById('work-preview-wrap')?.classList.add('hidden');
+  startWorkCamera();
+}
+
+async function confirmJobCompletion() {
+  if (!activeCompletingJobId) return;
+  const errEl = document.getElementById('work-proof-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!capturedWorkPhotoDataUrl) {
+    if (errEl) {
+      errEl.textContent = 'කරුණාකර වැඩ අවසන් කළ බව තහවුරු කිරීමට Camera එකෙන් Live Photo එකක් ලබාගන්න (Work photo proof required).';
+      errEl.classList.remove('hidden');
+    }
+    showToast('Work completion photo is required', 'error');
+    return;
+  }
+
+  const notes = document.getElementById('complete-job-notes')?.value.trim() || '';
+  const confirmBtn = document.getElementById('btn-confirm-complete');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Completing...';
+  }
+
+  try {
+    const ref = db.collection('jobs').doc(activeCompletingJobId);
+    const doc = await ref.get();
+    const jobData = doc.exists ? doc.data() : null;
+
+    await ref.update({
+      status: 'completed',
+      completionPhoto: capturedWorkPhotoDataUrl,
+      completionNotes: notes,
+      completedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    showToast('Job Complete කළා! ✅ Work proof photo සුරක්ෂිත විය.', 'success');
+    closeCompleteJobModal();
+
+    if (document.getElementById('tech-claims')) loadTechClaims();
+
+    if (jobData) {
+      notifyJobCompleted({
+        ...jobData,
+        completionPhoto: capturedWorkPhotoDataUrl,
+        completionNotes: notes
+      });
+    }
+  } catch (err) {
+    console.error('Job completion error:', err);
+    showToast('Failed to complete job: ' + (err.message || ''), 'error');
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = '<i class="fas fa-check-double"></i> Confirm & Complete';
+    }
+  }
+}
+
+// ── STAR RATING & FEEDBACK SYSTEM ─────────────────────────────
+function renderStarRating(rating, count) {
+  const r = Number(rating);
+  const c = Number(count || 0);
+  if (!r || isNaN(r) || c === 0) {
+    return `<span class="star-rating-badge" title="New Technician (No reviews yet)"><i class="fas fa-star"></i> <strong>New</strong></span>`;
+  }
+  return `<span class="star-rating-badge" title="${r.toFixed(1)} out of 5 (${c} reviews)"><i class="fas fa-star"></i> <strong>${r.toFixed(1)}</strong>/5 <small style="color:var(--txt3);margin-left:2px">(${c})</small></span>`;
+}
+
+async function openFeedbackModal(jobId) {
+  try {
+    const doc = await db.collection('jobs').doc(jobId).get();
+    if (!doc.exists) return;
+    const job = doc.data();
+
+    document.getElementById('feedback-job-id').value = jobId;
+    document.getElementById('feedback-tech-id').value = job.claimedBy || '';
+    document.getElementById('feedback-tech-name').textContent = job.claimedByName || 'Technician';
+    document.getElementById('feedback-job-title').textContent = job.title || 'Job';
+
+    const avEl = document.getElementById('feedback-tech-av');
+    if (avEl) {
+      if (job.claimedByPhoto) {
+        avEl.innerHTML = `<img src="${job.claimedByPhoto}" alt="Technician" />`;
+      } else {
+        avEl.innerHTML = `${(job.claimedByName || 'T').charAt(0).toUpperCase()}`;
+      }
+    }
+
+    setStarRating(5);
+    const commentInput = document.getElementById('feedback-comment');
+    if (commentInput) commentInput.value = job.feedback || '';
+    document.getElementById('feedback-error')?.classList.add('hidden');
+
+    document.getElementById('modal-feedback').classList.remove('hidden');
+  } catch (err) {
+    console.error('openFeedbackModal error:', err);
+  }
+}
+
+function setStarRating(val) {
+  document.getElementById('selected-rating-val').value = val;
+  const stars = document.querySelectorAll('#star-picker i');
+  stars.forEach(s => {
+    const sVal = Number(s.dataset.val);
+    s.classList.toggle('active', sVal <= val);
+  });
+  const labels = {
+    1: '⭐ 1/5 - Poor (දුර්වලයි)',
+    2: '⭐⭐ 2/5 - Fair (සාමාන්‍යයි)',
+    3: '⭐⭐⭐ 3/5 - Good (හොඳයි)',
+    4: '⭐⭐⭐⭐ 4/5 - Very Good (ඉතා හොඳයි)',
+    5: '⭐⭐⭐⭐⭐ 5/5 - Excellent (විශිෂ්ටයි)'
+  };
+  const labelEl = document.getElementById('star-label');
+  if (labelEl) labelEl.textContent = labels[val] || `${val}/5 Stars`;
+}
+
+function previewStars(val) {
+  const stars = document.querySelectorAll('#star-picker i');
+  stars.forEach(s => {
+    const sVal = Number(s.dataset.val);
+    s.classList.toggle('active', sVal <= val);
+  });
+}
+
+function resetStarPreview() {
+  const currentVal = Number(document.getElementById('selected-rating-val')?.value || 5);
+  setStarRating(currentVal);
+}
+
+async function submitFeedback() {
+  const jobId = document.getElementById('feedback-job-id')?.value;
+  const techId = document.getElementById('feedback-tech-id')?.value;
+  const rating = Number(document.getElementById('selected-rating-val')?.value || 5);
+  const comment = document.getElementById('feedback-comment')?.value.trim() || '';
+  const errEl = document.getElementById('feedback-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!jobId) return;
+
+  const btn = document.getElementById('btn-submit-feedback');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+  }
+
+  try {
+    // 1. Update Job Document with Rating
+    await db.collection('jobs').doc(jobId).update({
+      rating: rating,
+      feedback: comment,
+      ratedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 2. Update Technician aggregate stats
+    if (techId) {
+      try {
+        const techRef = db.collection('users').doc(techId);
+        const techDoc = await techRef.get();
+        if (techDoc.exists) {
+          const tData = techDoc.data();
+          const oldCount = Number(tData.ratingCount || 0);
+          const oldTotal = Number(tData.ratingTotal || 0);
+          const newCount = oldCount + 1;
+          const newTotal = oldTotal + rating;
+          const newAvg = Number(newTotal / newCount).toFixed(1);
+
+          await techRef.update({
+            ratingCount: newCount,
+            ratingTotal: newTotal,
+            avgRating: Number(newAvg)
+          });
+        }
+      } catch (e) {
+        console.warn('Could not update tech rating profile:', e);
+      }
+    }
+
+    // 3. Save to reviews collection
+    try {
+      await db.collection('reviews').add({
+        jobId,
+        techId: techId || '',
+        customerId: currentUser ? currentUser.uid : 'guest',
+        customerName: currentUserData ? currentUserData.name : 'Customer',
+        rating,
+        feedback: comment,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch(e) {}
+
+    showToast('Feedback එක සාර්ථකව Submit කළා! ස්තූතියි! ⭐', 'success');
+    closeModal('modal-feedback');
+
+    // Refresh views
+    if (document.getElementById('cust-jobs')) loadCustomerJobs();
+    openJobModal(jobId);
+  } catch (err) {
+    console.error('Feedback submit error:', err);
+    if (errEl) {
+      errEl.textContent = 'Feedback submit කිරීමේදී දෝෂයක්: ' + (err.message || '');
+      errEl.classList.remove('hidden');
+    }
+    showToast('Failed to submit feedback', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Review එක Submit කරන්න';
+    }
+  }
 }
 
 async function handleTechRegister(e) {
@@ -1278,6 +1640,7 @@ function jobCard(id, job, view) {
     const techPhone = job.claimedByPhone || '';
     const techPhoto = job.claimedByPhoto || '';
     const cleanTechPhone = cleanPhone(techPhone);
+    const techRatingHtml = renderStarRating(job.claimedByRating, job.claimedByRatingCount);
 
     const avatarHtml = techPhoto
       ? `<img src="${techPhoto}" class="assigned-tech-img" alt="${esc(techName)}" onclick="event.stopPropagation();previewPhoto('${techPhoto}', '${esc(techName)} - Technician Selfie')" title="Click to view full photo" />`
@@ -1290,7 +1653,10 @@ function jobCard(id, job, view) {
         <div class="assigned-tech-verify-badge" title="Verified Technician"><i class="fas fa-check"></i></div>
       </div>
       <div class="assigned-tech-details">
-        <div class="assigned-tech-lbl"><i class="fas fa-user-check"></i> භාරගත් Technician</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px">
+          <div class="assigned-tech-lbl"><i class="fas fa-user-check"></i> භාරගත් Technician</div>
+          ${techRatingHtml}
+        </div>
         <div class="assigned-tech-name">${esc(techName)}</div>
         ${techPhone ? `
         <div class="assigned-tech-actions">
@@ -1301,16 +1667,40 @@ function jobCard(id, job, view) {
     </div>`;
   }
 
+  // Work completion & rating prompts for Customer
+  let customerCompletionExtraHtml = '';
+  if (view === 'customer' && job.status === 'completed') {
+    if (!job.rating) {
+      customerCompletionExtraHtml = `
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:var(--r-m);padding:10px 12px;margin:8px 0;display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="font-size:.78rem;font-weight:700;color:var(--accent)"><i class="fas fa-star"></i> Technician සඳහා Feedback දෙන්න</div>
+          <button class="btn btn-rate-tech btn-sm" onclick="event.stopPropagation();openFeedbackModal('${id}')"><i class="fas fa-star"></i> Rate Now</button>
+        </div>`;
+    } else {
+      customerCompletionExtraHtml = `
+        <div class="customer-review-card" style="margin:8px 0;padding:8px 12px">
+          <div style="font-size:.78rem;font-weight:800;color:#fbbf24;display:flex;align-items:center;gap:6px">
+            <span>${'⭐'.repeat(job.rating)} (${job.rating}/5)</span>
+            <span style="font-size:.7rem;color:var(--txt3);font-weight:500">ඔබගේ Feedback</span>
+          </div>
+          ${job.feedback ? `<div style="font-size:.8rem;color:var(--txt2);margin-top:3px;font-style:italic">"${esc(job.feedback)}"</div>` : ''}
+        </div>`;
+    }
+  }
+
   let actions = '';
   if (view === 'tech' && job.status === 'open') {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> Map</button>` : '';
     actions = `<button class="btn btn-primary btn-sm" onclick="claimJob('${id}',event)"><i class="fas fa-handshake"></i> Accept Job</button>${mapBtn}`;
   } else if (view === 'tech-claimed' || (myJob && view !== 'customer')) {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> Map</button>` : '';
-    actions = `<button class="btn btn-success btn-sm" onclick="markComplete('${id}')"><i class="fas fa-check"></i> Complete</button>${mapBtn}`;
+    actions = `<button class="btn btn-success btn-sm" onclick="openCompleteJobModal('${id}')"><i class="fas fa-camera"></i> Complete Job</button>${mapBtn}`;
   } else if (view === 'customer') {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> View Map</button>` : '';
-    actions = `<button class="btn btn-ghost btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-eye"></i> View</button>${mapBtn}`;
+    const rateBtn = (job.status === 'completed' && !job.rating)
+      ? `<button class="btn btn-rate-tech btn-sm" onclick="openFeedbackModal('${id}')"><i class="fas fa-star"></i> Rate</button>`
+      : '';
+    actions = `<button class="btn btn-ghost btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-eye"></i> View</button>${rateBtn}${mapBtn}`;
   } else if (view === 'admin') {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> Map</button>` : '';
     actions = `<button class="btn btn-ghost btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-eye"></i> View</button>
@@ -1336,8 +1726,10 @@ function jobCard(id, job, view) {
       <span class="meta-item"><i class="fas fa-user"></i>${esc(job.customerName || 'Customer')}</span>
       <span class="meta-item"><i class="fas fa-clock"></i>${ago}</span>
       ${job.claimedByName ? `<span class="meta-item"><i class="fas fa-tools"></i>${esc(job.claimedByName)}</span>` : ''}
+      ${job.completionPhoto ? `<span class="meta-item" style="color:#34d399;font-weight:700"><i class="fas fa-camera"></i> Proof Verified</span>` : ''}
     </div>
     ${view === 'customer' && assignedTechCardHtml ? assignedTechCardHtml : phoneHtml}
+    ${customerCompletionExtraHtml}
     <div class="jc-actions">${actions}</div>
   </div>`;
 }
@@ -1373,12 +1765,17 @@ async function claimJob(jobId, e) {
     }
     const jobData = doc.data();
 
+    const techRating = Number(currentUserData.avgRating || 0);
+    const techRatingCount = Number(currentUserData.ratingCount || 0);
+
     await ref.update({
       status: 'claimed',
       claimedBy: currentUser.uid,
       claimedByName: currentUserData.name,
       claimedByPhone: currentUserData.phone || '',
       claimedByPhoto: currentUserData.photoUrl || '',
+      claimedByRating: techRating,
+      claimedByRatingCount: techRatingCount,
       claimedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -1394,21 +1791,8 @@ async function claimJob(jobId, e) {
 }
 
 async function markComplete(jobId) {
-  try {
-    const doc = await db.collection('jobs').doc(jobId).get();
-    const jobData = doc.exists ? doc.data() : null;
-
-    await db.collection('jobs').doc(jobId).update({
-      status: 'completed',
-      completedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    showToast('Job complete! ✅', 'success');
-    if (document.getElementById('tech-claims')) loadTechClaims();
-
-    if (jobData) {
-      notifyJobCompleted(jobData);
-    }
-  } catch (err) { showToast('Failed to update', 'error'); }
+  // Enforce live camera work proof modal (gallery upload disabled)
+  openCompleteJobModal(jobId);
 }
 
 // ── JOB MODAL ─────────────────────────────────────────────────
@@ -1448,11 +1832,17 @@ async function openJobModal(jobId) {
     let techCardModalHtml = '';
     if (job.claimedByName || job.claimedBy) {
       let techPhoto = job.claimedByPhoto || '';
-      if (!techPhoto && job.claimedBy) {
+      let techRating = job.claimedByRating || 0;
+      let techRatingCount = job.claimedByRatingCount || 0;
+
+      if (job.claimedBy) {
         try {
           const uDoc = await db.collection('users').doc(job.claimedBy).get();
-          if (uDoc.exists && uDoc.data().photoUrl) {
-            techPhoto = uDoc.data().photoUrl;
+          if (uDoc.exists) {
+            const uData = uDoc.data();
+            if (!techPhoto && uData.photoUrl) techPhoto = uData.photoUrl;
+            if (!techRating && uData.avgRating) techRating = uData.avgRating;
+            if (!techRatingCount && uData.ratingCount) techRatingCount = uData.ratingCount;
           }
         } catch (e) {}
       }
@@ -1460,6 +1850,7 @@ async function openJobModal(jobId) {
       const techName = job.claimedByName || 'Technician';
       const techPhone = job.claimedByPhone || '';
       const cleanTechPhone = cleanPhone(techPhone);
+      const starBadge = renderStarRating(techRating, techRatingCount);
 
       const avatarHtml = techPhoto
         ? `<img src="${techPhoto}" class="assigned-tech-img" alt="${esc(techName)}" onclick="previewPhoto('${techPhoto}','${esc(techName)} - Technician Selfie')" />`
@@ -1474,7 +1865,10 @@ async function openJobModal(jobId) {
           ${techPhoto ? `<div class="modal-tech-zoom-hint" onclick="previewPhoto('${techPhoto}','${esc(techName)} - Technician Selfie')"><i class="fas fa-search-plus"></i> Photo එක විශාල කර බලන්න (Click to enlarge)</div>` : ''}
           <div>
             <div class="assigned-tech-lbl"><i class="fas fa-user-check"></i> භාරගත් Technician (Assigned Technician)</div>
-            <div style="font-size:1.15rem;font-weight:800;color:var(--txt);margin-top:2px">${esc(techName)}</div>
+            <div style="font-size:1.15rem;font-weight:800;color:var(--txt);margin-top:2px;display:flex;align-items:center;justify-content:center;gap:8px">
+              <span>${esc(techName)}</span>
+              ${starBadge}
+            </div>
             ${techPhone ? `<div style="font-size:.92rem;font-weight:700;color:var(--success);font-family:monospace;margin-top:4px"><i class="fas fa-phone"></i> ${esc(techPhone)}</div>` : ''}
           </div>
           ${techPhone ? `
@@ -1488,6 +1882,41 @@ async function openJobModal(jobId) {
         </div>`;
     }
 
+    // Work completion photo display in modal
+    let completionProofModalHtml = '';
+    if (job.completionPhoto) {
+      completionProofModalHtml = `
+        <div class="completion-proof-card">
+          <div class="completion-proof-header"><i class="fas fa-camera"></i> Work Completion Proof (වැඩ අවසන් කළ ඡායාරූපය)</div>
+          <img src="${job.completionPhoto}" class="completion-proof-img" onclick="previewPhoto('${job.completionPhoto}', 'Work Completion Proof - ${esc(job.title)}')" title="Click to view full photo" />
+          ${job.completionNotes ? `<div class="completion-notes-text"><i class="fas fa-quote-left" style="color:var(--success);margin-right:6px"></i>${esc(job.completionNotes)}</div>` : ''}
+        </div>`;
+    }
+
+    // Customer review or rating prompt
+    let customerFeedbackModalHtml = '';
+    if (job.status === 'completed') {
+      if (job.rating) {
+        customerFeedbackModalHtml = `
+          <div class="customer-review-card">
+            <div class="customer-review-header">
+              <span style="color:#fbbf24;font-weight:800;font-size:.95rem">${'⭐'.repeat(job.rating)} (${job.rating}/5.0)</span>
+              <span style="font-size:.74rem;color:var(--txt3)">Customer Feedback</span>
+            </div>
+            ${job.feedback ? `<div class="customer-review-comment">"${esc(job.feedback)}"</div>` : '<div style="color:var(--txt3);font-size:.8rem;font-style:italic">No written comment provided.</div>'}
+          </div>`;
+      } else if (isOwner || currentUserData?.role === 'customer') {
+        customerFeedbackModalHtml = `
+          <div style="background:linear-gradient(135deg,rgba(245,158,11,0.1) 0%,rgba(245,158,11,0.03) 100%);border:1.5px solid rgba(245,158,11,0.35);border-radius:var(--r-l);padding:14px;text-align:center;margin:10px 0">
+            <h4 style="margin-bottom:6px;color:#fbbf24"><i class="fas fa-star"></i> Technician සඳහා Feedback ලබා දෙන්න</h4>
+            <p style="font-size:.8rem;color:var(--txt2);margin-bottom:12px">ඔබගේ අත්දැකීම අනුව Technician ට තරු 1-5 අතර Rating එකක් ලබා දෙන්න.</p>
+            <button class="btn btn-rate-tech btn-full" onclick="closeModal('modal-job');openFeedbackModal('${jobId}')">
+              <i class="fas fa-star"></i> Feedback & Rating ලබා දෙන්න
+            </button>
+          </div>`;
+      }
+    }
+
     document.getElementById('modal-job-body').innerHTML = `
       <h2 style="margin-bottom:8px;padding-right:28px">${esc(job.title)}</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
@@ -1496,6 +1925,8 @@ async function openJobModal(jobId) {
       </div>
       ${mapHtml}
       ${techCardModalHtml}
+      ${completionProofModalHtml}
+      ${customerFeedbackModalHtml}
       <div style="display:grid;gap:10px">
         <div class="detail-box"><div class="dl">Description</div><div class="dv">${esc(job.description)}</div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1508,6 +1939,7 @@ async function openJobModal(jobId) {
         </div>
         ${!techCardModalHtml && job.claimedByName ? `<div class="detail-box" style="background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.2)"><div class="dl">Claimed by</div><div class="dv" style="color:var(--accent)">${esc(job.claimedByName)}</div></div>` : ''}
         ${isAdmin ? `<button class="btn btn-warning btn-full" onclick="closeModal('modal-job');openEditJobModal('${jobId}')"><i class="fas fa-edit"></i> Edit This Job</button>` : ''}
+        ${(isMine && job.status === 'claimed') ? `<button class="btn btn-success btn-full" onclick="closeModal('modal-job');openCompleteJobModal('${jobId}')" style="margin-top:4px"><i class="fas fa-camera"></i> Complete Job (වැඩ අවසන් කර Photo එක ගන්න)</button>` : ''}
       </div>`;
 
     document.getElementById('modal-job').classList.remove('hidden');
@@ -1527,6 +1959,9 @@ function closeModal(id) {
   document.getElementById(id)?.classList.add('hidden');
   if (id === 'modal-job' || id === 'all') {
     if (modalMap) { modalMap.remove(); modalMap = null; }
+  }
+  if (id === 'modal-complete-job') {
+    stopWorkCamera();
   }
 }
 
@@ -2152,7 +2587,7 @@ function techCardHtml(id, t, context) {
     <div class="tech-info">
       <div class="tech-av" ${t.photoUrl ? `onclick="previewPhoto('${t.photoUrl}','${esc(t.name)} - Technician Selfie')"` : ''}>${avHtml}</div>
       <div style="flex:1">
-        <div class="tech-name">${esc(t.name)} <span style="font-size:.72rem;color:${statusColor};font-weight:700">${statusIcon} ${t.status}</span></div>
+        <div class="tech-name">${esc(t.name)} ${renderStarRating(t.avgRating, t.ratingCount)} <span style="font-size:.72rem;color:${statusColor};font-weight:700">${statusIcon} ${t.status}</span></div>
         <div class="tech-meta">
           <span><i class="fas fa-phone"></i> ${esc(t.phone)}</span>
           <span><i class="fas fa-envelope"></i> ${esc(t.email)}</span>

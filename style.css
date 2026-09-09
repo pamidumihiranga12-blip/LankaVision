@@ -696,3 +696,187 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   margin-top: 12px;
 }
 
+/* ── WORK COMPLETION CAMERA MODAL ── */
+.complete-job-modal-box {
+  max-width: 520px;
+}
+.work-viewport {
+  height: 280px;
+}
+.work-preview-card {
+  position: relative;
+  width: 100%;
+  max-height: 240px;
+  border-radius: var(--r-m);
+  border: 2px solid var(--success);
+  box-shadow: 0 0 20px rgba(16,185,129,0.3);
+  overflow: hidden;
+  background: #000;
+}
+.work-preview-card img {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── 5-STAR RATING & FEEDBACK MODAL ── */
+.feedback-modal-box {
+  max-width: 480px;
+}
+.feedback-tech-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg2);
+  border-radius: var(--r-m);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.feedback-tech-av {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.2rem;
+  border: 2px solid var(--primary-l);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.feedback-tech-av img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.star-rating-section {
+  text-align: center;
+  padding: 16px 12px;
+  background: var(--bg2);
+  border-radius: var(--r-m);
+  border: 1.5px solid rgba(251,191,36,0.3);
+}
+.star-picker {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 2.2rem;
+  cursor: pointer;
+  margin: 12px 0 8px;
+}
+.star-picker i {
+  color: #334155;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.star-picker i.active {
+  color: #fbbf24;
+  text-shadow: 0 0 16px rgba(251,191,36,0.55);
+}
+.star-picker i:hover {
+  transform: scale(1.25);
+}
+.star-label {
+  font-size: .88rem;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: .3px;
+}
+
+/* ── STAR RATING BADGE (SHOWN TO CUSTOMER) ── */
+.star-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(251,191,36,0.12);
+  border: 1px solid rgba(251,191,36,0.35);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: .74rem;
+  font-weight: 800;
+  color: #fbbf24;
+}
+.star-rating-badge i {
+  color: #fbbf24;
+}
+.btn-rate-tech {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+}
+.btn-rate-tech:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245,158,11,0.5);
+}
+
+/* ── WORK PROOF DISPLAY CARD (IN MODAL & JOB CARD) ── */
+.completion-proof-card {
+  background: rgba(16,185,129,0.06);
+  border: 1.5px solid rgba(16,185,129,0.3);
+  border-radius: var(--r-l);
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.completion-proof-header {
+  font-size: .78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #34d399;
+  letter-spacing: .5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.completion-proof-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: var(--r-m);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: block;
+  transition: var(--ease);
+}
+.completion-proof-img:hover {
+  transform: scale(1.02);
+  border-color: var(--success);
+}
+.completion-notes-text {
+  font-size: .82rem;
+  color: var(--txt2);
+  margin-top: 8px;
+  line-height: 1.4;
+  background: rgba(0,0,0,0.25);
+  padding: 8px 12px;
+  border-radius: var(--r-s);
+}
+
+/* ── REVIEW DISPLAY BOX ── */
+.customer-review-card {
+  background: rgba(251,191,36,0.06);
+  border: 1.5px solid rgba(251,191,36,0.3);
+  border-radius: var(--r-l);
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.customer-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.customer-review-comment {
+  font-size: .85rem;
+  color: var(--txt);
+  line-height: 1.45;
+  font-style: italic;
+}
+
+

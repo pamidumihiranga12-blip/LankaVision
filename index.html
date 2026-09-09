@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=14" />
 </head>
 <body>
 <div id="app">
@@ -527,6 +527,142 @@
     </div>
   </div>
 
+  <!-- ====== WORK COMPLETION PROOF MODAL (TECHNICIAN) ====== -->
+  <div id="modal-complete-job" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeCompleteJobModal()"></div>
+    <div class="modal-box complete-job-modal-box">
+      <button class="modal-close" onclick="closeCompleteJobModal()"><i class="fas fa-times"></i></button>
+      <h2 style="margin-bottom:6px;display:flex;align-items:center;gap:10px">
+        <i class="fas fa-check-circle" style="color:var(--success)"></i> Job Complete කරන්න
+      </h2>
+      <p class="auth-sub" style="margin-bottom:16px">
+        වැඩේ අවසන් කළ බව තහවුරු කිරීමට ස්ථානයේ / උපකරණවල Live Photo එකක් Camera එකෙන්ම ගන්න.
+      </p>
+
+      <!-- Work Camera Widget -->
+      <div class="form-group selfie-form-group">
+        <p class="selfie-hint"><i class="fas fa-shield-alt"></i> ආරක්ෂක පියවරක් ලෙස Camera එකෙන්ම Live Photo එකක් ගත යුතුය. (Gallery upload තහනම් වේ 🔒)</p>
+
+        <div id="work-proof-box" class="selfie-box">
+          <!-- Idle / Ready to open camera -->
+          <div id="work-idle" class="selfie-idle-state">
+            <div class="selfie-idle-icon" style="background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.3);color:var(--success)">
+              <i class="fas fa-camera"></i>
+            </div>
+            <div class="selfie-idle-txt">වැඩ අවසන් කළ උපකරණ හෝ ස්ථානයේ Live Photo එකක් ගන්න</div>
+            <button type="button" class="btn btn-success btn-sm" onclick="startWorkCamera()">
+              <i class="fas fa-video"></i> Camera On කරන්න
+            </button>
+          </div>
+
+          <!-- Camera Stream -->
+          <div id="work-camera-wrap" class="selfie-camera-wrap hidden">
+            <div class="selfie-viewport work-viewport">
+              <video id="work-proof-video" autoplay playsinline muted></video>
+              <div class="live-rec-badge"><span class="rec-dot"></span> LIVE WORK CAM</div>
+            </div>
+            <div class="selfie-controls">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="stopWorkCamera()">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+              <button type="button" class="btn btn-warning btn-sm" onclick="switchWorkCamera()" title="Switch Camera">
+                <i class="fas fa-sync-alt"></i> Switch Camera
+              </button>
+              <button type="button" class="btn btn-success btn-sm" onclick="captureWorkProof()">
+                <i class="fas fa-circle"></i> Capture Photo
+              </button>
+            </div>
+          </div>
+
+          <!-- Captured Work Photo Preview -->
+          <div id="work-preview-wrap" class="selfie-preview-wrap hidden">
+            <div class="work-preview-card">
+              <img id="work-proof-preview-img" alt="Work Completion Proof" />
+              <div class="selfie-check-badge"><i class="fas fa-check"></i></div>
+            </div>
+            <div class="selfie-preview-info">
+              <span class="selfie-status-success"><i class="fas fa-check-circle"></i> වැඩ අවසන් කළ Photo එක සාර්ථකයි!</span>
+              <button type="button" class="btn btn-outline btn-sm" onclick="retakeWorkProof()">
+                <i class="fas fa-redo"></i> Retake / නැවත ගන්න
+              </button>
+            </div>
+          </div>
+
+          <canvas id="work-proof-canvas" style="display:none"></canvas>
+        </div>
+        <div id="work-proof-error" class="error-msg hidden" style="margin-top:8px"></div>
+      </div>
+
+      <!-- Completion Notes -->
+      <div class="form-group">
+        <label><i class="fas fa-clipboard-check"></i> Completion Notes (අමතර විස්තර - Optional)</label>
+        <textarea id="complete-job-notes" rows="2" placeholder="e.g. CCTV කැමරා 4 සාර්ථකව සවි කර DVR සහ Mobile App configure කරන ලදී."></textarea>
+      </div>
+
+      <input type="hidden" id="complete-target-job-id" />
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button type="button" class="btn btn-ghost btn-full" onclick="closeCompleteJobModal()">Cancel</button>
+        <button type="button" class="btn btn-success btn-full" id="btn-confirm-complete" onclick="confirmJobCompletion()">
+          <i class="fas fa-check-double"></i> Confirm & Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== CUSTOMER FEEDBACK & 5-STAR RATING MODAL ====== -->
+  <div id="modal-feedback" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('modal-feedback')"></div>
+    <div class="modal-box feedback-modal-box">
+      <button class="modal-close" onclick="closeModal('modal-feedback')"><i class="fas fa-times"></i></button>
+      <h2 style="margin-bottom:6px;display:flex;align-items:center;gap:10px">
+        <i class="fas fa-star" style="color:#fbbf24"></i> Rate Technician
+      </h2>
+      <p class="auth-sub" style="margin-bottom:16px">ඔබගේ Technician ගේ සේවාව පිළිබඳව තරු (Rating) සහ අදහස් ලබා දෙන්න</p>
+
+      <!-- Technician Summary Banner -->
+      <div id="feedback-tech-banner" class="feedback-tech-banner">
+        <div class="feedback-tech-av" id="feedback-tech-av"></div>
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:1rem" id="feedback-tech-name">Technician Name</div>
+          <div style="font-size:.78rem;color:var(--txt3)" id="feedback-job-title">Job Title</div>
+        </div>
+      </div>
+
+      <!-- 5-Star Selector -->
+      <div class="star-rating-section">
+        <label style="font-size:.85rem;font-weight:700;color:var(--txt2);margin-bottom:10px;display:block">
+          තරු ගණන තෝරන්න (Select Rating):
+        </label>
+        <div class="star-picker" id="star-picker">
+          <i class="fas fa-star active" data-val="1" onclick="setStarRating(1)" onmouseenter="previewStars(1)" onmouseleave="resetStarPreview()"></i>
+          <i class="fas fa-star active" data-val="2" onclick="setStarRating(2)" onmouseenter="previewStars(2)" onmouseleave="resetStarPreview()"></i>
+          <i class="fas fa-star active" data-val="3" onclick="setStarRating(3)" onmouseenter="previewStars(3)" onmouseleave="resetStarPreview()"></i>
+          <i class="fas fa-star active" data-val="4" onclick="setStarRating(4)" onmouseenter="previewStars(4)" onmouseleave="resetStarPreview()"></i>
+          <i class="fas fa-star active" data-val="5" onclick="setStarRating(5)" onmouseenter="previewStars(5)" onmouseleave="resetStarPreview()"></i>
+        </div>
+        <div id="star-label" class="star-label">⭐⭐⭐⭐⭐ Excellent (විශිෂ්ටයි)</div>
+        <input type="hidden" id="selected-rating-val" value="5" />
+      </div>
+
+      <!-- Feedback Text -->
+      <div class="form-group" style="margin-top:16px">
+        <label><i class="fas fa-comment-dots"></i> ඔබේ අදහස (Feedback / Review)</label>
+        <textarea id="feedback-comment" rows="3" placeholder="Technician ගේ සේවාව, වේගවත් බව හෝ ගුණාත්මකභාවය ගැන ලියන්න..."></textarea>
+      </div>
+
+      <div id="feedback-error" class="error-msg hidden"></div>
+      <input type="hidden" id="feedback-job-id" />
+      <input type="hidden" id="feedback-tech-id" />
+
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-feedback')">Cancel</button>
+        <button type="button" class="btn btn-primary btn-full" id="btn-submit-feedback" onclick="submitFeedback()">
+          <i class="fas fa-paper-plane"></i> Review එක Submit කරන්න
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ====== PHOTO PREVIEW MODAL ====== -->
   <div id="modal-photo-preview" class="modal hidden">
     <div class="modal-backdrop" onclick="closeModal('modal-photo-preview')"></div>
@@ -555,7 +691,7 @@
 
 <!-- App Logic -->
 <script src="firebase-config.js?v=12"></script>
-<script src="app.js?v=13"></script>
+<script src="app.js?v=14"></script>
 
 <!-- Guaranteed loading overlay removal after 2s -->
 <script>
