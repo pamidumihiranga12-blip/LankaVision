@@ -58,9 +58,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 /* ── LANDING NAV ── */
 .landing-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:rgba(8,12,20,0.95);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
-.nav-brand{display:flex;align-items:center;gap:10px;font-size:1.2rem;font-weight:700;cursor:pointer}
+.nav-top-row{display:flex;align-items:center;justify-content:space-between;width:100%}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:1.2rem;font-weight:700;cursor:pointer;user-select:none}
 .nav-brand i{color:var(--accent);font-size:1.4rem}
 .nav-actions{display:flex;gap:10px;align-items:center}
+.nav-mobile-lang-row{display:none}
 
 /* ── HERO ── */
 .hero-section{padding:60px 28px 40px;text-align:center;background:radial-gradient(ellipse at 50% 0%,rgba(37,99,235,0.15) 0%,transparent 70%)}
@@ -159,12 +161,83 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .icon-btn{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:var(--r-m);color:var(--txt);cursor:pointer;padding:8px 12px;font-size:.95rem;transition:var(--ease)}
 .icon-btn:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.15)}
 
-/* ── BOTTOM MOBILE NAV ── */
-.mobile-bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--glass);backdrop-filter:blur(24px);border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:center;padding:10px 8px 14px;z-index:99;display:none}
-@media(max-width:640px){.mobile-bottom-nav{display:flex}}
-.mbn-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--txt3);cursor:pointer;padding:4px 12px;border-radius:var(--r-m);transition:var(--ease);font-size:.7rem;font-weight:600}
-.mbn-item i{font-size:1.3rem}
-.mbn-item.active,.mbn-item:hover{color:var(--primary-l)}
+/* ── MOBILE BOTTOM APP BAR (Native App Feel) ── */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(8, 12, 20, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: none;
+  justify-content: space-around;
+  align-items: center;
+  padding: 4px 8px 6px;
+  z-index: 995;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+}
+@media(max-width: 640px) {
+  .mobile-bottom-nav {
+    display: flex;
+  }
+}
+.mbn-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--txt3);
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--r-m);
+  transition: all 0.2s ease;
+  font-size: 0.68rem;
+  font-weight: 600;
+  user-select: none;
+  flex: 1;
+  max-width: 80px;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  font-family: var(--font);
+}
+.mbn-item i {
+  font-size: 1.25rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.mbn-item:hover, .mbn-item.active {
+  color: var(--primary-l);
+}
+.mbn-item.active i {
+  transform: scale(1.15);
+  color: var(--primary-l);
+}
+.mbn-item.mbn-post-job {
+  transform: translateY(-8px);
+}
+.mbn-fab-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.15rem;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.5);
+  border: 2.5px solid var(--bg);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.mbn-item.mbn-post-job:hover .mbn-fab-badge,
+.mbn-item.mbn-post-job.active .mbn-fab-badge {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.7);
+}
 
 /* ── TABS ── */
 .dash-tabs,.admin-tabs{display:flex;gap:4px;padding:12px 16px 0;background:var(--bg);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
@@ -316,15 +389,174 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .atab{display:none}
 .atab.active{display:block}
 
-/* ── RESPONSIVE ── */
+/* ── RESPONSIVE MOBILE APP POLISH ── */
 @media(max-width:640px){
-  .hero-title{font-size:1.9rem}
-  .landing-nav{padding:14px 18px}
-  .hero-section{padding:40px 18px 30px}
-  .features-section{padding:24px 16px 80px}
-  .adm-job-row{grid-template-columns:1fr;gap:8px}
-  .jobs-grid{grid-template-columns:1fr}
-  .auth-card{padding:24px 20px}
+  /* Landing Header */
+  .landing-nav {
+    padding: 10px 14px 8px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .nav-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .nav-brand {
+    font-size: 1.05rem;
+    gap: 8px;
+  }
+  .nav-brand i {
+    font-size: 1.25rem;
+  }
+  .desktop-only-switcher {
+    display: none !important;
+  }
+  .nav-actions {
+    gap: 6px;
+  }
+  .nav-actions .btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 9999px;
+  }
+  .nav-mobile-lang-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 2px 0 0;
+  }
+  .nav-mobile-lang-row .lang-switcher {
+    width: auto;
+    padding: 2px 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  .nav-mobile-lang-row .lang-btn {
+    padding: 3px 11px;
+    font-size: 0.72rem;
+  }
+
+  /* Hero Section */
+  .hero-section {
+    padding: 24px 16px 20px;
+  }
+  .hero-badge {
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    margin-bottom: 12px;
+  }
+  .hero-title {
+    font-size: 1.85rem;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .hero-subtitle {
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin-bottom: 22px;
+  }
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    max-width: 320px;
+    margin: 0 auto 26px;
+  }
+  .hero-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 13px 20px;
+    font-size: 0.95rem;
+    border-radius: var(--r-l);
+  }
+  .hero-stats {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+  .hero-stat {
+    padding: 12px 4px;
+    border-radius: var(--r-m);
+  }
+  .hs-num {
+    font-size: 1.3rem;
+  }
+  .hs-lbl {
+    font-size: 0.68rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* App / Dashboard Header */
+  .app-nav {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .app-nav .nav-brand {
+    font-size: 1.05rem;
+    gap: 6px;
+  }
+  .app-nav .nav-user {
+    gap: 6px;
+  }
+  .nav-name {
+    display: none;
+  }
+
+  /* Role Selection */
+  .role-cards {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+  .role-card {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+  .role-card i {
+    font-size: 1.5rem;
+    width: 28px;
+  }
+
+  /* Features & Cards */
+  .features-section {
+    padding: 20px 14px 80px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .feature-card {
+    padding: 18px 16px;
+    text-align: left;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .feature-icon {
+    margin-bottom: 0;
+    font-size: 1.6rem;
+    flex-shrink: 0;
+  }
+  .adm-job-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .jobs-grid {
+    grid-template-columns: 1fr;
+  }
+  .auth-card {
+    padding: 22px 18px;
+  }
+  .screen {
+    padding-bottom: 78px;
+  }
+  .fab {
+    bottom: 80px;
+  }
 }
 @media(min-width:1024px){
   .hero-section{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;text-align:left;padding:80px 80px 60px}
@@ -953,6 +1185,115 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     font-size: 0.7rem;
   }
 }
+
+/* ── COMPREHENSIVE MOBILE APP EXPERIENCE (@media max-width: 640px) ── */
+.desktop-only-switcher {
+  display: inline-flex;
+}
+.nav-mobile-lang-row {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  /* Landing Navigation: 2-tier layout preventing any horizontal overflow */
+  .landing-nav {
+    flex-direction: column !important;
+    padding: 10px 14px 8px !important;
+    gap: 8px !important;
+  }
+  .nav-top-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+  .desktop-only-switcher {
+    display: none !important;
+  }
+  .nav-mobile-lang-row {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+  .nav-brand {
+    font-size: 1.05rem !important;
+    gap: 6px !important;
+  }
+  .nav-brand i {
+    font-size: 1.25rem !important;
+  }
+  .nav-actions {
+    gap: 6px !important;
+  }
+  .nav-actions .btn {
+    padding: 6px 11px !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* Hero section touch-friendly & responsive */
+  .hero-section {
+    padding: 28px 16px 20px !important;
+  }
+  .hero-badge {
+    padding: 4px 12px !important;
+    font-size: 0.74rem !important;
+    margin-bottom: 14px !important;
+  }
+  .hero-title {
+    font-size: 1.7rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 12px !important;
+  }
+  .hero-subtitle {
+    font-size: 0.88rem !important;
+    line-height: 1.55 !important;
+    margin-bottom: 24px !important;
+  }
+  .hero-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 320px !important;
+    margin: 0 auto 28px !important;
+    gap: 10px !important;
+  }
+  .hero-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 13px 18px !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* 3-Column Stats Grid: perfectly balanced, no awkward wrapping */
+  .hero-stats {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 360px !important;
+    margin: 0 auto !important;
+  }
+  .hero-stat {
+    padding: 10px 4px !important;
+  }
+  .hs-num {
+    font-size: 1.25rem !important;
+  }
+  .hs-lbl {
+    font-size: 0.68rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* Role selection cards single column on mobile */
+  .role-cards {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure screen content is never covered by the native mobile bottom app bar */
+  .screen {
+    padding-bottom: 74px;
+  }
+}
+
 
 
 

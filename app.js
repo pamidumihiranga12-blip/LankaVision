@@ -139,25 +139,292 @@ const DISTRICT_CITIES = {
 };
 
 const CITY_COORDS = {
+  // ── ANURADHAPURA & NORTH CENTRAL ──
   'Padaviya': [8.8784, 80.7580],
-  'Anuradhapura': [8.3114, 80.4037],
-  'Kekirawa': [8.0441, 80.5960],
+  'Kebithigollewa': [8.6366, 80.6865],
   'Medawachchiya': [8.5434, 80.4958],
-  'Eppawala': [8.1408, 80.4136],
-  'Mihintale': [8.3512, 80.5042],
-  'Tambuttegama': [8.1561, 80.3019],
-  'Habarana': [8.0338, 80.7511],
   'Horowpathana': [8.5556, 80.8667],
   'Galenbindunuwewa': [8.3846, 80.6587],
+  'Kahatagasdigiliya': [8.4239, 80.7183],
+  'Rambewa': [8.4500, 80.5167],
+  'Mihintale': [8.3512, 80.5042],
+  'Anuradhapura': [8.3114, 80.4037],
+  'Nochchiyagama': [8.2703, 80.1989],
+  'Thalawa': [8.1969, 80.3128],
+  'Tambuttegama': [8.1561, 80.3019],
+  'Rajanganaya': [8.1833, 80.1833],
+  'Eppawala': [8.1408, 80.4136],
+  'Thirappane': [8.1500, 80.5500],
+  'Kekirawa': [8.0441, 80.5960],
+  'Habarana': [8.0338, 80.7511],
+  'Galnewa': [8.0667, 80.3667],
+  'Ipalogama': [8.0833, 80.5000],
+
+  // ── VAVUNIYA (BORDERING PADAVIYA) ──
+  'Vavuniya': [8.7514, 80.4972],
+  'Nedunkeni': [8.9833, 80.6833],
+  'Omanthai': [8.8500, 80.5000],
+  'Cheddikulam': [8.6667, 80.3167],
+
+  // ── TRINCOMALEE (BORDERING PADAVIYA) ──
+  'Trincomalee': [8.5874, 81.2152],
+  'Kuchchaveli': [8.8167, 81.0833],
+  'Pulmoddai': [8.9500, 80.9500],
+  'Nilaveli': [8.6833, 81.1833],
+  'Kinniya': [8.4833, 81.1833],
+  'Kantale': [8.3667, 80.9833],
+  'Muttur': [8.4500, 81.2667],
+  'Serunuwara': [8.3167, 81.2833],
+
+  // ── MULLAITIVU (BORDERING PADAVIYA) ──
+  'Mullaitivu': [9.2671, 80.8142],
+  'Oddusuddan': [9.1500, 80.6500],
+  'Puthukkudiyiruppu': [9.3167, 80.7000],
+  'Mankulam': [9.1333, 80.4333],
+  'Mallavi': [9.1333, 80.3000],
+
+  // ── POLONNARUWA ──
+  'Polonnaruwa': [7.9403, 81.0188],
+  'Kaduruwela': [7.9333, 81.0167],
+  'Hingurakgoda': [8.0500, 80.9667],
+  'Medirigiriya': [8.1500, 80.9833],
+  'Giritale': [7.9833, 80.9167],
+  'Welikanda': [7.9833, 81.2500],
+  'Aralaganwila': [7.8833, 81.1500],
+  'Dimbulagala': [7.8667, 81.1333],
+
+  // ── MANNAR ──
+  'Mannar': [8.9786, 79.9044],
+  'Madhu': [8.8500, 80.2000],
+  'Murunkan': [8.8333, 80.0333],
+  'Nanaddan': [8.8333, 79.9500],
+  'Pesalai': [9.0833, 79.8167],
+  'Thalaimannar': [9.1000, 79.7167],
+
+  // ── MATALE ──
+  'Matale': [7.4675, 80.6234],
+  'Dambulla': [7.8742, 80.6511],
+  'Galewela': [7.8167, 80.5667],
+  'Sigiriya': [7.9542, 80.7553],
+  'Naula': [7.7000, 80.6500],
+  'Ukuwela': [7.4333, 80.6333],
+  'Rattota': [7.5167, 80.6667],
+  'Yatawatta': [7.5333, 80.5833],
+
+  // ── KURUNEGALA ──
+  'Kurunegala': [7.4867, 80.3647],
+  'Kuliyapitiya': [7.4689, 80.0400],
+  'Narammala': [7.4333, 80.2167],
+  'Wariyapola': [7.6333, 80.2667],
+  'Pannala': [7.3333, 80.0167],
+  'Giriulla': [7.3667, 80.1333],
+  'Polgahawela': [7.3333, 80.3000],
+  'Ibbagamuwa': [7.5500, 80.4500],
+  'Alawwa': [7.3000, 80.2500],
+  'Mawathagama': [7.4333, 80.4333],
+  'Nikaweratiya': [7.7500, 80.1167],
+  'Maho': [7.8167, 80.2833],
+  'Galgamuwa': [7.9833, 80.2833],
+
+  // ── PUTTALAM ──
+  'Puttalam': [8.0362, 79.8283],
+  'Chilaw': [7.5758, 79.7953],
+  'Wennappuwa': [7.3500, 79.8500],
+  'Marawila': [7.4167, 79.8167],
+  'Dankotuwa': [7.3000, 79.8833],
+  'Anamaduwa': [7.9000, 80.0167],
+  'Nattandiya': [7.4167, 79.8667],
+  'Kalpitiya': [8.2333, 79.7667],
+  'Mahawewa': [7.4500, 79.8333],
+
+  // ── COLOMBO ──
+  'Colombo 1-15': [6.9271, 79.8612],
   'Dehiwala': [6.8533, 79.8656],
+  'Mount Lavinia': [6.8380, 79.8660],
   'Moratuwa': [6.7730, 79.8816],
+  'Kotte': [6.8914, 79.9044],
+  'Maharagama': [6.8480, 79.9267],
+  'Kesbewa': [6.7833, 79.9500],
+  'Homagama': [6.8444, 80.0028],
+  'Nugegoda': [6.8649, 79.8997],
+  'Kotikawatta': [6.9333, 79.9000],
+  'Mulleriyawa': [6.9333, 79.9167],
+  'Kolonnawa': [6.9333, 79.8833],
+  'Malabe': [6.9044, 79.9547],
+  'Kaduwela': [6.9333, 79.9833],
+  'Piliyandala': [6.8019, 79.9228],
+  'Battaramulla': [6.8970, 79.9223],
+  'Rajagiriya': [6.9089, 79.8919],
+  'Athurugiriya': [6.8708, 79.9889],
+  'Padukka': [6.8444, 80.1000],
+  'Hanwella': [6.8944, 80.0833],
+  'Boralesgamuwa': [6.8417, 79.9028],
+
+  // ── GAMPAHA ──
+  'Gampaha': [7.0917, 80.0106],
   'Negombo': [7.2008, 79.8736],
+  'Kelaniya': [6.9553, 79.9225],
+  'Wattala': [6.9897, 79.8919],
+  'Ja-Ela': [7.0767, 79.8919],
+  'Kandana': [7.0472, 79.8919],
+  'Minuwangoda': [7.1667, 79.9500],
+  'Katunayake': [7.1694, 79.8878],
+  'Ragama': [7.0278, 79.9222],
+  'Divulapitiya': [7.2167, 80.0333],
+  'Mirigama': [7.2444, 80.1306],
+  'Kiribathgoda': [6.9806, 79.9278],
+  'Kadawatha': [7.0000, 79.9500],
+  'Veyangoda': [7.1556, 80.0583],
+  'Nittambuwa': [7.1444, 80.1000],
+
+  // ── KALUTARA ──
+  'Kalutara': [6.5854, 79.9607],
   'Panadura': [6.7130, 79.9074],
   'Horana': [6.7153, 80.0631],
-  'Dambulla': [7.8742, 80.6511],
-  'Chilaw': [7.5758, 79.7953],
+  'Beruwala': [6.4789, 79.9828],
+  'Aluthgama': [6.4333, 80.0000],
+  'Matugama': [6.5222, 80.1167],
+  'Wadduwa': [6.6667, 79.9333],
+  'Bandaragama': [6.7167, 79.9833],
+  'Ingiriya': [6.7500, 80.1667],
+  'Bulathsinhala': [6.6500, 80.1833],
+
+  // ── KANDY ──
+  'Kandy': [7.2906, 80.6337],
+  'Peradeniya': [7.2667, 80.6000],
+  'Katugastota': [7.3167, 80.6167],
+  'Gampola': [7.1667, 80.5667],
+  'Nawalapitiya': [7.0500, 80.5333],
+  'Kundasale': [7.2833, 80.6833],
+  'Digana': [7.3000, 80.7333],
+  'Akurana': [7.3667, 80.6167],
+  'Teldeniya': [7.3000, 80.7667],
+  'Gelioya': [7.2000, 80.5833],
+  'Pilimathalawa': [7.2667, 80.5667],
+  'Wattegama': [7.3500, 80.6833],
+
+  // ── GALLE ──
+  'Galle': [6.0328, 80.2170],
+  'Karapitiya': [6.0667, 80.2333],
+  'Ambalangoda': [6.2333, 80.0500],
+  'Hikkaduwa': [6.1394, 80.1064],
+  'Elpitiya': [6.2556, 80.1472],
+  'Bentota': [6.4250, 79.9972],
+  'Baddegama': [6.1833, 80.1833],
+  'Ahangama': [5.9722, 80.3667],
+  'Habaraduwa': [6.0000, 80.3000],
+  'Neluwa': [6.3667, 80.4333],
+  'Batapola': [6.2333, 80.1167],
+
+  // ── MATARA ──
+  'Matara': [5.9549, 80.5550],
+  'Weligama': [5.9722, 80.4278],
+  'Akuressa': [6.1000, 80.4667],
+  'Dikwella': [5.9667, 80.7000],
+  'Deniyaya': [6.3333, 80.5500],
+  'Hakmana': [6.0833, 80.6500],
+  'Kamburupitiya': [6.0667, 80.5667],
+  'Devinuwara': [5.9333, 80.5833],
+  'Gandara': [5.9333, 80.6167],
+
+  // ── HAMBANTOTA ──
+  'Hambantota': [6.1240, 81.1185],
   'Tangalle': [6.0240, 80.7941],
-  'Bandarawela': [6.8259, 80.9982]
+  'Beliatta': [6.0500, 80.7167],
+  'Tissamaharama': [6.2833, 81.2833],
+  'Ambalantota': [6.1167, 81.0167],
+  'Walasmulla': [6.1500, 80.6833],
+  'Weeraketiya': [6.1500, 80.7667],
+  'Middeniya': [6.2333, 80.7667],
+  'Suriyawewa': [6.3167, 81.0000],
+
+  // ── JAFFNA & KILINOCHCHI ──
+  'Jaffna': [9.6615, 80.0255],
+  'Nallur': [9.6667, 80.0333],
+  'Chavakachcheri': [9.6500, 80.1500],
+  'Point Pedro': [9.8167, 80.2333],
+  'Karainagar': [9.7500, 79.8833],
+  'Velanai': [9.6500, 79.9167],
+  'Chunnakam': [9.7500, 80.0167],
+  'Manipay': [9.7167, 79.9833],
+  'Kopay': [9.6833, 80.0500],
+  'Tellippalai': [9.7833, 80.0333],
+  'Kilinochchi': [9.3803, 80.4003],
+  'Paranthan': [9.4333, 80.4000],
+  'Pallai': [9.5833, 80.3000],
+  'Pooneryn': [9.5000, 80.2000],
+  'Kandavalai': [9.4167, 80.4833],
+
+  // ── BATTICALOA & AMPARA ──
+  'Batticaloa': [7.7102, 81.6924],
+  'Eravur': [7.7667, 81.6000],
+  'Kattankudy': [7.6833, 81.7167],
+  'Valachchenai': [7.9167, 81.5333],
+  'Kaluwanchikudy': [7.5333, 81.7833],
+  'Vakarai': [8.1333, 81.4333],
+  'Chenkalady': [7.7833, 81.5833],
+  'Oddamavadi': [7.9167, 81.5167],
+  'Ampara': [7.2948, 81.6727],
+  'Akkaraipattu': [7.2167, 81.8500],
+  'Kalmunai': [7.4167, 81.8333],
+  'Sammanthurai': [7.3667, 81.8000],
+  'Pottuvil': [6.8667, 81.8333],
+  'Dehiattakandiya': [7.7000, 81.0500],
+  'Uhana': [7.3833, 81.6333],
+  'Mahaoya': [7.5333, 81.3500],
+  'Damana': [7.2000, 81.6500],
+  'Padiyathalawa': [7.4000, 81.2000],
+  'Sainthamaruthu': [7.3833, 81.8500],
+
+  // ── BADULLA & MONARAGALA ──
+  'Badulla': [6.9934, 81.0550],
+  'Bandarawela': [6.8259, 80.9982],
+  'Hali Ela': [6.9500, 81.0333],
+  'Ella': [6.8667, 81.0500],
+  'Haputale': [6.7667, 80.9500],
+  'Welimada': [6.9000, 80.9000],
+  'Mahiyanganaya': [7.3167, 81.0000],
+  'Passara': [6.9333, 81.1500],
+  'Diyatalawa': [6.8167, 80.9667],
+  'Demodara': [6.9000, 81.0667],
+  'Monaragala': [6.8728, 81.3507],
+  'Wellawaya': [6.7333, 81.1000],
+  'Buttala': [6.7500, 81.2500],
+  'Bibile': [7.1667, 81.2167],
+  'Kataragama': [6.4167, 81.3333],
+  'Siyambalanduwa': [6.9000, 81.5500],
+  'Medagama': [7.1000, 81.3000],
+
+  // ── KEGALLE & RATNAPURA ──
+  'Kegalle': [7.2513, 80.3464],
+  'Mawanella': [7.2500, 80.4500],
+  'Warakapola': [7.2333, 80.2000],
+  'Rambukkana': [7.3167, 80.4000],
+  'Ruwanwella': [7.0500, 80.2500],
+  'Dehiowita': [6.9833, 80.2833],
+  'Deraniyagala': [6.9333, 80.3333],
+  'Yatiyantota': [7.0333, 80.3000],
+  'Galigamuwa': [7.2333, 80.3000],
+  'Ratnapura': [6.7056, 80.3847],
+  'Embilipitiya': [6.3333, 80.8500],
+  'Balangoda': [6.6500, 80.7000],
+  'Pelmadulla': [6.6167, 80.5500],
+  'Kuruwita': [6.7667, 80.3667],
+  'Kahawatta': [6.5833, 80.5833],
+  'Eheliyagoda': [6.8500, 80.2667],
+  'Godakawela': [6.5333, 80.6333],
+  'Nivithigala': [6.6000, 80.4833],
+
+  // ── NUWARA ELIYA ──
+  'Nuwara Eliya': [6.9497, 80.7891],
+  'Hatton': [6.9000, 80.6000],
+  'Talawakelle': [6.9333, 80.6500],
+  'Kotagala': [6.9333, 80.6000],
+  'Ginigathena': [6.9833, 80.4833],
+  'Maskeliya': [6.8333, 80.5667],
+  'Ragala': [6.9833, 80.8500],
+  'Walapane': [7.0500, 80.8667],
+  'Norwood': [6.8333, 80.6167]
 };
 
 // ── NEIGHBORING DISTRICTS (ශ්‍රී ලංකාවේ මායිම් දිස්ත්‍රික්ක) ──
@@ -394,13 +661,21 @@ async function notifyNewJobPosted(job) {
       if (!isHome && !isNeighbor) return;
 
       let distanceKm = null;
-      const techCoords = (t.city && CITY_COORDS[t.city]) || (t.district && DISTRICT_COORDS[t.district]);
+      const techCoords = (t.location?.lat && t.location?.lng) 
+        ? [t.location.lat, t.location.lng] 
+        : ((t.city && CITY_COORDS[t.city]) || (t.district && DISTRICT_COORDS[t.district]));
+
       if (techCoords && jobLat && jobLng) {
         distanceKm = calcDistanceKm(techCoords[0], techCoords[1], jobLat, jobLng);
       }
 
-      // If neighboring district, only notify if within 60 km
-      if (!isHome && distanceKm !== null && distanceKm > 60) {
+      // STRICT 36 KM RADIUS RULE:
+      // If distance can be calculated, only notify if within 36 km (never send alerts for jobs further away)
+      if (distanceKm !== null && distanceKm > 36) {
+        return;
+      }
+      // Fallback if coordinates missing: only notify home district
+      if (distanceKm === null && !isHome) {
         return;
       }
 
@@ -706,6 +981,65 @@ function showScreen(id) {
   if (id === 'screen-post-job') {
     setTimeout(initPostJobMap, 200);
     updatePostJobScreen();
+  }
+  updateMobileNavState(id);
+}
+
+// ── MOBILE BOTTOM BAR NAVIGATION ──────────────────────────────
+function updateMobileNavState(id) {
+  const nav = document.getElementById('mobile-bottom-nav');
+  if (!nav) return;
+
+  if (!id) {
+    const activeScreen = document.querySelector('.screen.active');
+    id = activeScreen ? activeScreen.id : 'screen-landing';
+  }
+
+  nav.querySelectorAll('.mbn-item').forEach(item => item.classList.remove('active'));
+
+  if (id === 'screen-landing') {
+    const homeBtn = document.getElementById('mbn-home');
+    if (homeBtn) homeBtn.classList.add('active');
+  } else if (id === 'screen-post-job') {
+    const postBtn = document.getElementById('mbn-post');
+    if (postBtn) postBtn.classList.add('active');
+  } else if (id === 'screen-register' || id === 'screen-register-role') {
+    const techBtn = document.getElementById('mbn-tech');
+    if (techBtn) techBtn.classList.add('active');
+  } else if (id === 'screen-login' || id === 'screen-dashboard' || id === 'screen-admin') {
+    const loginBtn = document.getElementById('mbn-login');
+    if (loginBtn) loginBtn.classList.add('active');
+  }
+
+  const loginText = document.getElementById('mbn-login-text');
+  const loginBtn = document.getElementById('mbn-login');
+  if (loginBtn && loginText) {
+    const icon = loginBtn.querySelector('i');
+    if (currentUser && currentUserData) {
+      loginText.setAttribute('data-i18n', 'nav_account');
+      loginText.textContent = (typeof t === 'function') ? t('nav_account', 'Account') : 'Account';
+      if (icon) {
+        icon.className = currentUserData.role === 'admin' ? 'fas fa-shield-alt' : 'fas fa-user-circle';
+      }
+    } else {
+      loginText.setAttribute('data-i18n', 'nav_login');
+      loginText.textContent = (typeof t === 'function') ? t('nav_login', 'Login') : 'Login';
+      if (icon) {
+        icon.className = 'fas fa-sign-in-alt';
+      }
+    }
+  }
+}
+
+function handleMobileAuthNav() {
+  if (currentUser && currentUserData) {
+    if (currentUserData.role === 'admin') {
+      showScreen('screen-admin');
+    } else {
+      showScreen('screen-dashboard');
+    }
+  } else {
+    showScreen('screen-login');
   }
 }
 
@@ -1679,10 +2013,48 @@ function initTechDashboard() {
   showTechTab('avail');
 }
 
+let techLiveLocation = null;
+
+function useTechLiveGps() {
+  const btn = document.getElementById('btn-tech-gps');
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    showToast('GPS is not supported on this device', 'warning');
+    return;
+  }
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      techLiveLocation = [pos.coords.latitude, pos.coords.longitude];
+      if (btn) {
+        btn.innerHTML = '<i class="fas fa-crosshairs" style="color:var(--success)"></i> GPS Active';
+        btn.style.borderColor = 'var(--success)';
+      }
+      showToast('ඔබ සිටින ස්ථානය (Live GPS) හඳුනාගත්තා! 36 km පරාසය යාවත්කාලීන විය.', 'success');
+      loadTechJobs();
+    },
+    err => {
+      console.warn('Geolocation error:', err);
+      if (btn) {
+        btn.innerHTML = '<i class="fas fa-crosshairs"></i> Live GPS';
+      }
+      showToast('GPS ලබාගත නොහැකි විය. Location permissions allow කරන්න.', 'warning');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  );
+}
+
 function showTechTab(tab) {
   setActiveTab('dash-tabs', tab);
   const c = document.getElementById('dash-content');
   if (tab === 'avail') {
+    const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+    const opt36 = tFn('filter_36km', '🎯 ළඟම Jobs (36 km ඇතුළත)');
+    const opt50 = tFn('filter_50km', '🚗 50 km ඇතුළත');
+    const optDist = `${tFn('filter_my_dist', '📍 මගේ දිස්ත්‍රික්කය පමණක්')} (${esc(currentUserData.district)})`;
+    const optAll = tFn('filter_all', '🌐 සියලුම Jobs (All)');
+
     c.innerHTML = `
       <div class="filter-bar" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
         <div>
@@ -1690,13 +2062,19 @@ function showTechTab(tab) {
           <p style="font-size:.78rem;color:var(--txt3);margin-top:2px">
             <span class="type-badge ${esc(currentUserData.serviceType)}">${esc(currentUserData.serviceType)}</span>
             · Base: <strong>${esc(currentUserData.city ? `${currentUserData.district}, ${currentUserData.city}` : currentUserData.district)}</strong>
+            · <span style="display:inline-flex;align-items:center;gap:4px;color:#34d399;font-weight:700"><i class="fas fa-bullseye"></i> 36 km Radius Active</span>
           </p>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <select id="tech-scope-filter" onchange="loadTechJobs()" style="background:var(--card);border:1px solid var(--border);color:var(--txt);padding:7px 14px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer">
-            <option value="all_nearby" selected>🌐 ඔබේ දිස්ත්‍රික්කය + ළඟම ප්‍රදේශ (Nearby)</option>
-            <option value="my_district">📍 මගේ දිස්ත්‍රික්කය පමණක් (${esc(currentUserData.district)})</option>
+            <option value="radius_36km" selected>${opt36}</option>
+            <option value="radius_50km">${opt50}</option>
+            <option value="my_district">${optDist}</option>
+            <option value="all_jobs">${optAll}</option>
           </select>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-tech-gps" onclick="useTechLiveGps()" title="Use live phone GPS" style="padding:7px 12px;font-size:.78rem">
+            <i class="fas fa-crosshairs"></i> <span>Live GPS</span>
+          </button>
         </div>
       </div>
       <div id="tech-avail" class="jobs-grid"><div class="empty-state" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>`;
@@ -1713,10 +2091,12 @@ function showTechTab(tab) {
 
 async function loadTechJobs() {
   try {
-    const scope = document.getElementById('tech-scope-filter')?.value || 'all_nearby';
+    const scope = document.getElementById('tech-scope-filter')?.value || 'radius_36km';
     const techDistrict = currentUserData.district;
     const techCity = currentUserData.city;
-    const techCoords = (techCity && CITY_COORDS[techCity]) || (techDistrict && DISTRICT_COORDS[techDistrict]);
+    const techCoords = techLiveLocation || ((currentUserData.location?.lat && currentUserData.location?.lng)
+      ? [currentUserData.location.lat, currentUserData.location.lng]
+      : ((techCity && CITY_COORDS[techCity]) || (techDistrict && DISTRICT_COORDS[techDistrict])));
 
     // Fetch open jobs
     const snap = await db.collection('jobs')
@@ -1725,63 +2105,88 @@ async function loadTechJobs() {
 
     let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // Filter by service type
+    // Filter by service type (CCTV, Satellite, Both)
     if (currentUserData.serviceType !== 'Both') {
       docs = docs.filter(j => j.type === currentUserData.serviceType);
     }
 
-    const nearbyDistricts = NEARBY_DISTRICTS[techDistrict] || [];
-
-    // Filter by location scope
-    docs = docs.filter(j => {
-      // 1. Same district is always included
-      if (j.district === techDistrict) return true;
-
-      // If user selected "my_district only", exclude outside jobs
-      if (scope === 'my_district') return false;
-
-      // 2. Must be an adjacent neighboring district
-      if (!nearbyDistricts.includes(j.district)) return false;
-
-      // 3. Distance check: if coords available, must be within ~65 km
+    // Compute distance in KM for every job relative to the technician's location
+    docs.forEach(j => {
       const jobLat = j.location?.lat || (j.city && CITY_COORDS[j.city]?.[0]) || (j.district && DISTRICT_COORDS[j.district]?.[0]);
       const jobLng = j.location?.lng || (j.city && CITY_COORDS[j.city]?.[1]) || (j.district && DISTRICT_COORDS[j.district]?.[1]);
-
       if (techCoords && jobLat && jobLng) {
-        const dist = calcDistanceKm(techCoords[0], techCoords[1], jobLat, jobLng);
-        j._distanceKm = dist;
-        return dist !== null ? dist <= 65 : true;
+        j._distanceKm = calcDistanceKm(techCoords[0], techCoords[1], jobLat, jobLng);
+      } else {
+        j._distanceKm = null;
       }
-
-      return true;
     });
 
-    // Compute distance for any remaining jobs for sorting & badge display
-    docs.forEach(j => {
-      if (j._distanceKm === undefined) {
-        const jobLat = j.location?.lat || (j.city && CITY_COORDS[j.city]?.[0]) || (j.district && DISTRICT_COORDS[j.district]?.[0]);
-        const jobLng = j.location?.lng || (j.city && CITY_COORDS[j.city]?.[1]) || (j.district && DISTRICT_COORDS[j.district]?.[1]);
-        if (techCoords && jobLat && jobLng) {
-          j._distanceKm = calcDistanceKm(techCoords[0], techCoords[1], jobLat, jobLng);
+    // Filter jobs strictly based on distance radius requirement
+    docs = docs.filter(j => {
+      // 1. If radius_36km (DEFAULT): Strictly show only jobs <= 36 km from technician
+      if (scope === 'radius_36km') {
+        if (j._distanceKm !== null && j._distanceKm !== undefined) {
+          return j._distanceKm <= 36;
         }
+        // Fallback for legacy jobs without coordinates: only show if same district
+        return j.district === techDistrict;
       }
+
+      // 2. If radius_50km: Show jobs within 50 km
+      if (scope === 'radius_50km') {
+        if (j._distanceKm !== null && j._distanceKm !== undefined) {
+          return j._distanceKm <= 50;
+        }
+        return j.district === techDistrict;
+      }
+
+      // 3. If my_district: Only jobs in same district
+      if (scope === 'my_district') {
+        return j.district === techDistrict;
+      }
+
+      // 4. If all_jobs: Show all available jobs
+      if (scope === 'all_jobs') {
+        return true;
+      }
+
+      // Default fallback: 36 km
+      if (j._distanceKm !== null && j._distanceKm !== undefined) {
+        return j._distanceKm <= 36;
+      }
+      return j.district === techDistrict;
     });
 
-    // Sort: Same district first, then by distance / date
+    // Sort: Nearest first (ascending distance), then latest date
     docs.sort((a, b) => {
-      const aSame = a.district === techDistrict ? 0 : 1;
-      const bSame = b.district === techDistrict ? 0 : 1;
-      if (aSame !== bSame) return aSame - bSame;
       if (a._distanceKm != null && b._distanceKm != null && a._distanceKm !== b._distanceKm) {
         return a._distanceKm - b._distanceKm;
       }
+      if (a._distanceKm != null && b._distanceKm == null) return -1;
+      if (a._distanceKm == null && b._distanceKm != null) return 1;
       return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
     });
 
     const el = document.getElementById('tech-avail');
     if (!el) return;
     if (!docs.length) {
-      el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-search"></i><p>ඔබේ ප්‍රදේශයේ හෝ ළඟම ප්‍රදේශවල open jobs නැත.</p></div>`;
+      const scopeDesc = scope === 'radius_36km'
+        ? 'ඔබ සිටින ස්ථානයේ සිට 36 km ඇතුළත'
+        : (scope === 'radius_50km' ? 'ඔබ සිටින ස්ථානයේ සිට 50 km ඇතුළත' : 'ඔබේ ප්‍රදේශයේ');
+      el.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;padding:36px 20px">
+          <i class="fas fa-radar" style="font-size:2.4rem;color:var(--primary-l);margin-bottom:12px"></i>
+          <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:6px">දැනට ${scopeDesc} open jobs නැත</h3>
+          <p style="font-size:.84rem;color:var(--txt2);max-width:420px;margin:0 auto 16px">ඔබ සිටින ස්ථානයෙන් දුර වැඩි jobs මෙහි නොපෙන්වයි. අලුත් Job එකක් 36 km ඇතුළත post වූ වහාම ඔබට Email alert එකක් ලැබෙනු ඇත.</p>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('tech-scope-filter').value='radius_50km';loadTechJobs()">
+              <i class="fas fa-expand-arrows-alt"></i> 50 km දක්වා බලන්න
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('tech-scope-filter').value='all_jobs';loadTechJobs()">
+              <i class="fas fa-globe"></i> සියලුම ප්‍රදේශ
+            </button>
+          </div>
+        </div>`;
       return;
     }
     el.innerHTML = docs.map(j => jobCard(j.id, j, 'tech')).join('');
@@ -1816,10 +2221,13 @@ function jobCard(id, job, view) {
   let locationBadge = '';
   if (view === 'tech' && currentUserData?.role === 'technician') {
     const isHome = job.district === currentUserData.district;
-    if (isHome) {
+    if (job._distanceKm != null) {
+      const isWithin36 = job._distanceKm <= 36;
+      locationBadge = `<span class="badge" style="background:${isWithin36 ? 'rgba(16,185,129,0.18)' : 'rgba(59,130,246,0.15)'};color:${isWithin36 ? '#34d399' : '#60a5fa'};font-size:.74rem;padding:3px 9px;border-radius:6px;font-weight:700"><i class="fas ${isWithin36 ? 'fa-bullseye' : 'fa-car-side'}"></i> ~${job._distanceKm} km දුර ${isWithin36 ? '(36km ඇතුළත)' : ''}</span>`;
+    } else if (isHome) {
       locationBadge = `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;font-size:.72rem;padding:2px 8px;border-radius:6px"><i class="fas fa-map-pin"></i> ඔබේ දිස්ත්‍රික්කය</span>`;
     } else {
-      locationBadge = `<span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;font-size:.72rem;padding:2px 8px;border-radius:6px"><i class="fas fa-car-side"></i> ළඟම ප්‍රදේශය${job._distanceKm ? ` (~${job._distanceKm} km)` : ''}</span>`;
+      locationBadge = `<span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;font-size:.72rem;padding:2px 8px;border-radius:6px"><i class="fas fa-car-side"></i> ළඟම ප්‍රදේශය</span>`;
     }
   }
 
@@ -1979,9 +2387,11 @@ function onLanguageChanged(lang) {
       loadAllAdmins();
     }
     showAdminTab(curTab);
+    updateMobileNavState('screen-admin');
     return;
   }
 
+  updateMobileNavState();
   if (!currentUserData) return;
   if (currentUserData.role === 'technician') {
     const activeBtn = document.querySelector('#dash-tabs .tab-btn.active');

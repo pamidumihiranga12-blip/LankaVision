@@ -10,7 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=16" />
+  <link rel="stylesheet" href="style.css?v=17" />
+  <script src="i18n.js?v=7"></script>
 </head>
 <body>
 <div id="app">
@@ -33,30 +34,42 @@
   <!-- ====== LANDING ====== -->
   <div id="screen-landing" class="screen active">
     <nav class="landing-nav">
-      <div class="nav-brand"><i class="fas fa-satellite-dish"></i><span data-i18n="brand_name">LankaVision Pro</span></div>
-      <div class="nav-actions">
+      <div class="nav-top-row">
+        <div class="nav-brand" onclick="showScreen('screen-landing')">
+          <i class="fas fa-satellite-dish"></i>
+          <span data-i18n="brand_name">LankaVision Pro</span>
+        </div>
+        <div class="nav-actions">
+          <div class="lang-switcher desktop-only-switcher">
+            <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English">English</button>
+            <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
+            <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
+          </div>
+          <button class="btn btn-ghost btn-sm nav-login-btn" onclick="showScreen('screen-login')"><i class="fas fa-sign-in-alt"></i> <span data-i18n="nav_login">Login</span></button>
+          <button class="btn btn-primary btn-sm nav-reg-btn" onclick="showRegisterOptions()"><i class="fas fa-user-plus"></i> <span data-i18n="nav_register">Register</span></button>
+        </div>
+      </div>
+      <div class="nav-mobile-lang-row">
         <div class="lang-switcher">
           <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English">English</button>
           <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
           <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-login')"><i class="fas fa-sign-in-alt"></i> <span data-i18n="nav_login">Login</span></button>
-        <button class="btn btn-primary btn-sm" onclick="showRegisterOptions()"><i class="fas fa-user-plus"></i> <span data-i18n="nav_register">Register</span></button>
       </div>
     </nav>
     <section class="hero-section">
       <div class="hero-content">
-        <div class="hero-badge"><i class="fas fa-map-marker-alt"></i> <span data-i18n="hero_badge">දිවයින පුරා සේවාව (25 Districts)</span></div>
+        <div class="hero-badge"><i class="fas fa-map-marker-alt"></i> <span data-i18n="hero_badge">Island-wide Coverage (25 Districts)</span></div>
         <h1 class="hero-title"><span data-i18n="hero_title_1">Sri Lanka's #1</span><br><span class="gradient-text" data-i18n="hero_title_2">CCTV & Satellite</span><br><span data-i18n="hero_title_3">Job Platform</span></h1>
-        <p class="hero-subtitle" data-i18n="hero_subtitle">CCTV සහ Satellite Technician ලාව Customer ලා සමඟ real-time හි සම්බන්ධ කරන ශ්‍රී ලංකාවේ #1 platform.</p>
+        <p class="hero-subtitle" data-i18n="hero_subtitle">Connecting certified CCTV & Satellite Technicians with Customers in real-time across all 25 districts.</p>
         <div class="hero-actions">
-          <button class="btn btn-primary btn-large" onclick="showScreen('screen-post-job')"><i class="fas fa-plus"></i> <span data-i18n="btn_post_job">Job එකක් දාන්න</span></button>
-          <button class="btn btn-outline btn-large" onclick="showRegisterOptions()"><i class="fas fa-tools"></i> <span data-i18n="btn_join_tech">Technician කෙනෙක් වෙන්න</span></button>
+          <button class="btn btn-primary btn-large" onclick="showScreen('screen-post-job')"><i class="fas fa-plus"></i> <span data-i18n="btn_post_job">Post a Job</span></button>
+          <button class="btn btn-outline btn-large" onclick="showRegisterOptions()"><i class="fas fa-tools"></i> <span data-i18n="btn_join_tech">Join as Technician</span></button>
         </div>
         <div class="hero-stats">
-          <div class="hero-stat"><span class="hs-num">25</span><span class="hs-lbl" data-i18n="stat_districts">දිස්ත්‍රික්ක 25</span></div>
-          <div class="hero-stat"><span class="hs-num">24/7</span><span class="hs-lbl" data-i18n="stat_service">24/7 සේවාව</span></div>
-          <div class="hero-stat"><span class="hs-num">🔒</span><span class="hs-lbl" data-i18n="stat_privacy">පූර්ණ ආරක්ෂිතයි</span></div>
+          <div class="hero-stat"><span class="hs-num">25</span><span class="hs-lbl" data-i18n="stat_districts">25 Districts</span></div>
+          <div class="hero-stat"><span class="hs-num">24/7</span><span class="hs-lbl" data-i18n="stat_service">24/7 Service</span></div>
+          <div class="hero-stat"><span class="hs-num">🔒</span><span class="hs-lbl" data-i18n="stat_privacy">Privacy Safe</span></div>
         </div>
       </div>
       <div class="hero-visual" style="display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:32px">
@@ -69,12 +82,12 @@
       </div>
     </section>
     <section class="features-section">
-      <div class="feature-card"><div class="feature-icon"><i class="fas fa-map-marked-alt"></i></div><h3 data-i18n="feat_dist">දිස්ත්‍රික්ක අනුව (District Smart)</h3><p data-i18n="feat_dist_desc">ඔබේ දිස්ත්‍රික්කයේ jobs පමණක් technician ලාට පෙනේ.</p></div>
-      <div class="feature-card"><div class="feature-icon"><i class="fas fa-shield-alt"></i></div><h3 data-i18n="feat_priv">දුරකථන ආරක්ෂාව (Phone Privacy)</h3><p data-i18n="feat_priv_desc">Job accept කරන තෙක් customer ගේ phone number සැඟවී ඇත.</p></div>
-      <div class="feature-card"><div class="feature-icon"><i class="fas fa-map-marker-alt"></i></div><h3 data-i18n="feat_maps">Google Maps Navigation</h3><p data-i18n="feat_maps_desc">Job location pin කර Google Maps හරහා directly navigate කරන්න.</p></div>
-      <div class="feature-card"><div class="feature-icon"><i class="fab fa-whatsapp"></i></div><h3 data-i18n="feat_wa">WhatsApp සෘජුවම (WhatsApp Direct)</h3><p data-i18n="feat_wa_desc">Job accept කළ පසු customer ගේ WhatsApp chat direct open වේ.</p></div>
-      <div class="feature-card"><div class="feature-icon"><i class="fas fa-bolt"></i></div><h3 data-i18n="feat_rt">ක්ෂණික දැනුම්දීම් (Real-time)</h3><p data-i18n="feat_rt_desc">දිවයින පුරා ක්ෂණික job updates.</p></div>
-      <div class="feature-card"><div class="feature-icon"><i class="fas fa-star"></i></div><h3 data-i18n="feat_ratings">තරු 5 Rating ක්‍රමය (5-Star Ratings)</h3><p data-i18n="feat_ratings_desc">පාරිභෝගිකයින්ගෙන් 5-star ratings සහ reviews ලබාගෙන විශ්වාසය දිනාගන්න.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fas fa-map-marked-alt"></i></div><h3 data-i18n="feat_dist">District Smart Matching</h3><p data-i18n="feat_dist_desc">Technicians instantly see jobs available only within their home district or nearby regions.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fas fa-shield-alt"></i></div><h3 data-i18n="feat_priv">Phone Privacy Protected</h3><p data-i18n="feat_priv_desc">Customer phone number is hidden until a technician accepts the job.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fas fa-map-marker-alt"></i></div><h3 data-i18n="feat_maps">Google Maps Navigation</h3><p data-i18n="feat_maps_desc">Pin exact job locations and get turn-by-turn navigation via Google Maps.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fab fa-whatsapp"></i></div><h3 data-i18n="feat_wa">WhatsApp Direct Chat</h3><p data-i18n="feat_wa_desc">Instantly start a WhatsApp chat with the customer upon claiming a job.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fas fa-bolt"></i></div><h3 data-i18n="feat_rt">Real-time Updates</h3><p data-i18n="feat_rt_desc">Real-time job postings and instant status notifications island-wide.</p></div>
+      <div class="feature-card"><div class="feature-icon"><i class="fas fa-star"></i></div><h3 data-i18n="feat_ratings">5-Star Ratings & Reviews</h3><p data-i18n="feat_ratings_desc">Build your reputation and win more work with verified customer star ratings.</p></div>
     </section>
   </div>
 
@@ -91,23 +104,23 @@
           </div>
         </div>
         <h2 data-i18n="login_title">Welcome Back 👋</h2>
-        <p class="auth-sub" data-i18n="login_sub">ඔබේ account එකට login කරන්න</p>
+        <p class="auth-sub" data-i18n="login_sub">Log in to your LankaVision account</p>
         <form id="login-form" onsubmit="handleLogin(event)">
           <div class="form-group">
-            <label><i class="fas fa-envelope"></i> <span data-i18n="email_label">Email ලිපිනය</span></label>
+            <label><i class="fas fa-envelope"></i> <span data-i18n="email_label">Email Address</span></label>
             <input type="email" id="login-email" placeholder="your@email.com" required />
           </div>
           <div class="form-group pwd-group">
-            <label><i class="fas fa-lock"></i> <span data-i18n="password_label">මුරපදය (Password)</span></label>
+            <label><i class="fas fa-lock"></i> <span data-i18n="password_label">Password</span></label>
             <input type="password" id="login-password" placeholder="Password" required />
             <button type="button" class="pwd-toggle" onclick="togglePwd('login-password',this)"><i class="fas fa-eye"></i></button>
           </div>
           <div id="login-error" class="error-msg hidden"></div>
-          <button type="submit" class="btn btn-primary btn-full" id="login-btn"><i class="fas fa-sign-in-alt"></i> <span data-i18n="btn_login">Login වන්න</span></button>
+          <button type="submit" class="btn btn-primary btn-full" id="login-btn"><i class="fas fa-sign-in-alt"></i> <span data-i18n="btn_login">Login</span></button>
         </form>
         <div class="auth-footer">
-          <p><span data-i18n="no_account">Account නැද්ද?</span> <a onclick="showRegisterOptions()" data-i18n="register_link">Register කරන්න</a></p>
-          <p style="margin-top:8px"><a onclick="showScreen('screen-landing')" data-i18n="back_to_home">← මුල් පිටුවට</a></p>
+          <p><span data-i18n="no_account">Don't have an account?</span> <a onclick="showRegisterOptions()" data-i18n="register_link">Register here</a></p>
+          <p style="margin-top:8px"><a onclick="showScreen('screen-landing')" data-i18n="back_to_home">← Back to Home</a></p>
         </div>
       </div>
     </div>
@@ -127,57 +140,57 @@
             <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
           </div>
         </div>
-        <h2 style="text-align:center;margin-bottom:6px" data-i18n="reg_role_title">LankaVision හා එක්වන්න ✨</h2>
-        <p class="auth-sub" style="text-align:center;margin-bottom:20px" data-i18n="reg_role_sub">ඔබ ලියාපදිංචි වන ආකාරය තෝරන්න</p>
-        <div class="role-cards" style="grid-template-columns:1fr 1fr">
+        <h2 style="text-align:center;margin-bottom:6px" data-i18n="reg_role_title">Join LankaVision Pro ✨</h2>
+        <p class="auth-sub" style="text-align:center;margin-bottom:20px" data-i18n="reg_role_sub">Choose how you would like to register</p>
+        <div class="role-cards">
           <div class="role-card" onclick="showRegisterForm('customer')">
             <i class="fas fa-user"></i>
-            <div><h3 data-i18n="role_customer">Customer</h3><p data-i18n="role_customer_desc">CCTV / Satellite සවිකිරීම් හෝ අලුත්වැඩියා සඳහා technician ලා සොයාගන්න</p></div>
+            <div><h3 data-i18n="role_customer">I Need a Service (Customer)</h3><p data-i18n="role_customer_desc">Find reliable technicians for CCTV and Satellite dish installation or repairs</p></div>
           </div>
           <div class="role-card" onclick="showRegisterForm('technician')">
             <i class="fas fa-tools"></i>
-            <div><h3 data-i18n="role_technician">Technician</h3><p data-i18n="role_technician_desc">Jobs භාරගෙන අමතර ආදායමක් උපයන්න</p></div>
+            <div><h3 data-i18n="role_technician">I am a Technician</h3><p data-i18n="role_technician_desc">Accept local jobs and grow your technician business</p></div>
           </div>
         </div>
-        <div class="auth-footer"><p><span data-i18n="no_account">Account ඇද්ද?</span> <a onclick="showScreen('screen-login')" data-i18n="nav_login">Login</a></p><p style="margin-top:8px"><a onclick="showScreen('screen-landing')" data-i18n="back_to_home">← Back</a></p></div>
+        <div class="auth-footer"><p><span data-i18n="no_account">Already have an account?</span> <a onclick="showScreen('screen-login')" data-i18n="nav_login">Login</a></p><p style="margin-top:8px"><a onclick="showScreen('screen-landing')" data-i18n="back_to_home">← Back to Home</a></p></div>
       </div>
 
       <!-- Customer Form -->
       <div id="reg-cust-form" class="auth-card hidden">
         <div class="back-link" onclick="showRegisterRoleSelect()"><i class="fas fa-arrow-left"></i> Back</div>
-        <h2 data-i18n="cust_reg_title">Customer Registration</h2><p class="auth-sub" data-i18n="role_customer_desc">ඔබේ customer account හදාගන්න</p>
+        <h2 data-i18n="cust_reg_title">Customer Registration</h2><p class="auth-sub" data-i18n="role_customer_desc">Create your customer account to post jobs</p>
         <form onsubmit="handleCustomerRegister(event)">
-          <div class="form-group"><label><i class="fas fa-user"></i> <span data-i18n="name_label">සම්පූර්ණ නම</span></label><input type="text" id="cust-name" placeholder="ඔබේ සම්පූර්ණ නම" required /></div>
-          <div class="form-group"><label><i class="fas fa-phone"></i> <span data-i18n="phone_label">දුරකථන අංකය</span></label><input type="tel" id="cust-phone" placeholder="07X XXX XXXX" required /></div>
-          <div class="form-group"><label><i class="fas fa-envelope"></i> <span data-i18n="email_label">Email ලිපිනය</span></label><input type="email" id="cust-email" placeholder="your@email.com" required /></div>
-          <div class="form-group pwd-group"><label><i class="fas fa-lock"></i> <span data-i18n="password_label">මුරපදය (Password)</span></label><input type="password" id="cust-password" placeholder="Min 6 characters" required /><button type="button" class="pwd-toggle" onclick="togglePwd('cust-password',this)"><i class="fas fa-eye"></i></button></div>
+          <div class="form-group"><label><i class="fas fa-user"></i> <span data-i18n="name_label">Full Name</span></label><input type="text" id="cust-name" placeholder="Your full name" required /></div>
+          <div class="form-group"><label><i class="fas fa-phone"></i> <span data-i18n="phone_label">Phone Number</span></label><input type="tel" id="cust-phone" placeholder="07X XXX XXXX" required /></div>
+          <div class="form-group"><label><i class="fas fa-envelope"></i> <span data-i18n="email_label">Email Address</span></label><input type="email" id="cust-email" placeholder="your@email.com" required /></div>
+          <div class="form-group pwd-group"><label><i class="fas fa-lock"></i> <span data-i18n="password_label">Password</span></label><input type="password" id="cust-password" placeholder="Min 6 characters" required /><button type="button" class="pwd-toggle" onclick="togglePwd('cust-password',this)"><i class="fas fa-eye"></i></button></div>
           <div id="cust-error" class="error-msg hidden"></div>
-          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-user-plus"></i> <span data-i18n="btn_create_account">Account එක හදන්න</span></button>
+          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-user-plus"></i> <span data-i18n="btn_create_account">Create Account</span></button>
         </form>
       </div>
 
       <!-- Technician Form -->
       <div id="reg-tech-form" class="auth-card hidden">
         <div class="back-link" onclick="showRegisterRoleSelect()"><i class="fas fa-arrow-left"></i> Back</div>
-        <h2 data-i18n="tech_reg_title">Technician Registration</h2><p class="auth-sub" data-i18n="role_technician_desc">Technician network එකට join වන්න</p>
+        <h2 data-i18n="tech_reg_title">Technician Registration</h2><p class="auth-sub" data-i18n="role_technician_desc">Join the certified technician network</p>
         <form onsubmit="handleTechRegister(event)">
-          <div class="form-group"><label><i class="fas fa-user"></i> <span data-i18n="name_label">සම්පූර්ණ නම</span></label><input type="text" id="tech-name" placeholder="ඔබේ සම්පූර්ණ නම" required /></div>
-          <div class="form-group"><label><i class="fas fa-phone"></i> <span data-i18n="phone_label">දුරකථන අංකය</span></label><input type="tel" id="tech-phone" placeholder="07X XXX XXXX" required /></div>
-          <div class="form-group"><label><i class="fas fa-envelope"></i> <span data-i18n="email_label">Email ලිපිනය</span></label><input type="email" id="tech-email" placeholder="your@email.com" required /></div>
-          <div class="form-group pwd-group"><label><i class="fas fa-lock"></i> <span data-i18n="password_label">මුරපදය (Password)</span></label><input type="password" id="tech-password" placeholder="Min 6 characters" required /><button type="button" class="pwd-toggle" onclick="togglePwd('tech-password',this)"><i class="fas fa-eye"></i></button></div>
+          <div class="form-group"><label><i class="fas fa-user"></i> <span data-i18n="name_label">Full Name</span></label><input type="text" id="tech-name" placeholder="Your full name" required /></div>
+          <div class="form-group"><label><i class="fas fa-phone"></i> <span data-i18n="phone_label">Phone Number</span></label><input type="tel" id="tech-phone" placeholder="07X XXX XXXX" required /></div>
+          <div class="form-group"><label><i class="fas fa-envelope"></i> <span data-i18n="email_label">Email Address</span></label><input type="email" id="tech-email" placeholder="your@email.com" required /></div>
+          <div class="form-group pwd-group"><label><i class="fas fa-lock"></i> <span data-i18n="password_label">Password</span></label><input type="password" id="tech-password" placeholder="Min 6 characters" required /><button type="button" class="pwd-toggle" onclick="togglePwd('tech-password',this)"><i class="fas fa-eye"></i></button></div>
           <div class="form-group">
-            <label><i class="fas fa-map-marker-alt"></i> <span data-i18n="district_label">දිස්ත්‍රික්කය</span></label>
-            <select id="tech-district" required onchange="onTechDistrictChange()"><option value="" data-i18n="select_district">දිස්ත්‍රික්කය තෝරන්න</option></select>
+            <label><i class="fas fa-map-marker-alt"></i> <span data-i18n="district_label">District</span></label>
+            <select id="tech-district" required onchange="onTechDistrictChange()"><option value="" data-i18n="select_district">Select District</option></select>
           </div>
           <div class="form-group hidden" id="tech-city-group">
-            <label><i class="fas fa-city"></i> <span data-i18n="city_label">නගරය (City / Town)</span></label>
+            <label><i class="fas fa-city"></i> <span data-i18n="city_label">City / Town</span></label>
             <select id="tech-city" onchange="onTechCityChange()">
-              <option value="">City / Town තෝරන්න</option>
+              <option value="">Select City / Town</option>
             </select>
-            <input type="text" id="tech-city-custom" class="hidden" placeholder="නගරයේ නම ලියන්න (වෙනත් නම්)" style="margin-top:8px" />
+            <input type="text" id="tech-city-custom" class="hidden" placeholder="Enter city / town name" style="margin-top:8px" />
           </div>
           <div class="form-group">
-            <label><i class="fas fa-tools"></i> <span data-i18n="service_type_label">සේවා වර්ගය (Service Type)</span></label>
+            <label><i class="fas fa-tools"></i> <span data-i18n="service_type_label">Your Specialty (Service Type)</span></label>
             <div class="type-select">
               <label class="type-opt"><input type="radio" name="svc-type" value="CCTV" required /><span><i class="fas fa-video"></i> CCTV</span></label>
               <label class="type-opt"><input type="radio" name="svc-type" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
@@ -187,16 +200,16 @@
 
           <!-- Live Camera Selfie Capture (Gallery upload blocked) -->
           <div class="form-group selfie-form-group">
-            <label><i class="fas fa-camera"></i> Live Selfie Photo <span style="color:var(--danger)">*</span></label>
-            <p class="selfie-hint"><i class="fas fa-shield-alt"></i> ආරක්ෂක පියවරක් ලෙස Camera එකෙන්ම Live Selfie එකක් ගත යුතුය. (Gallery upload තහනම් වේ 🔒)</p>
+            <label><i class="fas fa-camera"></i> <span data-i18n="selfie_title">Live Selfie Verification</span> <span style="color:var(--danger)">*</span></label>
+            <p class="selfie-hint"><i class="fas fa-shield-alt"></i> <span data-i18n="selfie_desc">Take a live selfie using your device camera (Gallery upload is disallowed)</span> 🔒</p>
 
             <div id="tech-selfie-box" class="selfie-box">
               <!-- Idle / Ready to open camera -->
               <div id="selfie-idle" class="selfie-idle-state">
                 <div class="selfie-idle-icon"><i class="fas fa-camera"></i></div>
-                <div class="selfie-idle-txt">ඔබගේ පැහැදිලි Live Selfie එකක් ගන්න</div>
+                <div class="selfie-idle-txt" data-i18n="selfie_desc">Take a clear live selfie using device camera</div>
                 <button type="button" class="btn btn-primary btn-sm" onclick="startTechCamera()">
-                  <i class="fas fa-video"></i> Camera On කරන්න
+                  <i class="fas fa-video"></i> <span data-i18n="btn_cam_on">Turn on Camera</span>
                 </button>
               </div>
 
@@ -205,7 +218,7 @@
                 <div class="selfie-viewport">
                   <video id="tech-selfie-video" autoplay playsinline muted></video>
                   <div class="selfie-guide-frame">
-                    <span class="guide-text"><i class="fas fa-user"></i> මුහුණ මැදට තබා ගන්න</span>
+                    <span class="guide-text"><i class="fas fa-user"></i> <span data-i18n="cam_oval_guide">Position face within oval guide</span></span>
                   </div>
                   <div class="live-rec-badge"><span class="rec-dot"></span> LIVE CAM</div>
                 </div>
@@ -217,7 +230,7 @@
                     <i class="fas fa-sync-alt"></i> Switch
                   </button>
                   <button type="button" class="btn btn-primary btn-sm" onclick="captureTechSelfie()">
-                    <i class="fas fa-circle"></i> Capture Selfie
+                    <i class="fas fa-circle"></i> <span data-i18n="btn_cam_capture">Capture Photo</span>
                   </button>
                 </div>
               </div>
@@ -229,9 +242,9 @@
                   <div class="selfie-check-badge"><i class="fas fa-check"></i></div>
                 </div>
                 <div class="selfie-preview-info">
-                  <span class="selfie-status-success"><i class="fas fa-check-circle"></i> Live Selfie එක සාර්ථකයි!</span>
+                  <span class="selfie-status-success"><i class="fas fa-check-circle"></i> <span data-i18n="selfie_success">Live Selfie captured successfully!</span></span>
                   <button type="button" class="btn btn-outline btn-sm" onclick="retakeTechSelfie()">
-                    <i class="fas fa-redo"></i> Retake / නැවත ගන්න
+                    <i class="fas fa-redo"></i> <span data-i18n="btn_cam_retake">Retake Photo</span>
                   </button>
                 </div>
               </div>
@@ -243,8 +256,8 @@
           </div>
 
           <div id="tech-error" class="error-msg hidden"></div>
-          <div class="info-box"><i class="fas fa-info-circle"></i> ඔබේ account Admin විසින් approve කළ පසු jobs access කළ හැකිය. (24-48 hrs)</div>
-          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-paper-plane"></i> Application Submit කරන්න</button>
+          <div class="info-box"><i class="fas fa-info-circle"></i> <span data-i18n="tech_approval_note">Your account can access jobs after admin approval (24–48 hrs).</span></div>
+          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-paper-plane"></i> <span data-i18n="btn_submit_app">Submit Application</span></button>
         </form>
       </div>
     </div>
@@ -254,10 +267,10 @@
   <div id="screen-pending" class="screen">
     <div class="centered-screen">
       <div class="big-icon pulsing" style="color:var(--warning)"><i class="fas fa-clock"></i></div>
-      <h2>Review ලෙස Pending</h2>
-      <p style="color:var(--txt2);max-width:320px">ඔබේ technician application admin team විසින් review කෙරෙමින් ඇත. Approve වූ පසු login කළ හැකිය. (24–48 hrs)</p>
-      <div class="info-pill"><i class="fas fa-envelope"></i> Admin ගෙන් confirm වීමට බලාසිටින්න</div>
-      <button class="btn btn-outline" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      <h2 data-i18n="pending_review_title">Under Review (Pending)</h2>
+      <p style="color:var(--txt2);max-width:320px" data-i18n="pending_review_desc">Your technician application is currently under review by our admin team. You can log in once approved. (24–48 hrs)</p>
+      <div class="info-pill"><i class="fas fa-envelope"></i> <span data-i18n="pending_wait_admin">Awaiting admin approval</span></div>
+      <button class="btn btn-outline" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> <span data-i18n="nav_logout">Logout</span></button>
     </div>
   </div>
 
@@ -266,60 +279,60 @@
     <div class="page-header">
       <div class="page-header-left">
         <button class="icon-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
-        <span><i class="fas fa-plus-circle" style="color:var(--primary-l)"></i> Job Post කරන්න</span>
+        <span><i class="fas fa-plus-circle" style="color:var(--primary-l)"></i> <span data-i18n="btn_post_job">Post a Job</span></span>
       </div>
     </div>
     <div class="page-content">
       <div class="form-card">
-        <h2><i class="fas fa-briefcase" style="color:var(--primary-l)"></i> New Job Request</h2>
+        <h2><i class="fas fa-briefcase" style="color:var(--primary-l)"></i> <span data-i18n="post_job_title">New Job Request</span></h2>
         <form id="post-job-form" onsubmit="handlePostJob(event)">
 
           <!-- Guest info -->
           <div id="guest-section" class="hidden">
-            <div class="sec-title">ඔබේ Information</div>
-            <div class="form-group"><label><i class="fas fa-user"></i> ඔබේ නම</label><input type="text" id="guest-name" placeholder="ඔබේ නම" /></div>
-            <div class="form-group"><label><i class="fas fa-phone"></i> ඔබේ Phone</label><input type="tel" id="guest-phone" placeholder="07X XXX XXXX" /></div>
-            <div class="form-group"><label><i class="fas fa-envelope"></i> ඔබේ Email <small style="color:var(--txt3)">(optional - Email updates සඳහා)</small></label><input type="email" id="guest-email" placeholder="your@email.com" /></div>
+            <div class="sec-title" data-i18n="guest_info_title">Your Contact Information</div>
+            <div class="form-group"><label><i class="fas fa-user"></i> <span data-i18n="name_label">Your Name</span></label><input type="text" id="guest-name" placeholder="Your name" /></div>
+            <div class="form-group"><label><i class="fas fa-phone"></i> <span data-i18n="phone_label">Your Phone</span></label><input type="tel" id="guest-phone" placeholder="07X XXX XXXX" /></div>
+            <div class="form-group"><label><i class="fas fa-envelope"></i> <span data-i18n="email_label">Your Email</span> <small style="color:var(--txt3)">(optional - for status updates)</small></label><input type="email" id="guest-email" placeholder="your@email.com" /></div>
           </div>
 
           <div class="sec-title">Job Details</div>
           <div class="form-group">
-            <label><i class="fas fa-tools"></i> Job Type</label>
+            <label><i class="fas fa-tools"></i> <span data-i18n="job_type_label">Job Type</span></label>
             <div class="type-select">
               <label class="type-opt"><input type="radio" name="job-type" value="CCTV" required /><span><i class="fas fa-video"></i> CCTV</span></label>
               <label class="type-opt"><input type="radio" name="job-type" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
             </div>
           </div>
-          <div class="form-group"><label><i class="fas fa-heading"></i> Job Title</label><input type="text" id="job-title" placeholder="e.g. CCTV installation at my shop" required /></div>
-          <div class="form-group"><label><i class="fas fa-align-left"></i> Description</label><textarea id="job-desc" rows="3" placeholder="Job ගැන detail ලියන්න..." required></textarea></div>
+          <div class="form-group"><label><i class="fas fa-heading"></i> <span data-i18n="job_title_label">Job Title</span></label><input type="text" id="job-title" placeholder="e.g. CCTV installation at my shop" required /></div>
+          <div class="form-group"><label><i class="fas fa-align-left"></i> <span data-i18n="job_desc_label">Description</span></label><textarea id="job-desc" rows="3" placeholder="Describe the job in detail..." required></textarea></div>
           <div class="form-group">
-            <label><i class="fas fa-map-marker-alt"></i> District (දිස්ත්‍රික්කය)</label>
-            <select id="job-district" required onchange="onDistrictChange()"><option value="">District තෝරන්න</option></select>
+            <label><i class="fas fa-map-marker-alt"></i> <span data-i18n="district_label">District</span></label>
+            <select id="job-district" required onchange="onDistrictChange()"><option value="" data-i18n="select_district">Select District</option></select>
           </div>
           <div class="form-group hidden" id="job-city-group">
-            <label><i class="fas fa-city"></i> City / Town (නගරය)</label>
+            <label><i class="fas fa-city"></i> <span data-i18n="city_label">City / Town</span></label>
             <select id="job-city" onchange="onCityChange()">
-              <option value="">City / Town තෝරන්න</option>
+              <option value="">Select City / Town</option>
             </select>
-            <input type="text" id="job-city-custom" class="hidden" placeholder="නගරයේ නම ලියන්න (වෙනත් නම්)" style="margin-top:8px" />
+            <input type="text" id="job-city-custom" class="hidden" placeholder="Enter city / town name" style="margin-top:8px" />
           </div>
           <div class="form-group">
             <label><i class="fas fa-map"></i> Map Pin – Exact Location</label>
-            <p class="map-hint"><i class="fas fa-hand-pointer"></i> Map එකේ click කර exact location mark කරන්න</p>
+            <p class="map-hint"><i class="fas fa-hand-pointer"></i> Click on the map to set the exact job location</p>
             <div id="post-job-map" class="map-box"></div>
             <div id="loc-display" class="loc-display hidden"><i class="fas fa-check-circle"></i> <span id="loc-text">Location selected</span></div>
           </div>
 
           <div class="sec-title">Customer Contact</div>
-          <div class="form-group"><label><i class="fas fa-user"></i> Customer Name <small style="color:var(--txt3)">(optional)</small></label><input type="text" id="cust-name-job" placeholder="Customer ගේ නම (optional)" /></div>
+          <div class="form-group"><label><i class="fas fa-user"></i> Customer Name <small style="color:var(--txt3)">(optional)</small></label><input type="text" id="cust-name-job" placeholder="Customer name (optional)" /></div>
           <div class="form-group">
             <label><i class="fas fa-phone"></i> Customer Phone Number <span style="color:var(--danger)">*</span></label>
             <input type="tel" id="cust-phone-job" placeholder="07X XXX XXXX" required />
-            <small class="field-note"><i class="fas fa-lock"></i> Technician job accept කරන තෙක් phone number සැඟවී ඇත 🔒</small>
+            <small class="field-note"><i class="fas fa-lock"></i> <span data-i18n="feat_priv_desc">Customer phone number is hidden until a technician accepts the job.</span> 🔒</small>
           </div>
 
           <div id="post-job-error" class="error-msg hidden"></div>
-          <button type="submit" class="btn btn-primary btn-full" id="post-job-btn"><i class="fas fa-paper-plane"></i> Job Post කරන්න</button>
+          <button type="submit" class="btn btn-primary btn-full" id="post-job-btn"><i class="fas fa-paper-plane"></i> <span data-i18n="btn_post_submit">Post Job Now</span></button>
         </form>
       </div>
     </div>
@@ -647,15 +660,15 @@
 
       <!-- Completion Notes -->
       <div class="form-group">
-        <label><i class="fas fa-clipboard-check"></i> Completion Notes (අමතර විස්තර - Optional)</label>
-        <textarea id="complete-job-notes" rows="2" placeholder="e.g. CCTV කැමරා 4 සාර්ථකව සවි කර DVR සහ Mobile App configure කරන ලදී."></textarea>
+        <label><i class="fas fa-clipboard-check"></i> <span data-i18n="work_notes_label">Completion Notes (Optional)</span></label>
+        <textarea id="complete-job-notes" rows="2" placeholder="e.g. CCTV 4 cameras installed and configured with DVR & mobile app."></textarea>
       </div>
 
       <input type="hidden" id="complete-target-job-id" />
       <div style="display:flex;gap:10px;margin-top:10px">
         <button type="button" class="btn btn-ghost btn-full" onclick="closeCompleteJobModal()">Cancel</button>
         <button type="button" class="btn btn-success btn-full" id="btn-confirm-complete" onclick="confirmJobCompletion()">
-          <i class="fas fa-check-double"></i> Confirm & Complete
+          <i class="fas fa-check-double"></i> <span data-i18n="btn_confirm_complete">Confirm & Complete</span>
         </button>
       </div>
     </div>
@@ -667,9 +680,9 @@
     <div class="modal-box feedback-modal-box">
       <button class="modal-close" onclick="closeModal('modal-feedback')"><i class="fas fa-times"></i></button>
       <h2 style="margin-bottom:6px;display:flex;align-items:center;gap:10px">
-        <i class="fas fa-star" style="color:#fbbf24"></i> Rate Technician
+        <i class="fas fa-star" style="color:#fbbf24"></i> <span data-i18n="rate_modal_title">Rate Technician</span>
       </h2>
-      <p class="auth-sub" style="margin-bottom:16px">ඔබගේ Technician ගේ සේවාව පිළිබඳව තරු (Rating) සහ අදහස් ලබා දෙන්න</p>
+      <p class="auth-sub" style="margin-bottom:16px" data-i18n="rate_modal_sub">Share your feedback and rate the technician's service</p>
 
       <!-- Technician Summary Banner -->
       <div id="feedback-tech-banner" class="feedback-tech-banner">
@@ -682,8 +695,8 @@
 
       <!-- 5-Star Selector -->
       <div class="star-rating-section">
-        <label style="font-size:.85rem;font-weight:700;color:var(--txt2);margin-bottom:10px;display:block">
-          තරු ගණන තෝරන්න (Select Rating):
+        <label style="font-size:.85rem;font-weight:700;color:var(--txt2);margin-bottom:10px;display:block" data-i18n="select_stars_lbl">
+          Select Star Rating:
         </label>
         <div class="star-picker" id="star-picker">
           <i class="fas fa-star active" data-val="1" onclick="setStarRating(1)" onmouseenter="previewStars(1)" onmouseleave="resetStarPreview()"></i>
@@ -692,14 +705,14 @@
           <i class="fas fa-star active" data-val="4" onclick="setStarRating(4)" onmouseenter="previewStars(4)" onmouseleave="resetStarPreview()"></i>
           <i class="fas fa-star active" data-val="5" onclick="setStarRating(5)" onmouseenter="previewStars(5)" onmouseleave="resetStarPreview()"></i>
         </div>
-        <div id="star-label" class="star-label">⭐⭐⭐⭐⭐ Excellent (විශිෂ්ටයි)</div>
+        <div id="star-label" class="star-label">⭐⭐⭐⭐⭐ Excellent</div>
         <input type="hidden" id="selected-rating-val" value="5" />
       </div>
 
       <!-- Feedback Text -->
       <div class="form-group" style="margin-top:16px">
-        <label><i class="fas fa-comment-dots"></i> ඔබේ අදහස (Feedback / Review)</label>
-        <textarea id="feedback-comment" rows="3" placeholder="Technician ගේ සේවාව, වේගවත් බව හෝ ගුණාත්මකභාවය ගැන ලියන්න..."></textarea>
+        <label><i class="fas fa-comment-dots"></i> <span data-i18n="feedback_notes_lbl">Your Feedback / Review</span></label>
+        <textarea id="feedback-comment" rows="3" placeholder="Share your experience regarding the technician's professionalism, speed, or quality..."></textarea>
       </div>
 
       <div id="feedback-error" class="error-msg hidden"></div>
@@ -709,7 +722,7 @@
       <div style="display:flex;gap:10px;margin-top:12px">
         <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-feedback')">Cancel</button>
         <button type="button" class="btn btn-primary btn-full" id="btn-submit-feedback" onclick="submitFeedback()">
-          <i class="fas fa-paper-plane"></i> Review එක Submit කරන්න
+          <i class="fas fa-paper-plane"></i> <span data-i18n="btn_submit_feedback">Submit Review</span>
         </button>
       </div>
     </div>
@@ -723,12 +736,12 @@
       <!-- Security Warning Banner -->
       <div style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(245,158,11,0.08));border:1.5px solid rgba(239,68,68,0.35);border-radius:var(--r-m);padding:14px;margin-bottom:16px;text-align:center">
         <i class="fas fa-user-shield" style="color:var(--danger);font-size:1.8rem;margin-bottom:8px;display:block"></i>
-        <h3 style="color:#fff;font-size:1.05rem;margin:0 0 6px 0">Live Selfie එක ලබා දීම අනිවාර්ය වේ 🔒</h3>
-        <p style="font-size:.82rem;color:var(--txt2);line-height:1.45;margin:0">
-          ගරු Technician තුමනි, ඔබ මීට පෙර අපගේ පද්ධතිය සමඟ සම්බන්ධ වූ අයෙකි. පාරිභෝගික ආරක්ෂාව තහවුරු කිරීමට සහ Jobs ලබා ගැනීමට ඔබගේ <strong>Live Selfie</strong> එක Camera එකෙන්ම ලබා දීම අනිවාර්ය වේ.
+        <h3 style="color:#fff;font-size:1.05rem;margin:0 0 6px 0" data-i18n="mandatory_selfie_badge">Live Selfie Required 🔒</h3>
+        <p style="font-size:.82rem;color:var(--txt2);line-height:1.45;margin:0" data-i18n="mandatory_selfie_desc">
+          Dear Technician, to protect customers and guarantee verification, capturing a live selfie from your device camera is required before viewing or accepting jobs.
         </p>
-        <p style="font-size:.76rem;color:var(--danger);font-weight:700;margin-top:6px">
-          ⚠️ Gallery / Photos upload කිරීම සපුරා තහනම් කර ඇත.
+        <p style="font-size:.76rem;color:var(--danger);font-weight:700;margin-top:6px" data-i18n="mandatory_selfie_warning">
+          ⚠️ Gallery upload is strictly disabled for security.
         </p>
       </div>
 
@@ -740,9 +753,9 @@
             <div class="selfie-idle-icon">
               <i class="fas fa-camera"></i>
             </div>
-            <p class="selfie-idle-text">Device Camera එකෙන් ඔබගේ මුහුණේ Live Selfie එකක් ගන්න</p>
+            <p class="selfie-idle-text" data-i18n="selfie_desc">Take a live selfie using your device camera (Gallery upload is disallowed)</p>
             <button type="button" class="btn btn-primary btn-sm" onclick="startMandatoryCamera()">
-              <i class="fas fa-video"></i> Camera එක On කරන්න
+              <i class="fas fa-video"></i> <span data-i18n="btn_cam_on">Turn on Camera</span>
             </button>
           </div>
 
@@ -752,7 +765,7 @@
               <video id="mandatory-selfie-video" autoplay playsinline muted></video>
               <div class="selfie-guide-frame">
                 <div class="selfie-guide-oval"></div>
-                <div class="selfie-guide-text">මුහුණ කවය තුළ තබා ගන්න</div>
+                <div class="selfie-guide-text" data-i18n="cam_oval_guide">Position face within oval guide</div>
               </div>
               <div class="live-rec-badge"><span class="rec-dot"></span> LIVE CAM</div>
             </div>
@@ -761,7 +774,7 @@
                 <i class="fas fa-sync-alt"></i>
               </button>
               <button type="button" class="btn btn-success btn-sm" onclick="captureMandatorySelfie()">
-                <i class="fas fa-circle"></i> Photo එක ගන්න (Capture)
+                <i class="fas fa-circle"></i> <span data-i18n="btn_cam_capture">Capture Photo</span>
               </button>
             </div>
           </div>
@@ -773,9 +786,9 @@
               <div class="selfie-check-badge"><i class="fas fa-check"></i></div>
             </div>
             <div class="selfie-preview-info">
-              <span class="selfie-status-success"><i class="fas fa-check-circle"></i> Selfie එක සාර්ථකයි!</span>
+              <span class="selfie-status-success"><i class="fas fa-check-circle"></i> <span data-i18n="selfie_success">Live Selfie captured successfully!</span></span>
               <button type="button" class="btn btn-outline btn-sm" onclick="retakeMandatorySelfie()">
-                <i class="fas fa-redo"></i> Retake / නැවත ගන්න
+                <i class="fas fa-redo"></i> <span data-i18n="btn_cam_retake">Retake Photo</span>
               </button>
             </div>
           </div>
@@ -788,10 +801,10 @@
       <!-- Action Buttons -->
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
         <button type="button" class="btn btn-success btn-full" id="btn-save-mandatory-selfie" onclick="saveMandatorySelfie()">
-          <i class="fas fa-check-double"></i> Selfie එක Save කර ඉදිරියට යන්න
+          <i class="fas fa-check-double"></i> <span data-i18n="btn_save_selfie">Save Selfie & Continue</span>
         </button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="handleLogout()" style="color:var(--txt3);font-size:.82rem">
-          <i class="fas fa-sign-out-alt"></i> දැන්ම බැහැ (Log Out වන්න)
+          <i class="fas fa-sign-out-alt"></i> <span data-i18n="btn_logout_cancel">Not Now (Log Out)</span>
         </button>
       </div>
 
@@ -813,6 +826,26 @@
     </div>
   </div>
 
+  <!-- ====== MOBILE BOTTOM APP BAR (Native App Feel) ====== -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+    <button type="button" class="mbn-item active" id="mbn-home" onclick="showScreen('screen-landing')">
+      <i class="fas fa-home"></i>
+      <span data-i18n="nav_home">Home</span>
+    </button>
+    <button type="button" class="mbn-item mbn-post-job" id="mbn-post" onclick="showScreen('screen-post-job')">
+      <div class="mbn-fab-badge"><i class="fas fa-plus"></i></div>
+      <span data-i18n="btn_post_job">Post Job</span>
+    </button>
+    <button type="button" class="mbn-item" id="mbn-tech" onclick="showRegisterOptions()">
+      <i class="fas fa-tools"></i>
+      <span data-i18n="btn_join_tech">Technician</span>
+    </button>
+    <button type="button" class="mbn-item" id="mbn-login" onclick="handleMobileAuthNav()">
+      <i class="fas fa-sign-in-alt"></i>
+      <span id="mbn-login-text" data-i18n="nav_login">Login</span>
+    </button>
+  </nav>
+
   <!-- ====== TOAST ====== -->
   <div id="toast-wrap"></div>
 
@@ -826,8 +859,7 @@
 
 <!-- App Logic -->
 <script src="firebase-config.js?v=12"></script>
-<script src="i18n.js?v=5"></script>
-<script src="app.js?v=17"></script>
+<script src="app.js?v=19"></script>
 
 <!-- Guaranteed loading overlay removal after 2s -->
 <script>

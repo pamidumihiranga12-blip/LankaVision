@@ -36,6 +36,10 @@ assert(html.includes('>සිංහල</button>'), 'Clean text button for Sinhal
 assert(html.includes('>தமிழ்</button>'), 'Clean text button for Tamil present');
 assert(html.includes('Noto+Sans+Sinhala') && html.includes('Noto+Sans+Tamil'), 'Google Fonts Noto Sans Sinhala & Tamil loaded in index.html');
 assert(css.includes('Noto Sans Sinhala') && css.includes('Noto Sans Tamil'), 'CSS font-family includes Noto Sans Sinhala & Tamil');
+assert(html.includes('<script src="i18n.js') && html.indexOf('<script src="i18n.js') < html.indexOf('</head>'), 'i18n.js is loaded in <head> for zero-flicker immediate translation');
+assert(html.includes('data-i18n="btn_post_job">Post a Job</span>'), 'index.html static HTML defaults to English ("Post a Job")');
+assert(html.includes('data-i18n="btn_join_tech">Join as Technician</span>'), 'index.html static HTML defaults to English ("Join as Technician")');
+assert(html.includes('data-i18n="hero_badge">Island-wide Coverage'), 'index.html static HTML defaults to English ("Island-wide Coverage")');
 assert(css.includes('.lang-switcher'), 'style.css contains styles for .lang-switcher');
 assert(css.includes('.lang-btn.active'), 'style.css contains active button styles');
 
@@ -193,8 +197,73 @@ assert(js.includes('saveMandatorySelfie'), 'app.js: saveMandatorySelfie function
 assert(js.includes('if (!currentUserData.photoUrl)'), 'app.js: loadUserData checks missing photoUrl for technicians');
 assert(js.includes('currentUserData.role === \'technician\' && !currentUserData.photoUrl'), 'app.js: claimJob blocks claims if photoUrl missing');
 
-// 9. HTTP SERVER HEALTH CHECK
-console.log('\n--- 9. HTTP Server Health Check ---');
+// 10. NATIVE MOBILE APP LAYOUT & RESPONSIVE NAVIGATION
+console.log('\n--- 10. Native Mobile App Layout & Responsive Navigation ---');
+assert(html.includes('class="nav-top-row"'), 'index.html: .nav-top-row exists for 2-tier mobile header');
+assert(html.includes('class="nav-mobile-lang-row"'), 'index.html: .nav-mobile-lang-row exists for mobile language row');
+assert(html.includes('id="mobile-bottom-nav"'), 'index.html: #mobile-bottom-nav native mobile bottom bar container exists');
+assert(html.includes('id="mbn-home"'), 'index.html: #mbn-home bottom navigation button exists');
+assert(html.includes('id="mbn-post"'), 'index.html: #mbn-post center FAB button exists');
+assert(html.includes('id="mbn-tech"'), 'index.html: #mbn-tech bottom navigation button exists');
+assert(html.includes('id="mbn-login"'), 'index.html: #mbn-login bottom navigation button exists');
+assert(html.includes('class="mbn-fab-badge"'), 'index.html: .mbn-fab-badge elevated action badge exists');
+assert(css.includes('.mobile-bottom-nav'), 'style.css: .mobile-bottom-nav styles exist');
+assert(css.includes('desktop-only-switcher'), 'style.css: .desktop-only-switcher rules exist');
+assert(css.includes('nav-mobile-lang-row'), 'style.css: .nav-mobile-lang-row rules exist');
+assert(css.includes('grid-template-columns: repeat(3, 1fr) !important'), 'style.css: 3-column balanced hero stats grid on mobile');
+assert(js.includes('updateMobileNavState'), 'app.js: updateMobileNavState function exists');
+assert(js.includes('handleMobileAuthNav'), 'app.js: handleMobileAuthNav function exists');
+assert(I18N.si.nav_home && I18N.en.nav_home && I18N.ta.nav_home, 'i18n.js: nav_home translated across all 3 languages');
+assert(I18N.si.nav_account && I18N.en.nav_account && I18N.ta.nav_account, 'i18n.js: nav_account translated across all 3 languages');
+
+// 11. TECHNICIAN 36 KM RADIUS SMART DISTANCE FILTERING
+console.log('\n--- 11. Technician 36 km Radius Smart Distance Filtering ---');
+assert(js.includes("'Padaviya': [8.8784, 80.7580]"), 'CITY_COORDS: Padaviya coordinates defined');
+assert(js.includes("'Kebithigollewa': [8.6366, 80.6865]"), 'CITY_COORDS: Kebithigollewa coordinates defined');
+assert(js.includes("'Vavuniya': [8.7514, 80.4972]"), 'CITY_COORDS: Vavuniya coordinates defined');
+assert(js.includes("'Nedunkeni': [8.9833, 80.6833]"), 'CITY_COORDS: Nedunkeni coordinates defined');
+assert(js.includes("'Omanthai': [8.8500, 80.5000]"), 'CITY_COORDS: Omanthai coordinates defined');
+assert(js.includes('radius_36km'), 'app.js: default radius_36km scope defined');
+assert(js.includes('j._distanceKm <= 36'), 'app.js: strict 36km radius filtering check enforced');
+assert(js.includes('distanceKm !== null && distanceKm > 36'), 'app.js: notifyNewJobPosted skips technicians further than 36km');
+assert(I18N.si.filter_36km && I18N.en.filter_36km && I18N.ta.filter_36km, 'i18n.js: filter_36km translated across all 3 languages');
+
+// Test distance calculation in node
+function testCalcDist(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c);
+}
+
+const padaviya = [8.8784, 80.7580];
+const kebithigollewa = [8.6366, 80.6865];
+const vavuniya = [8.7514, 80.4972];
+const nedunkeni = [8.9833, 80.6833];
+const anuradhapuraTown = [8.3114, 80.4037];
+const kekirawa = [8.0441, 80.5960];
+
+const dKebithigollewa = testCalcDist(padaviya[0], padaviya[1], kebithigollewa[0], kebithigollewa[1]);
+assert(dKebithigollewa <= 36, `Padaviya -> Kebithigollewa distance is ${dKebithigollewa} km (<= 36km: INCLUDED)`);
+
+const dVavuniya = testCalcDist(padaviya[0], padaviya[1], vavuniya[0], vavuniya[1]);
+assert(dVavuniya <= 36, `Padaviya -> Vavuniya distance is ${dVavuniya} km (<= 36km: INCLUDED)`);
+
+const dNedunkeni = testCalcDist(padaviya[0], padaviya[1], nedunkeni[0], nedunkeni[1]);
+assert(dNedunkeni <= 36, `Padaviya -> Nedunkeni distance is ${dNedunkeni} km (<= 36km: INCLUDED)`);
+
+const dAnuradhapura = testCalcDist(padaviya[0], padaviya[1], anuradhapuraTown[0], anuradhapuraTown[1]);
+assert(dAnuradhapura > 36, `Padaviya -> Anuradhapura Town distance is ${dAnuradhapura} km (> 36km: STRICTLY EXCLUDED)`);
+
+const dKekirawa = testCalcDist(padaviya[0], padaviya[1], kekirawa[0], kekirawa[1]);
+assert(dKekirawa > 36, `Padaviya -> Kekirawa distance is ${dKekirawa} km (> 36km: STRICTLY EXCLUDED)`);
+
+// 12. HTTP SERVER HEALTH CHECK
+console.log('\n--- 12. HTTP Server Health Check ---');
 const req = http.get('http://localhost:8080/index.html', (res) => {
   assert(res.statusCode === 200, `Local HTTP server is responding with status 200 OK (got ${res.statusCode})`);
   

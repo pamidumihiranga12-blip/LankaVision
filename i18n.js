@@ -14,6 +14,8 @@ const I18N = {
     brand_sub: 'CCTV සහ Satellite Job Platform',
     nav_login: 'Login',
     nav_register: 'Register',
+    nav_home: 'මුල් පිටුව',
+    nav_account: 'ගිණුම',
     nav_logout: 'Logout',
     nav_my_jobs: 'මගේ Jobs',
     nav_profile: 'Profile',
@@ -103,6 +105,11 @@ const I18N = {
     tab_my_jobs: 'My Posted Jobs',
     tab_post_job: 'Post Job',
     tab_profile: 'Profile',
+    filter_36km: '🎯 ළඟම Jobs (36 km ඇතුළත)',
+    filter_50km: '🚗 50 km ඇතුළත',
+    filter_my_dist: '📍 මගේ දිස්ත්‍රික්කය පමණක්',
+    filter_all: '🌐 සියලුම Jobs (All)',
+    dist_away: 'දුර',
 
     // Job Actions & Statuses
     btn_accept_job: 'භාරගන්න (Accept)',
@@ -214,6 +221,8 @@ const I18N = {
     brand_sub: 'CCTV & Satellite Job Platform',
     nav_login: 'Login',
     nav_register: 'Register',
+    nav_home: 'Home',
+    nav_account: 'Account',
     nav_logout: 'Logout',
     nav_my_jobs: 'My Jobs',
     nav_profile: 'Profile',
@@ -303,6 +312,11 @@ const I18N = {
     tab_my_jobs: 'My Posted Jobs',
     tab_post_job: 'Post Job',
     tab_profile: 'Profile',
+    filter_36km: '🎯 Nearby Jobs (Within 36 km)',
+    filter_50km: '🚗 Within 50 km',
+    filter_my_dist: '📍 My District Only',
+    filter_all: '🌐 All Available Jobs',
+    dist_away: 'away',
 
     // Job Actions & Statuses
     btn_accept_job: 'Accept Job',
@@ -414,6 +428,8 @@ const I18N = {
     brand_sub: 'CCTV & Satellite வேலை தளம்',
     nav_login: 'உள்நுழைக',
     nav_register: 'பதிவு செய்க',
+    nav_home: 'முகப்பு',
+    nav_account: 'கணக்கு',
     nav_logout: 'வெளியேறு',
     nav_my_jobs: 'எனது வேலைகள்',
     nav_profile: 'சுயவிவரம்',
@@ -503,6 +519,11 @@ const I18N = {
     tab_my_jobs: 'என் வேலைகள்',
     tab_post_job: 'வேலை பதிவிடுக',
     tab_profile: 'சுயவிவரம்',
+    filter_36km: '🎯 அருகிலுள்ள வேலைகள் (36 km)',
+    filter_50km: '🚗 50 km எல்லைக்குள்',
+    filter_my_dist: '📍 எனது மாவட்டம் மட்டும்',
+    filter_all: '🌐 அனைத்து வேலைகளும்',
+    dist_away: 'தூரம்',
 
     // Job Actions & Statuses
     btn_accept_job: 'ஏற்றுக்கொள் (Accept)',
@@ -605,8 +626,21 @@ const I18N = {
   }
 };
 
-// Current active language - persisted in localStorage (defaults to 'en')
-let currentLang = localStorage.getItem('app_lang') || 'en';
+// Current active language - defaults to 'en' (English)
+let currentLang = (function() {
+  try {
+    // If user explicitly chose a language, use that
+    const explicit = localStorage.getItem('app_user_lang');
+    if (explicit && I18N[explicit]) return explicit;
+    // Clear old legacy 'si' default if user hasn't explicitly chosen
+    if (localStorage.getItem('app_lang') === 'si') {
+      localStorage.removeItem('app_lang');
+    }
+    return localStorage.getItem('app_lang') || 'en';
+  } catch (e) {
+    return 'en';
+  }
+})();
 if (!I18N[currentLang]) currentLang = 'en';
 
 /**
@@ -627,9 +661,10 @@ function t(key, fallback) {
  * Changes active language, updates localStorage and applies translations across the entire DOM
  */
 function setLanguage(lang) {
-  if (!I18N[lang]) lang = 'si';
+  if (!I18N[lang]) lang = 'en';
   currentLang = lang;
   try {
+    localStorage.setItem('app_user_lang', lang);
     localStorage.setItem('app_lang', lang);
   } catch (e) {}
 
