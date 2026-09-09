@@ -847,6 +847,39 @@ async function notifyJobClaimed(job, tech) {
   });
 }
 
+// Trigger 4.5: Job Scheduled -> Notify Customer
+async function notifyJobScheduled(job, tech, date, time, notes) {
+  let custEmail = job.customerEmail || '';
+  if (!custEmail && job.postedBy && job.postedBy !== 'guest') {
+    try {
+      const uDoc = await db.collection('users').doc(job.postedBy).get();
+      if (uDoc.exists) custEmail = uDoc.data().email || '';
+    } catch (e) {}
+  }
+
+  if (custEmail) {
+    const custHtml = emailWrapper('Visit Scheduled', `
+      <h2 style="color:#3b82f6;margin-top:0;font-size:18px">📅 Technician Scheduled Your Service Visit!</h2>
+      <p>ආයුබෝවන් <strong>${esc(job.customerName || 'Customer')}</strong>, ඔබගේ <strong>${esc(job.title)}</strong> සඳහා Technician පැමිණෙන දිනය සහ වේලාව නියම කර ඇත.</p>
+      <div class="detail-card" style="border-left:4px solid #3b82f6">
+        <div class="row"><span class="lbl">📅 Visit Date</span><span class="val" style="color:#60a5fa;font-weight:700">${esc(date)}</span></div>
+        <div class="row"><span class="lbl">⏰ Visit Time</span><span class="val" style="color:#60a5fa;font-weight:700">${esc(time)}</span></div>
+        <div class="row"><span class="lbl">Technician</span><span class="val">${esc(tech?.name || 'Technician')}</span></div>
+        <div class="row"><span class="lbl">Technician Phone</span><span class="val" style="color:#34d399;font-family:monospace">${esc(tech?.phone || 'N/A')}</span></div>
+        ${notes ? `<div class="row"><span class="lbl">Notes</span><span class="val">${esc(notes)}</span></div>` : ''}
+      </div>
+      <p>කරුණාකර ඉහත දිනයේ සහ වේලාවේදී Technician පැමිණීමට සූදානම්ව සිටින්න. අවශ්‍ය නම් Technician අමතා වෙනස්කම් සිදු කර ගත හැක.</p>
+    `);
+
+    sendEmailNotification({
+      to: custEmail,
+      subject: `📅 Visit Scheduled: ${job.title} on ${date} at ${time} - LankaVision Pro`,
+      html: custHtml,
+      text: `Technician ${tech?.name} (${tech?.phone}) scheduled your visit on ${date} at ${time} for job: ${job.title}`
+    });
+  }
+}
+
 // Trigger 5: Job Completed -> Notify Customer
 async function notifyJobCompleted(job) {
   let custEmail = job.customerEmail || '';
@@ -2301,6 +2334,33 @@ function jobCard(id, job, view) {
     }
   }
 
+  // Scheduled or Preferred Visit Card display
+  let scheduleVisitCardHtml = '';
+  if (job.scheduledDate) {
+    scheduleVisitCardHtml = `
+      <div class="scheduled-visit-card">
+        <div class="sched-title">
+          <span><i class="fas fa-calendar-check"></i> ${tFn('scheduled_visit', 'Scheduled Visit')}</span>
+          ${(view === 'tech-claimed' || myJob) ? `<span style="font-size:0.75rem;color:var(--primary-l);cursor:pointer;font-weight:700" onclick="event.stopPropagation();openScheduleModal('${id}')"><i class="fas fa-edit"></i> ${tFn('btn_reschedule', 'Edit')}</span>` : ''}
+        </div>
+        <div class="sched-time">
+          <span>📅 ${esc(job.scheduledDate)}</span>
+          ${job.scheduledTime ? `<span>⏰ ${esc(job.scheduledTime)}</span>` : ''}
+        </div>
+        ${job.scheduledNotes ? `<div class="sched-notes"><i class="fas fa-comment-dots"></i> ${esc(job.scheduledNotes)}</div>` : ''}
+      </div>`;
+  } else if (job.preferredDate) {
+    scheduleVisitCardHtml = `
+      <div class="preferred-visit-card">
+        <div style="font-weight:700;color:var(--accent);display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:2px">
+          <span><i class="fas fa-clock"></i> ${tFn('cust_preferred_time', 'Customer Preferred Time')}</span>
+          ${(view === 'tech-claimed' || myJob) ? `<span style="font-size:0.75rem;color:var(--primary-l);cursor:pointer;font-weight:700" onclick="event.stopPropagation();openScheduleModal('${id}')"><i class="fas fa-calendar-plus"></i> ${tFn('btn_schedule', 'Schedule')}</span>` : ''}
+        </div>
+        <div>📅 ${esc(job.preferredDate)} ${job.preferredTime ? `⏰ ${esc(job.preferredTime)}` : ''}</div>
+        ${job.preferredNotes ? `<div style="font-size:0.75rem;color:var(--txt3);margin-top:2px"><i class="fas fa-sticky-note"></i> ${esc(job.preferredNotes)}</div>` : ''}
+      </div>`;
+  }
+
   const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
   let actions = '';
   if (view === 'tech' && job.status === 'open') {
@@ -2308,7 +2368,8 @@ function jobCard(id, job, view) {
     actions = `<button class="btn btn-primary btn-sm" onclick="claimJob('${id}',event)"><i class="fas fa-handshake"></i> ${tFn('btn_accept_job', 'Accept Job')}</button>${mapBtn}`;
   } else if (view === 'tech-claimed' || (myJob && view !== 'customer')) {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'Map')}</button>` : '';
-    actions = `<button class="btn btn-success btn-sm" onclick="openCompleteJobModal('${id}')"><i class="fas fa-camera"></i> ${tFn('btn_complete_job', 'Complete Job')}</button>${mapBtn}`;
+    const schedBtn = `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openScheduleModal('${id}')"><i class="fas fa-calendar-alt"></i> ${job.scheduledDate ? tFn('btn_reschedule', 'Reschedule') : tFn('btn_schedule', 'Schedule')}</button>`;
+    actions = `${schedBtn}<button class="btn btn-success btn-sm" onclick="openCompleteJobModal('${id}')"><i class="fas fa-camera"></i> ${tFn('btn_complete_job', 'Complete Job')}</button>${mapBtn}`;
   } else if (view === 'customer') {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'View Map')}</button>` : '';
     const rateBtn = (job.status === 'completed' && !job.rating)
@@ -2340,9 +2401,11 @@ function jobCard(id, job, view) {
       <span class="meta-item"><i class="fas fa-user"></i>${esc(job.customerName || 'Customer')}</span>
       <span class="meta-item"><i class="fas fa-clock"></i>${ago}</span>
       ${job.claimedByName ? `<span class="meta-item"><i class="fas fa-tools"></i>${esc(job.claimedByName)}</span>` : ''}
+      ${job.scheduledDate ? `<span class="meta-item" style="color:var(--primary-l);font-weight:700"><i class="fas fa-calendar-check"></i> ${esc(job.scheduledDate)} ${job.scheduledTime ? esc(job.scheduledTime) : ''}</span>` : ''}
       ${job.completionPhoto ? `<span class="meta-item" style="color:#34d399;font-weight:700"><i class="fas fa-camera"></i> Proof Verified</span>` : ''}
     </div>
     ${view === 'customer' && assignedTechCardHtml ? assignedTechCardHtml : phoneHtml}
+    ${scheduleVisitCardHtml}
     ${customerCompletionExtraHtml}
     <div class="jc-actions">${actions}</div>
   </div>`;
@@ -2454,10 +2517,13 @@ async function claimJob(jobId, e) {
     });
 
     showToast('Job Accept! 🎉 Phone number reveal වෙලා!', 'success');
-    openJobModal(jobId);
     if (document.getElementById('tech-avail')) loadTechJobs();
+    if (typeof loadTechClaims === 'function') loadTechClaims();
 
     notifyJobClaimed(jobData, currentUserData);
+
+    // Open schedule modal immediately so technician can set the visit date & time
+    openScheduleModal(jobId, jobData);
   } catch (err) {
     console.error(err);
     showToast('Failed to accept job. Try again.', 'error');
@@ -2467,6 +2533,117 @@ async function claimJob(jobId, e) {
 async function markComplete(jobId) {
   // Enforce live camera work proof modal (gallery upload disabled)
   openCompleteJobModal(jobId);
+}
+
+// ── VISIT SCHEDULING SYSTEM ──────────────────────────────────
+let currentSchedulingJobId = null;
+
+async function openScheduleModal(jobId, preloadedData) {
+  currentSchedulingJobId = jobId;
+  const idEl = document.getElementById('schedule-job-id');
+  if (idEl) idEl.value = jobId;
+
+  let job = preloadedData;
+  if (!job) {
+    try {
+      const snap = await db.collection('jobs').doc(jobId).get();
+      if (snap.exists) job = snap.data();
+    } catch (err) {
+      console.error('Error fetching job for schedule:', err);
+    }
+  }
+
+  const dateInput = document.getElementById('schedule-date');
+  const timeInput = document.getElementById('schedule-time');
+  const notesInput = document.getElementById('schedule-notes');
+  const prefBox = document.getElementById('schedule-cust-pref-box');
+  const prefText = document.getElementById('schedule-cust-pref-text');
+
+  if (job) {
+    if (job.preferredDate || job.preferredTime || job.preferredNotes) {
+      const parts = [];
+      if (job.preferredDate) parts.push(`📅 ${job.preferredDate}`);
+      if (job.preferredTime) parts.push(`⏰ ${job.preferredTime}`);
+      if (job.preferredNotes) parts.push(`"${job.preferredNotes}"`);
+      if (prefText) prefText.textContent = parts.join(' • ');
+      if (prefBox) prefBox.classList.remove('hidden');
+    } else {
+      if (prefBox) prefBox.classList.add('hidden');
+    }
+
+    if (dateInput) {
+      dateInput.value = job.scheduledDate || job.preferredDate || new Date().toISOString().split('T')[0];
+    }
+    if (timeInput) {
+      timeInput.value = job.scheduledTime || job.preferredTime || '10:00';
+    }
+    if (notesInput) {
+      notesInput.value = job.scheduledNotes || job.preferredNotes || '';
+    }
+  }
+
+  const modal = document.getElementById('modal-schedule-visit');
+  if (modal) modal.classList.remove('hidden');
+}
+
+async function saveScheduleVisit(e) {
+  if (e) e.preventDefault();
+  const jobId = document.getElementById('schedule-job-id')?.value || currentSchedulingJobId;
+  const scheduledDate = document.getElementById('schedule-date')?.value;
+  const scheduledTime = document.getElementById('schedule-time')?.value;
+  const scheduledNotes = document.getElementById('schedule-notes')?.value.trim() || '';
+
+  if (!jobId) { showToast('Invalid Job ID', 'error'); return; }
+  if (!scheduledDate || !scheduledTime) {
+    showToast('කරුණාකර දිනය සහ වේලාව තෝරන්න (Select Date & Time)', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('btn-save-schedule');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scheduling...';
+  }
+
+  try {
+    const jobRef = db.collection('jobs').doc(jobId);
+    const snap = await jobRef.get();
+    const jobData = snap.exists ? snap.data() : {};
+
+    await jobRef.update({
+      scheduledDate,
+      scheduledTime,
+      scheduledNotes,
+      scheduledAt: firebase.firestore.FieldValue.serverTimestamp(),
+      isScheduled: true
+    });
+
+    showToast(`Visit Scheduled for ${scheduledDate} at ${scheduledTime}! 📅`, 'success');
+    closeModal('modal-schedule-visit');
+
+    // Send email notification to customer
+    notifyJobScheduled(jobData, currentUserData, scheduledDate, scheduledTime, scheduledNotes);
+
+    // Refresh job lists
+    if (typeof loadTechClaims === 'function') loadTechClaims();
+    if (typeof loadCustomerJobs === 'function') loadCustomerJobs();
+    if (typeof loadAdminJobs === 'function') loadAdminJobs();
+
+    // If job modal was open, refresh it
+    const modalJob = document.getElementById('modal-job');
+    if (modalJob && !modalJob.classList.contains('hidden')) {
+      openJobModal(jobId);
+    }
+  } catch (err) {
+    console.error('Error saving schedule:', err);
+    showToast('Failed to schedule visit. Try again.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+      btn.innerHTML = `<i class="fas fa-calendar-check"></i> <span data-i18n="btn_confirm_schedule">${tFn('btn_confirm_schedule', 'Schedule Visit')}</span>`;
+    }
+  }
 }
 
 // ── JOB MODAL ─────────────────────────────────────────────────
@@ -2591,6 +2768,43 @@ async function openJobModal(jobId) {
       }
     }
 
+    // Scheduled Visit info in modal
+    let scheduledVisitModalHtml = '';
+    if (job.scheduledDate) {
+      scheduledVisitModalHtml = `
+        <div class="scheduled-visit-card" style="margin:12px 0">
+          <div class="sched-title">
+            <span><i class="fas fa-calendar-check"></i> ${tFn('scheduled_visit', 'Scheduled Visit')}</span>
+            ${(isMine && job.status === 'claimed') ? `<button class="btn btn-primary btn-sm" style="padding:2px 8px;font-size:0.75rem" onclick="closeModal('modal-job');openScheduleModal('${jobId}')"><i class="fas fa-edit"></i> ${tFn('btn_reschedule', 'Reschedule')}</button>` : ''}
+          </div>
+          <div class="sched-time">
+            <span>📅 ${esc(job.scheduledDate)}</span>
+            ${job.scheduledTime ? `<span>⏰ ${esc(job.scheduledTime)}</span>` : ''}
+          </div>
+          ${job.scheduledNotes ? `<div class="sched-notes"><i class="fas fa-comment-dots"></i> ${esc(job.scheduledNotes)}</div>` : ''}
+        </div>`;
+    } else if (job.preferredDate) {
+      scheduledVisitModalHtml = `
+        <div class="preferred-visit-card" style="margin:12px 0">
+          <div style="font-weight:700;color:var(--accent);display:flex;align-items:center;justify-content:space-between">
+            <span><i class="fas fa-clock"></i> ${tFn('cust_preferred_time', 'Customer Preferred Time')}</span>
+            ${(isMine && job.status === 'claimed') ? `<button class="btn btn-primary btn-sm" style="padding:2px 8px;font-size:0.75rem" onclick="closeModal('modal-job');openScheduleModal('${jobId}')"><i class="fas fa-calendar-plus"></i> ${tFn('btn_schedule', 'Schedule Now')}</button>` : ''}
+          </div>
+          <div style="font-size:0.95rem;font-weight:700;color:var(--txt);margin-top:4px">📅 ${esc(job.preferredDate)} ${job.preferredTime ? `⏰ ${esc(job.preferredTime)}` : ''}</div>
+          ${job.preferredNotes ? `<div style="font-size:0.75rem;color:var(--txt3);margin-top:2px"><i class="fas fa-sticky-note"></i> ${esc(job.preferredNotes)}</div>` : ''}
+        </div>`;
+    } else if (isMine && job.status === 'claimed') {
+      scheduledVisitModalHtml = `
+        <div style="background:rgba(59,130,246,0.08);border:1px dashed rgba(59,130,246,0.4);border-radius:var(--r-m);padding:10px 14px;margin:12px 0;display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="font-size:0.8rem;color:var(--primary-l);font-weight:600">
+            <i class="fas fa-calendar-alt"></i> Visit එක සඳහා දිනය/වේලාව Schedule කරන්න
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="closeModal('modal-job');openScheduleModal('${jobId}')">
+            <i class="fas fa-calendar-plus"></i> ${tFn('btn_schedule', 'Schedule')}
+          </button>
+        </div>`;
+    }
+
     document.getElementById('modal-job-body').innerHTML = `
       <h2 style="margin-bottom:8px;padding-right:28px">${esc(job.title)}</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
@@ -2599,6 +2813,7 @@ async function openJobModal(jobId) {
       </div>
       ${mapHtml}
       ${techCardModalHtml}
+      ${scheduledVisitModalHtml}
       ${completionProofModalHtml}
       ${customerFeedbackModalHtml}
       <div style="display:grid;gap:10px">
@@ -2613,6 +2828,7 @@ async function openJobModal(jobId) {
         </div>
         ${!techCardModalHtml && job.claimedByName ? `<div class="detail-box" style="background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.2)"><div class="dl">Claimed by</div><div class="dv" style="color:var(--accent)">${esc(job.claimedByName)}</div></div>` : ''}
         ${isAdmin ? `<button class="btn btn-warning btn-full" onclick="closeModal('modal-job');openEditJobModal('${jobId}')"><i class="fas fa-edit"></i> Edit This Job</button>` : ''}
+        ${(isMine && job.status === 'claimed') ? `<button class="btn btn-primary btn-full" onclick="closeModal('modal-job');openScheduleModal('${jobId}')" style="margin-top:4px"><i class="fas fa-calendar-alt"></i> ${job.scheduledDate ? tFn('btn_reschedule', 'Reschedule Visit') : tFn('btn_schedule', 'Schedule Visit')} (දිනය/වේලාව)</button>` : ''}
         ${(isMine && job.status === 'claimed') ? `<button class="btn btn-success btn-full" onclick="closeModal('modal-job');openCompleteJobModal('${jobId}')" style="margin-top:4px"><i class="fas fa-camera"></i> Complete Job (වැඩ අවසන් කර Photo එක ගන්න)</button>` : ''}
       </div>`;
 
@@ -3039,6 +3255,10 @@ async function handlePostJob(e) {
     posterName = gn;
   }
 
+  const preferredDate = document.getElementById('job-pref-date')?.value || '';
+  const preferredTime = document.getElementById('job-pref-time')?.value || '';
+  const preferredNotes = document.getElementById('job-pref-notes')?.value.trim() || '';
+
   const btn = document.getElementById('post-job-btn');
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
@@ -3054,6 +3274,13 @@ async function handlePostJob(e) {
       postedBy, postedByName: posterName,
       status: 'open',
       claimedBy: null, claimedByName: null,
+      preferredDate: preferredDate || null,
+      preferredTime: preferredTime || null,
+      preferredNotes: preferredNotes || null,
+      scheduledDate: null,
+      scheduledTime: null,
+      scheduledNotes: null,
+      isScheduled: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 

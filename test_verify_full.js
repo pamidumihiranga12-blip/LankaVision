@@ -262,8 +262,37 @@ assert(dAnuradhapura > 36, `Padaviya -> Anuradhapura Town distance is ${dAnuradh
 const dKekirawa = testCalcDist(padaviya[0], padaviya[1], kekirawa[0], kekirawa[1]);
 assert(dKekirawa > 36, `Padaviya -> Kekirawa distance is ${dKekirawa} km (> 36km: STRICTLY EXCLUDED)`);
 
-// 12. HTTP SERVER HEALTH CHECK
-console.log('\n--- 12. HTTP Server Health Check ---');
+// 13. TECHNICIAN CUSTOMER VISIT SCHEDULING SYSTEM
+console.log('\n--- 13. Technician Customer Visit Scheduling System ---');
+assert(html.includes('id="modal-schedule-visit"'), 'index.html: Schedule visit modal exists');
+assert(html.includes('id="schedule-date"') && html.includes('type="date"'), 'index.html: Schedule date input exists');
+assert(html.includes('id="schedule-time"') && html.includes('type="time"'), 'index.html: Schedule time input exists');
+assert(html.includes('id="schedule-notes"'), 'index.html: Schedule coordination notes input exists');
+assert(html.includes('id="schedule-cust-pref-box"'), 'index.html: Customer preferred time banner exists in schedule modal');
+assert(html.includes('id="job-pref-date"'), 'index.html: Preferred date input exists in customer post job form');
+assert(html.includes('id="job-pref-time"'), 'index.html: Preferred time input exists in customer post job form');
+assert(html.includes('id="job-pref-notes"'), 'index.html: Availability notes input exists in customer post job form');
+
+assert(js.includes('openScheduleModal'), 'app.js: openScheduleModal function exists');
+assert(js.includes('saveScheduleVisit'), 'app.js: saveScheduleVisit function exists');
+assert(js.includes('notifyJobScheduled'), 'app.js: notifyJobScheduled customer email trigger exists');
+assert(js.includes('scheduledDate') && js.includes('scheduledTime'), 'app.js: scheduledDate and scheduledTime persisted in Firestore');
+assert(js.includes('preferredDate: preferredDate || null'), 'app.js: handlePostJob persists customer preferred date');
+assert(js.includes('scheduleVisitCardHtml'), 'app.js: jobCard renders visit schedule card and badge');
+assert(js.includes('scheduledVisitModalHtml'), 'app.js: openJobModal displays scheduled visit card');
+
+assert(I18N.si.btn_schedule && I18N.en.btn_schedule && I18N.ta.btn_schedule, 'i18n.js: btn_schedule translated in Sinhala, English, and Tamil');
+assert(I18N.si.btn_reschedule && I18N.en.btn_reschedule && I18N.ta.btn_reschedule, 'i18n.js: btn_reschedule translated in Sinhala, English, and Tamil');
+assert(I18N.si.schedule_modal_title && I18N.en.schedule_modal_title && I18N.ta.schedule_modal_title, 'i18n.js: schedule_modal_title translated in Sinhala, English, and Tamil');
+assert(I18N.si.scheduled_visit && I18N.en.scheduled_visit && I18N.ta.scheduled_visit, 'i18n.js: scheduled_visit translated in Sinhala, English, and Tamil');
+
+assert(css.includes('.schedule-modal-box'), 'style.css: .schedule-modal-box styled');
+assert(css.includes('.scheduled-visit-card'), 'style.css: .scheduled-visit-card styled');
+assert(css.includes('.preferred-visit-card'), 'style.css: .preferred-visit-card styled');
+assert(css.includes('.schedule-pref-box'), 'style.css: .schedule-pref-box styled');
+
+// 14. HTTP SERVER HEALTH CHECK
+console.log('\n--- 14. HTTP Server Health Check ---');
 const req = http.get('http://localhost:8080/index.html', (res) => {
   assert(res.statusCode === 200, `Local HTTP server is responding with status 200 OK (got ${res.statusCode})`);
   

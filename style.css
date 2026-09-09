@@ -928,6 +928,68 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   margin-top: 12px;
 }
 
+/* ── VISIT SCHEDULING MODAL & CARDS ── */
+.schedule-modal-box {
+  max-width: 490px;
+}
+.scheduled-visit-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.04) 100%);
+  border: 1.5px solid rgba(59, 130, 246, 0.35);
+  border-radius: var(--r-m);
+  padding: 11px 14px;
+  margin: 9px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.scheduled-visit-card .sched-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary-l);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.scheduled-visit-card .sched-time {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.scheduled-visit-card .sched-notes {
+  font-size: 0.8rem;
+  color: var(--txt2);
+  margin-top: 2px;
+}
+.preferred-visit-card {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.03) 100%);
+  border: 1px dashed rgba(245, 158, 11, 0.45);
+  border-radius: var(--r-m);
+  padding: 8px 12px;
+  margin: 7px 0;
+  font-size: 0.82rem;
+  color: var(--txt);
+}
+.schedule-pref-box {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--r-m);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+.schedule-badge-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--primary-l);
+}
+
 /* ── WORK COMPLETION CAMERA MODAL ── */
 .complete-job-modal-box {
   max-width: 520px;

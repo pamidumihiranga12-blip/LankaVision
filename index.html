@@ -331,6 +331,23 @@
             <small class="field-note"><i class="fas fa-lock"></i> <span data-i18n="feat_priv_desc">Customer phone number is hidden until a technician accepts the job.</span> 🔒</small>
           </div>
 
+          <!-- Preferred Visit Date & Time (Optional) -->
+          <div class="sec-title"><i class="fas fa-calendar-alt"></i> <span data-i18n="pref_time_title">Preferred Visit Date & Time (Optional)</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group">
+              <label><i class="fas fa-calendar"></i> <span data-i18n="pref_date_label">Preferred Date</span></label>
+              <input type="date" id="job-pref-date" />
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-clock"></i> <span data-i18n="pref_time_label">Preferred Time</span></label>
+              <input type="time" id="job-pref-time" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-comment-dots"></i> <span data-i18n="pref_notes_label">Customer Availability Note</span></label>
+            <input type="text" id="job-pref-notes" placeholder="e.g. Please visit after 4:00 PM / Weekends only" />
+          </div>
+
           <div id="post-job-error" class="error-msg hidden"></div>
           <button type="submit" class="btn btn-primary btn-full" id="post-job-btn"><i class="fas fa-paper-plane"></i> <span data-i18n="btn_post_submit">Post Job Now</span></button>
         </form>
@@ -671,6 +688,57 @@
           <i class="fas fa-check-double"></i> <span data-i18n="btn_confirm_complete">Confirm & Complete</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ====== SCHEDULE CUSTOMER VISIT MODAL ====== -->
+  <div id="modal-schedule-visit" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('modal-schedule-visit')"></div>
+    <div class="modal-box schedule-modal-box">
+      <button class="modal-close" onclick="closeModal('modal-schedule-visit')"><i class="fas fa-times"></i></button>
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="width:52px;height:52px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--primary-l);font-size:1.5rem;margin-bottom:8px">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <h3 style="margin-bottom:4px" data-i18n="schedule_modal_title">Schedule Customer Visit</h3>
+        <p style="font-size:0.82rem;color:var(--txt2)" data-i18n="schedule_modal_subtitle">Set the date and time when the customer is available to visit them.</p>
+      </div>
+
+      <!-- Customer preferred time banner (auto-filled if customer set it) -->
+      <div id="schedule-cust-pref-box" class="schedule-pref-box hidden">
+        <div style="font-size:0.75rem;font-weight:700;color:var(--accent);margin-bottom:3px">
+          <i class="fas fa-info-circle"></i> <span data-i18n="cust_preferred_time">Customer Preferred Time:</span>
+        </div>
+        <div id="schedule-cust-pref-text" style="font-size:0.85rem;font-weight:600;color:var(--txt)"></div>
+      </div>
+
+      <form id="schedule-visit-form" onsubmit="saveScheduleVisit(event)">
+        <input type="hidden" id="schedule-job-id" />
+        
+        <div class="form-group">
+          <label><i class="fas fa-calendar"></i> <span data-i18n="visit_date_label">Visit Date</span> <span style="color:var(--danger)">*</span></label>
+          <input type="date" id="schedule-date" required />
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-clock"></i> <span data-i18n="visit_time_label">Visit Time</span> <span style="color:var(--danger)">*</span></label>
+          <input type="time" id="schedule-time" required />
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-comment-alt"></i> <span data-i18n="schedule_notes_label">Visit Notes / Coordination</span></label>
+          <input type="text" id="schedule-notes" placeholder="e.g. Customer at home after 2:00 PM" />
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-schedule-visit')">
+            <span data-i18n="btn_cancel">Cancel</span>
+          </button>
+          <button type="submit" class="btn btn-primary btn-full" id="btn-save-schedule">
+            <i class="fas fa-calendar-check"></i> <span data-i18n="btn_confirm_schedule">Schedule Visit</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

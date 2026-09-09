@@ -131,6 +131,22 @@ const I18N = {
     work_notes_label: 'Completion Notes (අමතර විස්තර - Optional)',
     btn_confirm_complete: 'Confirm කර අවසන් කරන්න',
 
+    // Visit Scheduling
+    btn_schedule: 'දිනය/වේලාව Schedule කරන්න',
+    btn_reschedule: 'දිනය/වේලාව වෙනස් කරන්න (Reschedule)',
+    schedule_modal_title: 'Customer Visit එක Schedule කරන්න',
+    schedule_modal_subtitle: 'Customer රැඳී සිටින දිනය සහ වේලාව තෝරා Visit එක Schedule කරන්න.',
+    visit_date_label: 'පැමිණෙන දිනය (Visit Date)',
+    visit_time_label: 'පැමිණෙන වේලාව (Visit Time)',
+    schedule_notes_label: 'සටහන් / Customer සමඟ කතා කළ විස්තර',
+    btn_confirm_schedule: 'Visit එක Schedule කරන්න',
+    scheduled_visit: 'නියමිත Visit දිනය/වේලාව',
+    cust_preferred_time: 'පාරිභෝගිකයා කැමති දිනය/වේලාව',
+    pref_time_title: 'පැමිණීමට කැමති දිනය සහ වේලාව (අමතර)',
+    pref_date_label: 'කැමති දිනය',
+    pref_time_label: 'කැමති වේලාව',
+    pref_notes_label: 'ඔබ සිටින වේලාව පිළිබඳ සටහනක්',
+
     // Feedback & Rating Modal
     rate_modal_title: 'Technician සඳහා Rating දෙන්න',
     rate_modal_sub: 'ඔබගේ Technician ගේ සේවාව පිළිබඳව තරු (Rating) සහ අදහස් ලබා දෙන්න',
@@ -338,6 +354,22 @@ const I18N = {
     work_notes_label: 'Completion Notes (Optional)',
     btn_confirm_complete: 'Confirm & Complete Job',
 
+    // Visit Scheduling
+    btn_schedule: 'Schedule Visit',
+    btn_reschedule: 'Reschedule Visit',
+    schedule_modal_title: 'Schedule Customer Visit',
+    schedule_modal_subtitle: 'Select the date and time when the customer is available to visit them.',
+    visit_date_label: 'Visit Date',
+    visit_time_label: 'Visit Time',
+    schedule_notes_label: 'Visit Notes / Coordination',
+    btn_confirm_schedule: 'Schedule Visit',
+    scheduled_visit: 'Scheduled Visit',
+    cust_preferred_time: 'Customer Preferred Date/Time',
+    pref_time_title: 'Preferred Visit Date & Time (Optional)',
+    pref_date_label: 'Preferred Date',
+    pref_time_label: 'Preferred Time',
+    pref_notes_label: 'Customer Availability Note',
+
     // Feedback & Rating Modal
     rate_modal_title: 'Rate Your Technician',
     rate_modal_sub: 'Give a star rating (1-5) and feedback on your technician’s service',
@@ -544,6 +576,22 @@ const I18N = {
     work_proof_modal_sub: 'முடிந்த வேலையின் நேரடி புகைப்படத்தை கேமரா மூலம் ஆதாரமாக எடுக்கவும்.',
     work_notes_label: 'முடிவு குறிப்புகள் (விருப்பமானது)',
     btn_confirm_complete: 'உறுதிசெய்து முடிக்க',
+
+    // Visit Scheduling
+    btn_schedule: 'நேரத்தை திட்டமிடுக (Schedule)',
+    btn_reschedule: 'தேதியை மாற்றுக (Reschedule)',
+    schedule_modal_title: 'வாடிக்கையாளர் சந்திப்பை திட்டமிடுக',
+    schedule_modal_subtitle: 'வாடிக்கையாளர் இருக்கும் தேதி மற்றும் நேரத்தை தேர்வு செய்து திட்டமிடுங்கள்.',
+    visit_date_label: 'வருகை தரும் தேதி (Visit Date)',
+    visit_time_label: 'வருகை தரும் நேரம் (Visit Time)',
+    schedule_notes_label: 'குறிப்புகள் (Notes)',
+    btn_confirm_schedule: 'திட்டமிடலை உறுதிசெய்',
+    scheduled_visit: 'திட்டமிடப்பட்ட சந்திப்பு நேரம்',
+    cust_preferred_time: 'வாடிக்கையாளர் விரும்பும் நேரம்',
+    pref_time_title: 'விரும்பும் தேதி மற்றும் நேரம் (விருப்பத்தேர்வு)',
+    pref_date_label: 'விரும்பும் தேதி',
+    pref_time_label: 'விரும்பும் நேரம்',
+    pref_notes_label: 'கிடைக்கும் நேரம் பற்றிய குறிப்பு',
 
     // Feedback & Rating Modal
     rate_modal_title: 'தொழில்நுட்ப வல்லுநருக்கு மதிப்பீடு',
