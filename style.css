@@ -1356,6 +1356,129 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   }
 }
 
+/* ── FLOATING WHATSAPP SUPPORT (SMARTZONE LK) ── */
+.floating-wa-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.45);
+  z-index: 9990;
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+.floating-wa-btn:hover {
+  background: #1d4ed8;
+  color: #ffffff !important;
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.6);
+}
+.floating-wa-btn:active {
+  transform: scale(0.95);
+}
+.floating-wa-tooltip {
+  position: absolute;
+  right: 62px;
+  background: rgba(15, 23, 42, 0.95);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  line-height: 1.35;
+  text-align: right;
+}
+.floating-wa-tooltip small {
+  color: var(--primary-l);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+.floating-wa-btn:hover .floating-wa-tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 640px) {
+  .floating-wa-btn {
+    bottom: 74px; /* Sits directly above the native mobile bottom app bar */
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.55rem;
+  }
+  .floating-wa-tooltip {
+    display: none;
+  }
+}
+
+/* ── APP FOOTER ── */
+.app-footer {
+  margin-top: 48px;
+  padding: 28px 20px 88px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: var(--txt3);
+}
+.footer-brand {
+  font-weight: 700;
+  color: var(--txt);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.footer-dev {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  color: var(--txt2);
+}
+.footer-dev strong {
+  color: var(--primary-l);
+  letter-spacing: 0.03em;
+}
+.footer-wa-link {
+  color: #38bdf8;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.15s ease;
+}
+.footer-wa-link:hover {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+.footer-copy {
+  font-size: 0.74rem;
+  color: var(--txt3);
+}
+
+
 
 
 

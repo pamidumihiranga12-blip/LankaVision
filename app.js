@@ -1019,60 +1019,129 @@ function showScreen(id) {
 }
 
 // ── MOBILE BOTTOM BAR NAVIGATION ──────────────────────────────
+function handleBrandNav() {
+  if (currentUser && currentUserData) {
+    handleMobileHomeNav();
+  } else {
+    showScreen('screen-landing');
+  }
+}
+
+function handleMobileHomeNav() {
+  if (currentUser && currentUserData) {
+    if (currentUserData.role === 'admin') {
+      showScreen('screen-admin');
+      if (typeof showAdminTab === 'function') showAdminTab('overview');
+    } else if (currentUserData.role === 'technician') {
+      showScreen('screen-dashboard');
+      if (typeof showTechTab === 'function') showTechTab('avail');
+    } else {
+      showScreen('screen-dashboard');
+      if (typeof showCustTab === 'function') showCustTab('jobs');
+    }
+  } else {
+    showScreen('screen-landing');
+  }
+}
+
+function handleMobileThirdNav() {
+  if (currentUser && currentUserData) {
+    goToMyJobs();
+  } else {
+    showRegisterOptions();
+  }
+}
+
+function handleMobileAuthNav() {
+  if (currentUser && currentUserData) {
+    goToProfile();
+  } else {
+    showScreen('screen-login');
+  }
+}
+
 function updateMobileNavState(id) {
   const nav = document.getElementById('mobile-bottom-nav');
   if (!nav) return;
 
   if (!id) {
     const activeScreen = document.querySelector('.screen.active');
-    id = activeScreen ? activeScreen.id : 'screen-landing';
+    id = activeScreen ? activeScreen.id : (currentUser && currentUserData ? (currentUserData.role === 'admin' ? 'screen-admin' : 'screen-dashboard') : 'screen-landing');
   }
+
+  const homeBtn = document.getElementById('mbn-home');
+  const postBtn = document.getElementById('mbn-post');
+  const techBtn = document.getElementById('mbn-tech');
+  const loginBtn = document.getElementById('mbn-login');
 
   nav.querySelectorAll('.mbn-item').forEach(item => item.classList.remove('active'));
 
   if (id === 'screen-landing') {
-    const homeBtn = document.getElementById('mbn-home');
     if (homeBtn) homeBtn.classList.add('active');
   } else if (id === 'screen-post-job') {
-    const postBtn = document.getElementById('mbn-post');
     if (postBtn) postBtn.classList.add('active');
   } else if (id === 'screen-register' || id === 'screen-register-role') {
-    const techBtn = document.getElementById('mbn-tech');
     if (techBtn) techBtn.classList.add('active');
-  } else if (id === 'screen-login' || id === 'screen-dashboard' || id === 'screen-admin') {
-    const loginBtn = document.getElementById('mbn-login');
+  } else if (id === 'screen-login') {
     if (loginBtn) loginBtn.classList.add('active');
+  } else if (id === 'screen-dashboard') {
+    const activeDashTab = document.querySelector('#dash-tabs .tab-btn.active')?.dataset.tab;
+    if (activeDashTab === 'profile') {
+      if (loginBtn) loginBtn.classList.add('active');
+    } else if (activeDashTab === 'claims' || (currentUserData?.role === 'customer' && activeDashTab === 'jobs')) {
+      if (techBtn) techBtn.classList.add('active');
+    } else {
+      if (homeBtn) homeBtn.classList.add('active');
+    }
+  } else if (id === 'screen-admin') {
+    const activeAdminTab = document.querySelector('#admin-sidebar .admin-nav-item.active, #admin-tabs .tab-btn.active')?.dataset.tab;
+    if (activeAdminTab === 'settings') {
+      if (loginBtn) loginBtn.classList.add('active');
+    } else if (activeAdminTab === 'techs') {
+      if (techBtn) techBtn.classList.add('active');
+    } else {
+      if (homeBtn) homeBtn.classList.add('active');
+    }
   }
 
+  // Update button 3 (Tech / My Jobs)
+  const techText = document.getElementById('mbn-tech-text');
+  const techIcon = document.getElementById('mbn-tech-icon') || techBtn?.querySelector('i');
+  if (techBtn && techText) {
+    if (currentUser && currentUserData) {
+      if (currentUserData.role === 'admin') {
+        techText.setAttribute('data-i18n', 'admin_tab_techs');
+        techText.textContent = (typeof t === 'function') ? t('admin_tab_techs', 'Technicians') : 'Technicians';
+        if (techIcon) techIcon.className = 'fas fa-users-cog';
+      } else {
+        techText.setAttribute('data-i18n', 'nav_my_jobs');
+        techText.textContent = (typeof t === 'function') ? t('nav_my_jobs', 'My Jobs') : 'My Jobs';
+        if (techIcon) techIcon.className = 'fas fa-clipboard-list';
+      }
+    } else {
+      techText.setAttribute('data-i18n', 'btn_join_tech');
+      techText.textContent = (typeof t === 'function') ? t('btn_join_tech', 'Technician') : 'Technician';
+      if (techIcon) techIcon.className = 'fas fa-tools';
+    }
+  }
+
+  // Update button 4 (Login / Account)
   const loginText = document.getElementById('mbn-login-text');
-  const loginBtn = document.getElementById('mbn-login');
+  const loginIcon = document.getElementById('mbn-login-icon') || loginBtn?.querySelector('i');
   if (loginBtn && loginText) {
-    const icon = loginBtn.querySelector('i');
     if (currentUser && currentUserData) {
       loginText.setAttribute('data-i18n', 'nav_account');
       loginText.textContent = (typeof t === 'function') ? t('nav_account', 'Account') : 'Account';
-      if (icon) {
-        icon.className = currentUserData.role === 'admin' ? 'fas fa-shield-alt' : 'fas fa-user-circle';
+      if (loginIcon) {
+        loginIcon.className = currentUserData.role === 'admin' ? 'fas fa-shield-alt' : 'fas fa-user-circle';
       }
     } else {
       loginText.setAttribute('data-i18n', 'nav_login');
       loginText.textContent = (typeof t === 'function') ? t('nav_login', 'Login') : 'Login';
-      if (icon) {
-        icon.className = 'fas fa-sign-in-alt';
+      if (loginIcon) {
+        loginIcon.className = 'fas fa-sign-in-alt';
       }
     }
-  }
-}
-
-function handleMobileAuthNav() {
-  if (currentUser && currentUserData) {
-    if (currentUserData.role === 'admin') {
-      showScreen('screen-admin');
-    } else {
-      showScreen('screen-dashboard');
-    }
-  } else {
-    showScreen('screen-login');
   }
 }
 
@@ -2003,6 +2072,7 @@ function showCustTab(tab) {
   } else {
     c.innerHTML = renderProfileCard();
   }
+  updateMobileNavState('screen-dashboard');
 }
 
 async function loadCustomerJobs() {
@@ -2021,15 +2091,39 @@ async function loadCustomerJobs() {
 }
 
 function goToMyJobs() {
-  document.getElementById('nav-dropdown').classList.add('hidden');
-  if (!currentUserData) return;
-  if (currentUserData.role === 'technician') showTechTab('claims');
-  else showCustTab('jobs');
+  document.getElementById('nav-dropdown')?.classList.add('hidden');
+  if (!currentUserData) {
+    showScreen('screen-login');
+    return;
+  }
+  if (currentUserData.role === 'technician') {
+    showScreen('screen-dashboard');
+    showTechTab('claims');
+  } else if (currentUserData.role === 'admin') {
+    showScreen('screen-admin');
+    showAdminTab('techs');
+  } else {
+    showScreen('screen-dashboard');
+    showCustTab('jobs');
+  }
 }
 
 function goToProfile() {
-  document.getElementById('nav-dropdown').classList.add('hidden');
-  document.getElementById('dash-content').innerHTML = renderProfileCard();
+  document.getElementById('nav-dropdown')?.classList.add('hidden');
+  if (!currentUserData) {
+    showScreen('screen-login');
+    return;
+  }
+  if (currentUserData.role === 'technician') {
+    showScreen('screen-dashboard');
+    showTechTab('profile');
+  } else if (currentUserData.role === 'admin') {
+    showScreen('screen-admin');
+    showAdminTab('settings');
+  } else {
+    showScreen('screen-dashboard');
+    showCustTab('profile');
+  }
 }
 
 // ── TECHNICIAN DASHBOARD ──────────────────────────────────────
@@ -2120,6 +2214,7 @@ function showTechTab(tab) {
   } else {
     c.innerHTML = renderProfileCard();
   }
+  updateMobileNavState('screen-dashboard');
 }
 
 async function loadTechJobs() {
@@ -3560,6 +3655,7 @@ function showAdminTab(tab) {
   if (tab === 'admins') {
     loadAllAdmins();
   }
+  updateMobileNavState('screen-admin');
 }
 
 // ── ADMIN MANAGEMENT ──────────────────────────────────────────
@@ -3756,6 +3852,9 @@ function renderProfileCard() {
       ${u.status ? `<div class="profile-row"><label><i class="fas fa-circle"></i> Status</label><span style="color:${statusColor};font-weight:700">${u.status}</span></div>` : ''}
       ${u.photoUrl ? `<div class="profile-row"><label><i class="fas fa-camera"></i> Live Selfie</label><span style="color:var(--success);font-weight:700;cursor:pointer" onclick="previewPhoto('${u.photoUrl}','${esc(u.name)}')"><i class="fas fa-check-circle"></i> Verified (View)</span></div>` : ''}
       <div style="margin-top:20px"><button class="btn btn-outline btn-full" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+      <div style="text-align:center;margin-top:22px;font-size:0.76rem;color:var(--txt3);border-top:1px solid var(--border);padding-top:16px">
+        Developed by <strong style="color:var(--primary-l)">SMARTZONE LK</strong> · <a href="https://wa.me/94786800086?text=Hello%20SMARTZONE%20LK" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:none;font-weight:700"><i class="fab fa-whatsapp"></i> +94 78 680 0086</a>
+      </div>
     </div>
   </div>`;
 }

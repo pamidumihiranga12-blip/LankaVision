@@ -35,7 +35,7 @@
   <div id="screen-landing" class="screen active">
     <nav class="landing-nav">
       <div class="nav-top-row">
-        <div class="nav-brand" onclick="showScreen('screen-landing')">
+        <div class="nav-brand" onclick="handleBrandNav()" style="cursor:pointer">
           <i class="fas fa-satellite-dish"></i>
           <span data-i18n="brand_name">LankaVision Pro</span>
         </div>
@@ -89,12 +89,22 @@
       <div class="feature-card"><div class="feature-icon"><i class="fas fa-bolt"></i></div><h3 data-i18n="feat_rt">Real-time Updates</h3><p data-i18n="feat_rt_desc">Real-time job postings and instant status notifications island-wide.</p></div>
       <div class="feature-card"><div class="feature-icon"><i class="fas fa-star"></i></div><h3 data-i18n="feat_ratings">5-Star Ratings & Reviews</h3><p data-i18n="feat_ratings_desc">Build your reputation and win more work with verified customer star ratings.</p></div>
     </section>
+
+    <!-- ====== LANDING FOOTER ====== -->
+    <footer class="app-footer">
+      <div class="footer-brand"><i class="fas fa-satellite-dish"></i> LankaVision Pro</div>
+      <div class="footer-dev">
+        <span>Developed by <strong>SMARTZONE LK</strong></span>
+        <a href="https://wa.me/94786800086?text=Hello%20SMARTZONE%20LK" target="_blank" rel="noopener noreferrer" class="footer-wa-link"><i class="fab fa-whatsapp"></i> +94 78 680 0086</a>
+      </div>
+      <div class="footer-copy">© 2026 LankaVision Pro · All rights reserved.</div>
+    </footer>
   </div>
 
   <!-- ====== LOGIN ====== -->
   <div id="screen-login" class="screen">
     <div class="auth-screen">
-      <div class="auth-brand" onclick="showScreen('screen-landing')"><i class="fas fa-satellite-dish"></i><span data-i18n="brand_name">LankaVision Pro</span></div>
+      <div class="auth-brand" onclick="handleBrandNav()" style="cursor:pointer"><i class="fas fa-satellite-dish"></i><span data-i18n="brand_name">LankaVision Pro</span></div>
       <div class="auth-card">
         <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
           <div class="lang-switcher lang-switcher-compact">
@@ -129,7 +139,7 @@
   <!-- ====== REGISTER ====== -->
   <div id="screen-register" class="screen">
     <div class="auth-screen">
-      <div class="auth-brand" onclick="showScreen('screen-landing')"><i class="fas fa-satellite-dish"></i><span data-i18n="brand_name">LankaVision Pro</span></div>
+      <div class="auth-brand" onclick="handleBrandNav()" style="cursor:pointer"><i class="fas fa-satellite-dish"></i><span data-i18n="brand_name">LankaVision Pro</span></div>
 
       <!-- Role Select -->
       <div id="reg-role-select" class="role-select-wrap">
@@ -358,7 +368,7 @@
   <!-- ====== DASHBOARD ====== -->
   <div id="screen-dashboard" class="screen">
     <nav class="app-nav">
-      <div class="nav-brand"><i class="fas fa-satellite-dish"></i><span data-i18n="brand_name">LankaVision</span></div>
+      <div class="nav-brand" onclick="handleBrandNav()" style="cursor:pointer"><i class="fas fa-satellite-dish"></i><span data-i18n="brand_name">LankaVision</span></div>
       <div class="nav-user">
         <div class="lang-switcher lang-switcher-compact">
           <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English">English</button>
@@ -896,23 +906,29 @@
 
   <!-- ====== MOBILE BOTTOM APP BAR (Native App Feel) ====== -->
   <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
-    <button type="button" class="mbn-item active" id="mbn-home" onclick="showScreen('screen-landing')">
-      <i class="fas fa-home"></i>
-      <span data-i18n="nav_home">Home</span>
+    <button type="button" class="mbn-item active" id="mbn-home" onclick="handleMobileHomeNav()">
+      <i class="fas fa-home" id="mbn-home-icon"></i>
+      <span id="mbn-home-text" data-i18n="nav_home">Home</span>
     </button>
     <button type="button" class="mbn-item mbn-post-job" id="mbn-post" onclick="showScreen('screen-post-job')">
       <div class="mbn-fab-badge"><i class="fas fa-plus"></i></div>
       <span data-i18n="btn_post_job">Post Job</span>
     </button>
-    <button type="button" class="mbn-item" id="mbn-tech" onclick="showRegisterOptions()">
-      <i class="fas fa-tools"></i>
-      <span data-i18n="btn_join_tech">Technician</span>
+    <button type="button" class="mbn-item" id="mbn-tech" onclick="handleMobileThirdNav()">
+      <i class="fas fa-tools" id="mbn-tech-icon"></i>
+      <span id="mbn-tech-text" data-i18n="btn_join_tech">Technician</span>
     </button>
     <button type="button" class="mbn-item" id="mbn-login" onclick="handleMobileAuthNav()">
-      <i class="fas fa-sign-in-alt"></i>
+      <i class="fas fa-sign-in-alt" id="mbn-login-icon"></i>
       <span id="mbn-login-text" data-i18n="nav_login">Login</span>
     </button>
   </nav>
+
+  <!-- ====== FLOATING WHATSAPP SUPPORT BUTTON (SMARTZONE LK) ====== -->
+  <a href="https://wa.me/94786800086?text=Hello%20SMARTZONE%20LK%20LankaVision%20Support" target="_blank" rel="noopener noreferrer" class="floating-wa-btn" id="floating-wa-btn" title="Contact Support: +94 78 680 0086 (Developed by SMARTZONE LK)" aria-label="WhatsApp Support +94 78 680 0086">
+    <i class="fab fa-whatsapp"></i>
+    <span class="floating-wa-tooltip">Support: +94 78 680 0086<br><small>Developed by SMARTZONE LK</small></span>
+  </a>
 
   <!-- ====== TOAST ====== -->
   <div id="toast-wrap"></div>

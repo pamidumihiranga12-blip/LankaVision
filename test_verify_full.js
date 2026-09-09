@@ -213,6 +213,12 @@ assert(css.includes('nav-mobile-lang-row'), 'style.css: .nav-mobile-lang-row rul
 assert(css.includes('grid-template-columns: repeat(3, 1fr) !important'), 'style.css: 3-column balanced hero stats grid on mobile');
 assert(js.includes('updateMobileNavState'), 'app.js: updateMobileNavState function exists');
 assert(js.includes('handleMobileAuthNav'), 'app.js: handleMobileAuthNav function exists');
+assert(js.includes('handleMobileHomeNav'), 'app.js: handleMobileHomeNav function exists');
+assert(js.includes('handleMobileThirdNav'), 'app.js: handleMobileThirdNav function exists');
+assert(js.includes('handleBrandNav'), 'app.js: handleBrandNav function exists');
+assert(html.includes('onclick="handleMobileHomeNav()"'), 'index.html: #mbn-home calls handleMobileHomeNav()');
+assert(html.includes('onclick="handleMobileThirdNav()"'), 'index.html: #mbn-tech calls handleMobileThirdNav()');
+assert(html.includes('onclick="handleBrandNav()"'), 'index.html: nav-brand calls handleBrandNav()');
 assert(I18N.si.nav_home && I18N.en.nav_home && I18N.ta.nav_home, 'i18n.js: nav_home translated across all 3 languages');
 assert(I18N.si.nav_account && I18N.en.nav_account && I18N.ta.nav_account, 'i18n.js: nav_account translated across all 3 languages');
 
@@ -291,8 +297,18 @@ assert(css.includes('.scheduled-visit-card'), 'style.css: .scheduled-visit-card 
 assert(css.includes('.preferred-visit-card'), 'style.css: .preferred-visit-card styled');
 assert(css.includes('.schedule-pref-box'), 'style.css: .schedule-pref-box styled');
 
-// 14. HTTP SERVER HEALTH CHECK
-console.log('\n--- 14. HTTP Server Health Check ---');
+// 15. FLOATING WHATSAPP SUPPORT BUTTON & SMARTZONE LK DEVELOPER ATTRIBUTION
+console.log('\n--- 15. Floating WhatsApp Support & SMARTZONE LK Attribution ---');
+assert(html.includes('id="floating-wa-btn"'), 'index.html: #floating-wa-btn floating WhatsApp button exists');
+assert(html.includes('wa.me/94786800086'), 'index.html: WhatsApp direct link to +94786800086 configured');
+assert(html.includes('Developed by') && html.includes('SMARTZONE LK'), 'index.html: "Developed by SMARTZONE LK" attribution in landing footer');
+assert(js.includes('SMARTZONE LK') && js.includes('94786800086'), 'app.js: Profile card includes SMARTZONE LK attribution and WhatsApp contact');
+assert(css.includes('.floating-wa-btn'), 'style.css: .floating-wa-btn styled');
+assert(css.includes('background: #2563eb;'), 'style.css: .floating-wa-btn styled with royal blue matching user design');
+assert(css.includes('.app-footer'), 'style.css: .app-footer styled');
+
+// 16. HTTP SERVER HEALTH CHECK
+console.log('\n--- 16. HTTP Server Health Check ---');
 const req = http.get('http://localhost:8080/index.html', (res) => {
   assert(res.statusCode === 200, `Local HTTP server is responding with status 200 OK (got ${res.statusCode})`);
   
