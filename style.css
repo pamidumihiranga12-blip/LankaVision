@@ -275,6 +275,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .type-badge.CCTV{background:rgba(6,182,212,0.15);color:var(--cctv)}
 .type-badge.Satellite{background:rgba(245,158,11,0.15);color:var(--satellite)}
 .type-badge.Both{background:rgba(139,92,246,0.15);color:var(--purple)}
+.type-badge.Router{background:rgba(168,85,247,0.18);color:#c084fc;border:1px solid rgba(168,85,247,0.3)}
+.type-opt input[type=checkbox]{display:none}
+.type-opt:has(input[type=checkbox]:checked){border-color:var(--primary);background:rgba(37,99,235,0.16);color:var(--primary-l);box-shadow:0 0 0 1px var(--primary)}
 .status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:.73rem;font-weight:700;text-transform:capitalize}
 .s-open{background:rgba(16,185,129,0.12);color:var(--success)}
 .s-claimed{background:rgba(245,158,11,0.12);color:var(--warning)}
@@ -355,9 +358,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .profile-row span{font-size:.9rem;font-weight:600}
 
 /* ── FAB ── */
-.fab{position:fixed;bottom:78px;right:20px;z-index:90;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-d));border:none;color:#fff;font-size:1.4rem;cursor:pointer;box-shadow:0 8px 24px rgba(37,99,235,0.5);transition:var(--ease);display:flex;align-items:center;justify-content:center}
+.fab{position:fixed;bottom:88px;right:24px;z-index:90;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-d));border:none;color:#fff;font-size:1.4rem;cursor:pointer;box-shadow:0 8px 24px rgba(37,99,235,0.5);transition:var(--ease);display:flex;align-items:center;justify-content:center}
 .fab:hover{transform:scale(1.1);box-shadow:0 12px 32px rgba(37,99,235,0.65)}
-@media(min-width:641px){.fab{bottom:24px}}
+@media(min-width:641px){.fab{bottom:88px;right:24px}}
+@media(max-width:640px){
+  .fab,
+  #fab-post{display:none !important}
+}
 
 /* ── TOAST ── */
 #toast-wrap{position:fixed;top:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:8px}
@@ -1416,7 +1423,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 @media (max-width: 640px) {
   .floating-wa-btn {
-    bottom: 74px; /* Sits directly above the native mobile bottom app bar */
+    bottom: 78px; /* Elevated cleanly above the native mobile bottom app bar (64px) */
     right: 16px;
     width: 48px;
     height: 48px;
@@ -1476,6 +1483,156 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .footer-copy {
   font-size: 0.74rem;
   color: var(--txt3);
+}
+
+/* ── LEAFLET CUSTOM MAP PINS ── */
+.custom-job-marker { background: transparent; border: none; }
+.job-marker-pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 0;
+  position: absolute;
+  transform: rotate(-45deg);
+  left: 50%;
+  top: 50%;
+  margin: -26px 0 0 -18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.55);
+  border: 2px solid #ffffff;
+  transition: transform .2s ease, box-shadow .2s ease;
+  cursor: pointer;
+}
+.job-marker-pin:hover {
+  transform: rotate(-45deg) scale(1.2);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.75);
+  z-index: 9999;
+}
+.job-marker-pin i {
+  transform: rotate(45deg);
+  font-size: 14px;
+  color: #ffffff;
+}
+.job-marker-pin.marker-cctv {
+  background: linear-gradient(135deg, #06b6d4, #0284c7);
+}
+.job-marker-pin.marker-satellite {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.job-marker-pin.marker-router {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+}
+.job-marker-pin.marker-tech {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  animation: techBeaconPulse 2s infinite;
+}
+@keyframes techBeaconPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.7); }
+  70%  { box-shadow: 0 0 0 14px rgba(59,130,246,0); }
+  100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+}
+
+/* ── CUSTOMER MANAGEMENT STYLES ── */
+.customer-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-l);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  transition: var(--ease);
+}
+.customer-card:hover {
+  border-color: rgba(59,130,246,0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.cust-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+.cust-av {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-d));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.15rem;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+  flex-shrink: 0;
+}
+.cust-name {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: var(--txt);
+  margin-bottom: 4px;
+}
+.cust-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 0.78rem;
+  color: var(--txt2);
+  flex-wrap: wrap;
+}
+.cust-meta a {
+  color: inherit;
+  text-decoration: none;
+}
+.cust-meta a:hover {
+  text-decoration: underline;
+  color: var(--primary-l);
+}
+.cust-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cust-job-badge {
+  background: rgba(59,130,246,0.14);
+  color: #60a5fa;
+  border: 1px solid rgba(59,130,246,0.3);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── ACTIVE JOB LOCK & ROUTER UPGRADE BANNER ── */
+.active-job-lock-banner {
+  background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(245,158,11,0.08));
+  border: 1.5px solid rgba(239,68,68,0.35);
+  border-radius: var(--r-m);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.router-upgrade-banner {
+  background: linear-gradient(135deg, rgba(168,85,247,0.16), rgba(59,130,246,0.1));
+  border: 1.5px solid rgba(168,85,247,0.4);
+  border-radius: var(--r-m);
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 

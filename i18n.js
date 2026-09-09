@@ -174,6 +174,7 @@ const I18N = {
     adm_tab_pending: 'Pending (අනුමත කිරීමට)',
     adm_tab_jobs: 'All Jobs (සියලු Jobs)',
     adm_tab_techs: 'Technicians ලා',
+    adm_tab_customers: 'Customers (පාරිභෝගිකයින්)',
     adm_tab_admins: 'Admins ලා',
 
     // Stats Grid
@@ -224,7 +225,21 @@ const I18N = {
     btn_save_changes: 'Save Changes (සුරකින්න)',
     cust_name_label: 'පාරිභෝගික නම (Customer Name)',
     cust_phone_label: 'දුරකථන අංකය (Customer Phone)',
-    status_label: 'තත්වය (Status)'
+    status_label: 'තත්වය (Status)',
+
+    // Router Installation & Multi-services
+    svc_router: 'Router Installation',
+    job_type_router: 'Router Installation',
+    svc_multi_hint: 'සේවා 1ක්, 2ක් හෝ 3ම තෝරාගත හැක (Select 1, 2, or all 3)',
+    adm_tech_loc_search_title: 'Technician Location සහ 36 km Radius Search',
+    adm_tech_loc_search_placeholder: '🔍 ස්ථානයක් Search කරන්න (උදා: Padaviya, Kekirawa, Colombo)...',
+    active_job_lock_title: 'ක්‍රියාකාරී Job එකක් භාරගෙන ඇත (Active Job Lock)',
+    active_job_lock_warning: 'ඔබ දැනටමත් Job එකක් භාරගෙන ඇත. නව Job එකක් භාරගැනීමට පෙර එම Job එක සම්පූර්ණ කරන්න (Complete) හෝ Visit එක Schedule කරන්න.',
+    btn_add_router: 'Router Installation එකතු කරන්න',
+    btn_not_now: 'දැන්ම එපා',
+    router_prompt_title: '🚀 නව සේවා අවස්ථාව: Router Installation!',
+    router_prompt_desc: 'ඔබ Wi-Fi Routers සහ Network උපකරණ සවිකිරීම සිදුකරනවාද? ඔබගේ ප්‍රදේශයේ Router jobs ලබා ගැනීමට ඔබගේ Profile එකට Router Installation එකතු කරගන්න!',
+    router_added_success: 'Router Installation සේවාව ඔබගේ profile එකට සාර්ථකව එකතු විය! 🎉'
   },
 
   // ── ENGLISH 🇬🇧 ───────────────────────────────────────────────
@@ -397,6 +412,7 @@ const I18N = {
     adm_tab_pending: 'Pending',
     adm_tab_jobs: 'All Jobs',
     adm_tab_techs: 'Technicians',
+    adm_tab_customers: 'Customers',
     adm_tab_admins: 'Admins',
 
     // Stats Grid
@@ -447,7 +463,21 @@ const I18N = {
     btn_save_changes: 'Save Changes',
     cust_name_label: 'Customer Name',
     cust_phone_label: 'Customer Phone',
-    status_label: 'Status'
+    status_label: 'Status',
+
+    // Router Installation & Multi-services
+    svc_router: 'Router Installation',
+    job_type_router: 'Router Installation',
+    svc_multi_hint: 'You can select 1, 2, or all 3 services',
+    adm_tech_loc_search_title: 'Technician Location & 36 km Radius Search',
+    adm_tech_loc_search_placeholder: '🔍 Search location (e.g. Padaviya, Kekirawa, Colombo)...',
+    active_job_lock_title: 'Active Job In Progress',
+    active_job_lock_warning: 'You already have an active claimed job. Complete it or schedule a visit before accepting another job.',
+    btn_add_router: 'Add Router Installation',
+    btn_not_now: 'Not Now',
+    router_prompt_title: '🚀 New Service Opportunity: Router Installation!',
+    router_prompt_desc: 'Do you install Wi-Fi routers and network equipment? Add Router Installation to your profile to receive router jobs in your area!',
+    router_added_success: 'Router Installation service added to your profile! 🎉'
   },
 
   // ── TAMIL 🇱🇰 ─────────────────────────────────────────────────
@@ -620,6 +650,7 @@ const I18N = {
     adm_tab_pending: 'நிலுவையில் உள்ளவை (Pending)',
     adm_tab_jobs: 'அனைத்து வேலைகள் (All Jobs)',
     adm_tab_techs: 'தொழில்நுட்ப வல்லுநர்கள் (Technicians)',
+    adm_tab_customers: 'வாடிக்கையாளர்கள் (Customers)',
     adm_tab_admins: 'நிர்வாகிகள் (Admins)',
 
     // Stats Grid
@@ -670,7 +701,21 @@ const I18N = {
     btn_save_changes: 'மாற்றங்களை சேமி (Save Changes)',
     cust_name_label: 'வாடிக்கையாளர் பெயர்',
     cust_phone_label: 'தொலைபேசி எண்',
-    status_label: 'நிலை (Status)'
+    status_label: 'நிலை (Status)',
+
+    // Router Installation & Multi-services
+    svc_router: 'Router Installation',
+    job_type_router: 'Router Installation',
+    svc_multi_hint: '1, 2 அல்லது 3 சேவைகளையும் தேர்ந்தெடுக்கலாம்',
+    adm_tech_loc_search_title: 'Technician இடம் மற்றும் 36 km Radius தேடல்',
+    adm_tech_loc_search_placeholder: '🔍 இடத்தை தேடவும் (உதா: Padaviya, Kekirawa)...',
+    active_job_lock_title: 'செயலில் உள்ள வேலை உள்ளது',
+    active_job_lock_warning: 'நீங்கள் ஏற்கனவே ஒரு வேலையை ஏற்றுக்கொண்டுள்ளீர்கள். புதிய வேலையை ஏற்கும் முன் அதை முடிக்கவும் அல்லது நேரத்தை திட்டமிடவும்.',
+    btn_add_router: 'Router Installation சேர்க்கவும்',
+    btn_not_now: 'இப்போது வேண்டாம்',
+    router_prompt_title: '🚀 புதிய சேவை வாய்ப்பு: Router Installation!',
+    router_prompt_desc: 'நீங்கள் Wi-Fi Routers மற்றும் நெட்வொர்க் உபகரணங்களை பொருத்துகிறீர்களா? உங்கள் பகுதியில் Router வேலைகளைப் பெற உங்கள் சுயவிவரத்தில் சேர்க்கவும்!',
+    router_added_success: 'Router Installation வெற்றிகரமாக சேர்க்கப்பட்டது! 🎉'
   }
 };
 

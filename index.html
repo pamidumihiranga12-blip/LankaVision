@@ -202,10 +202,11 @@
           <div class="form-group">
             <label><i class="fas fa-tools"></i> <span data-i18n="service_type_label">Your Specialty (Service Type)</span></label>
             <div class="type-select">
-              <label class="type-opt"><input type="radio" name="svc-type" value="CCTV" required /><span><i class="fas fa-video"></i> CCTV</span></label>
-              <label class="type-opt"><input type="radio" name="svc-type" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
-              <label class="type-opt"><input type="radio" name="svc-type" value="Both" /><span><i class="fas fa-tools"></i> Both</span></label>
+              <label class="type-opt"><input type="checkbox" name="tech-svc-opt" value="CCTV" /><span><i class="fas fa-video"></i> CCTV</span></label>
+              <label class="type-opt"><input type="checkbox" name="tech-svc-opt" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
+              <label class="type-opt"><input type="checkbox" name="tech-svc-opt" value="Router" /><span><i class="fas fa-wifi"></i> Router Installation</span></label>
             </div>
+            <small class="field-note"><i class="fas fa-info-circle"></i> <span data-i18n="svc_multi_hint">You can select 1, 2, or all 3 services</span></small>
           </div>
 
           <!-- Live Camera Selfie Capture (Gallery upload blocked) -->
@@ -311,6 +312,7 @@
             <div class="type-select">
               <label class="type-opt"><input type="radio" name="job-type" value="CCTV" required /><span><i class="fas fa-video"></i> CCTV</span></label>
               <label class="type-opt"><input type="radio" name="job-type" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
+              <label class="type-opt"><input type="radio" name="job-type" value="Router" /><span><i class="fas fa-wifi"></i> Router Installation</span></label>
             </div>
           </div>
           <div class="form-group"><label><i class="fas fa-heading"></i> <span data-i18n="job_title_label">Job Title</span></label><input type="text" id="job-title" placeholder="e.g. CCTV installation at my shop" required /></div>
@@ -411,6 +413,7 @@
       <button class="tab-btn" data-tab="pending" onclick="showAdminTab('pending')"><i class="fas fa-clock"></i> <span data-i18n="adm_tab_pending">Pending</span> <span class="badge" id="pending-count">0</span></button>
       <button class="tab-btn" data-tab="jobs" onclick="showAdminTab('jobs')"><i class="fas fa-briefcase"></i> <span data-i18n="adm_tab_jobs">All Jobs</span></button>
       <button class="tab-btn" data-tab="technicians" onclick="showAdminTab('technicians')"><i class="fas fa-users"></i> <span data-i18n="adm_tab_techs">Technicians</span></button>
+      <button class="tab-btn" data-tab="customers" onclick="showAdminTab('customers')"><i class="fas fa-user-friends"></i> <span data-i18n="adm_tab_customers">Customers</span> <span class="badge" id="cust-count">0</span></button>
       <button class="tab-btn" data-tab="admins" onclick="showAdminTab('admins')" id="adm-tab-admins"><i class="fas fa-user-shield"></i> <span data-i18n="adm_tab_admins">Admins</span></button>
     </div>
     <div class="admin-content">
@@ -445,6 +448,7 @@
             <option value="all" data-i18n="opt_all_types">All Types</option>
             <option value="CCTV">CCTV</option>
             <option value="Satellite">Satellite</option>
+            <option value="Router">Router Installation</option>
           </select>
           <select id="adm-filter-district" onchange="filterAdminJobs()">
             <option value="all" data-i18n="opt_all_districts">All Districts</option>
@@ -455,6 +459,33 @@
 
       <!-- Technicians -->
       <div id="atab-technicians" class="atab">
+        <!-- Location & Radius Search Bar for Technicians -->
+        <div class="panel" style="margin-bottom:14px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-m)">
+          <div style="font-weight:700;font-size:.88rem;margin-bottom:8px;display:flex;align-items:center;gap:7px">
+            <i class="fas fa-search-location" style="color:var(--accent)"></i>
+            <span data-i18n="adm_tech_loc_search_title">Technician Location &amp; 36 km Radius Search</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <div style="flex:1;min-width:220px;position:relative">
+              <input type="text" id="adm-tech-loc-search" placeholder="🔍 Search location (e.g. Padaviya, Kekirawa, Colombo)..." list="adm-tech-city-list" oninput="filterTechnicians()" onchange="filterTechnicians()" style="width:100%;background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--r-m);padding:9px 14px;color:var(--txt);font-size:.85rem" />
+              <datalist id="adm-tech-city-list"></datalist>
+            </div>
+            <select id="adm-tech-radius" onchange="filterTechnicians()" style="background:var(--bg2);border:1.5px solid var(--border);color:var(--txt);padding:9px 12px;border-radius:var(--r-m);font-size:.84rem;font-weight:600">
+              <option value="36" selected>🎯 36 km Radius</option>
+              <option value="50">🚗 50 km Radius</option>
+              <option value="20">⚡ 20 km Radius</option>
+              <option value="all">🌐 All Distances</option>
+            </select>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="clearTechLocationSearch()" style="padding:9px 14px">
+              <i class="fas fa-times"></i> Clear
+            </button>
+          </div>
+          <div id="adm-tech-loc-banner" class="hidden" style="margin-top:10px;font-size:.82rem;padding:7px 12px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#93c5fd;display:flex;align-items:center;justify-content:space-between">
+            <span id="adm-tech-loc-banner-text"></span>
+            <button type="button" onclick="clearTechLocationSearch()" style="background:none;border:none;color:#fff;cursor:pointer;font-weight:700;font-size:.78rem;text-decoration:underline">Reset</button>
+          </div>
+        </div>
+
         <div class="filter-bar">
           <select id="adm-tech-filter" onchange="filterTechnicians()">
             <option value="all" data-i18n="opt_all_status">All Status</option>
@@ -466,10 +497,24 @@
             <option value="all" data-i18n="opt_all_types">All Types</option>
             <option value="CCTV">CCTV</option>
             <option value="Satellite">Satellite</option>
-            <option value="Both" data-i18n="svc_both">Both</option>
+            <option value="Router">Router Installation</option>
+            <option value="Both" data-i18n="svc_both">Both (CCTV & Satellite)</option>
           </select>
         </div>
         <div id="technicians-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div></div>
+      </div>
+
+      <!-- Customers -->
+      <div id="atab-customers" class="atab">
+        <div class="filter-bar" style="justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+          <div style="flex:1;min-width:240px">
+            <input type="text" id="adm-cust-search" placeholder="🔍 Search customers by name, phone, email..." oninput="filterAdminCustomers()" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--txt);padding:9px 14px;border-radius:var(--r-m);font-size:.85rem" />
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:.84rem;color:var(--txt2);font-weight:600">Total Customers: <strong id="total-cust-count" style="color:var(--primary-l)">0</strong></span>
+          </div>
+        </div>
+        <div id="customers-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div></div>
       </div>
 
       <!-- Admins -->
@@ -509,6 +554,7 @@
           <div class="type-select">
             <label class="type-opt"><input type="radio" name="edit-job-type" value="CCTV" /><span><i class="fas fa-video"></i> CCTV</span></label>
             <label class="type-opt"><input type="radio" name="edit-job-type" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
+            <label class="type-opt"><input type="radio" name="edit-job-type" value="Router" /><span><i class="fas fa-wifi"></i> Router</span></label>
           </div>
         </div>
         <div class="form-group"><label><i class="fas fa-align-left"></i> <span data-i18n="job_desc_label">Description</span></label><textarea id="edit-desc" rows="3" required></textarea></div>
@@ -567,9 +613,9 @@
         <div class="form-group">
           <label><i class="fas fa-tools"></i> <span data-i18n="service_type_label">Service Type</span></label>
           <div class="type-select">
-            <label class="type-opt"><input type="radio" name="edit-svc" value="CCTV" /><span><i class="fas fa-video"></i> CCTV</span></label>
-            <label class="type-opt"><input type="radio" name="edit-svc" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
-            <label class="type-opt"><input type="radio" name="edit-svc" value="Both" /><span><i class="fas fa-tools"></i> <span data-i18n="svc_both">Both</span></span></label>
+            <label class="type-opt"><input type="checkbox" name="edit-tech-svc-opt" value="CCTV" /><span><i class="fas fa-video"></i> CCTV</span></label>
+            <label class="type-opt"><input type="checkbox" name="edit-tech-svc-opt" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
+            <label class="type-opt"><input type="checkbox" name="edit-tech-svc-opt" value="Router" /><span><i class="fas fa-wifi"></i> Router</span></label>
           </div>
         </div>
         <div class="form-group">

@@ -480,27 +480,62 @@ let allTechs        = [];
 let appInitialized  = false;
 let authResolved    = false;
 
+// ── SERVICE TYPES & MULTI-SELECT HELPERS ──────────────────────
+function getTechServices(tech) {
+  if (!tech) return [];
+  if (Array.isArray(tech.services) && tech.services.length) return tech.services;
+  if (typeof tech.serviceType === 'string') {
+    if (tech.serviceType === 'Both') return ['CCTV', 'Satellite'];
+    if (tech.serviceType.includes(',')) return tech.serviceType.split(',').map(s => s.trim()).filter(Boolean);
+    if (tech.serviceType.includes('+')) return tech.serviceType.split('+').map(s => s.trim()).filter(Boolean);
+    return [tech.serviceType];
+  }
+  return [];
+}
+
+function techProvidesService(tech, jobType) {
+  if (!tech || !jobType) return false;
+  const svcs = getTechServices(tech);
+  return svcs.includes(jobType) || svcs.includes('Both');
+}
+
 // ── EMAIL NOTIFICATIONS (via LankaVision SMTP) ────────────────
-const BACKUP_ADMIN_EMAIL = 'lankavision@smartzonelk.lk';
-const ADMIN_EMAIL = MAIN_ADMIN_EMAIL;
-const ADMIN_EMAILS = [MAIN_ADMIN_EMAIL, BACKUP_ADMIN_EMAIL];
+const ADMIN_EMAIL = MAIN_ADMIN_EMAIL; // lankavisionadmin@gmail.com
+const ADMIN_EMAILS = [MAIN_ADMIN_EMAIL];
 
 function getAllAdminEmails() {
-  return ADMIN_EMAILS;
+  return [MAIN_ADMIN_EMAIL];
 }
 
 async function sendEmailNotification({ to, subject, html, text }) {
   if (!to) return;
+  const isFileProto = (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:');
+  const primaryEndpoint = isFileProto ? 'https://lanka-vision.vercel.app/api/send-email' : '/api/send-email';
+
   try {
-    const res = await fetch('/api/send-email', {
+    const res = await fetch(primaryEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to, subject, html, text })
     });
     const data = await res.json();
-    return data;
+    if (data && data.success) return data;
+    throw new Error(data?.error || 'Primary endpoint failed');
   } catch (err) {
-    console.warn('[EMAIL ERROR]', err);
+    console.warn('[EMAIL PRIMARY FAILED, TRYING FALLBACK]', err.message);
+    if (primaryEndpoint !== 'https://lanka-vision.vercel.app/api/send-email') {
+      try {
+        const resFallback = await fetch('https://lanka-vision.vercel.app/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, subject, html, text })
+        });
+        const dataFallback = await resFallback.json();
+        return dataFallback;
+      } catch (fbErr) {
+        console.warn('[EMAIL FALLBACK ALSO FAILED]', fbErr.message);
+      }
+    }
     return { success: false, error: err.message };
   }
 }
@@ -652,8 +687,8 @@ async function notifyNewJobPosted(job) {
       const t = d.data();
       if (!t.email) return;
 
-      // Check service type match
-      if (t.serviceType !== 'Both' && t.serviceType !== job.type) return;
+      // Check service type match using multi-service helper
+      if (!techProvidesService(t, job.type)) return;
 
       const isHome = t.district === jobDistrict;
       const isNeighbor = nearbyDistricts.includes(t.district);
@@ -722,11 +757,15 @@ async function notifyTechRegistered(tech) {
     const techLoc = tech.city ? `${tech.district}, ${tech.city}` : tech.district;
     console.log('[NOTIFY] Dispatching registration emails for:', tech.name, techLoc);
 
-    // 1. To Admin
+    // 1. To Admin (Clean HTML without heavy base64 to ensure 100% email deliverability)
     const adminHtml = emailWrapper('New Technician Application', `
       <h2 style="color:#60a5fa;margin-top:0;font-size:18px">👤 New Technician Registration!</h2>
       <p>නව Technician කෙනෙක් system එකට register වී ඇත. Review කර approve කරන්න.</p>
-      ${tech.photoUrl ? `<div style="text-align:center;margin:12px 0"><img src="${tech.photoUrl}" style="width:76px;height:76px;border-radius:50%;border:3px solid #3b82f6;object-fit:cover" alt="Technician Selfie" /></div>` : ''}
+      <div style="text-align:center;margin:12px 0">
+        <span style="display:inline-block;padding:5px 14px;background:rgba(59,130,246,0.15);color:#38bdf8;border:1px solid #3b82f6;border-radius:999px;font-size:12px;font-weight:700">
+          📸 Live Selfie Verified 🔒
+        </span>
+      </div>
       <div class="detail-card">
         <div class="row"><span class="lbl">Name</span><span class="val">${esc(tech.name)}</span></div>
         <div class="row"><span class="lbl">Phone</span><span class="val" style="color:#34d399;font-family:monospace">${esc(tech.phone)}</span></div>
@@ -739,15 +778,17 @@ async function notifyTechRegistered(tech) {
       </div>
     `);
 
-    sendEmailNotification({
+    const adminEmailRes = await sendEmailNotification({
       to: ADMIN_EMAILS,
       subject: `👤 New Technician Application: ${tech.name} (${techLoc})`,
       html: adminHtml,
-      text: `New Technician: ${tech.name}, ${tech.phone}, Location: ${techLoc}`
+      text: `LankaVision Pro - New Technician Application!\n\nName: ${tech.name}\nPhone: ${tech.phone}\nEmail: ${tech.email}\nLocation: ${techLoc}\nServices: ${tech.serviceType || 'All'}\nStatus: Pending Approval\n\nReview in Admin Panel: ${APP_BASE_URL}`
     });
+    console.log('[EMAIL TO ADMIN RESULT]', adminEmailRes);
 
-    // 2. To Technician
+    // 2. To Technician (Wait 2s to respect host rate limit)
     if (tech.email) {
+      await new Promise(r => setTimeout(r, 2000));
       const techHtml = emailWrapper('Application Received', `
         <h2 style="color:#fbbf24;margin-top:0;font-size:18px">⏳ Application Received!</h2>
         <p>ආයුබෝවන් <strong>${esc(tech.name)}</strong>, LankaVision Pro Technician ජාලය හා එක්වීමට ඉල්ලුම් කළාට ස්තූතියි.</p>
@@ -758,12 +799,13 @@ async function notifyTechRegistered(tech) {
         </div>
         <p>ඔබගේ තොරතුරු Admin විසින් review කර පැය 24–48ක් ඇතුළත approve කරනු ඇත. Approve වූ විගස ඔබට confirmation email එකක් ලැබෙනු ඇත.</p>
       `);
-      sendEmailNotification({
+      const techEmailRes = await sendEmailNotification({
         to: tech.email,
         subject: `⏳ Application Received - LankaVision Pro`,
         html: techHtml,
-        text: `Application received. Location: ${techLoc}. Pending admin review.`
+        text: `LankaVision Pro - Application Received!\n\nHello ${tech.name},\nThank you for applying to join the LankaVision Pro technician network.\n\nLocation: ${techLoc}\nServices: ${tech.serviceType || 'All'}\nStatus: Pending Admin Review\n\nOur team will review your application within 24-48 hours.`
       });
+      console.log('[EMAIL TO TECH RESULT]', techEmailRes);
     }
   } catch (err) {
     console.error('[NOTIFY TECH ERROR]', err);
@@ -915,6 +957,80 @@ async function notifyJobCompleted(job) {
       text: `Your job ${job.title} has been completed. Review the work proof photo and rate your technician on LankaVision Pro.`
     });
   }
+
+  // 2. To Admin (Always alert admin of completed jobs)
+  const adminCompletedHtml = emailWrapper('Job Completed', `
+    <h2 style="color:#10b981;margin-top:0;font-size:18px">✅ Job Completed: ${esc(job.title)}</h2>
+    <p>Technician කෙනෙක් Job එකක් සාර්ථකව අවසන් කර ඇත (Job marked as Completed with work proof).</p>
+    <div class="detail-card">
+      <div class="row"><span class="lbl">Job Title</span><span class="val">${esc(job.title)}</span></div>
+      <div class="row"><span class="lbl">Service</span><span class="val">${esc(job.type)}</span></div>
+      <div class="row"><span class="lbl">Technician</span><span class="val" style="color:#38bdf8">${esc(job.claimedByName || 'N/A')}</span></div>
+      <div class="row"><span class="lbl">Customer</span><span class="val">${esc(job.customerName || 'N/A')} (${esc(job.customerPhone || '')})</span></div>
+      ${job.completionNotes ? `<div class="row"><span class="lbl">Notes</span><span class="val">${esc(job.completionNotes)}</span></div>` : ''}
+    </div>
+    <div style="text-align:center;margin-top:18px">
+      <a href="${APP_BASE_URL}" class="btn-link">View in Admin Panel</a>
+    </div>
+  `);
+
+  sendEmailNotification({
+    to: ADMIN_EMAILS,
+    subject: `✅ Job Completed: ${job.title} by ${job.claimedByName || 'Technician'}`,
+    html: adminCompletedHtml,
+    text: `Job ${job.title} completed by ${job.claimedByName}. Customer: ${job.customerName}.`
+  });
+}
+
+// Trigger 6: Customer Registered -> Notify Customer & Admin
+async function notifyCustomerRegistered(cust) {
+  if (!cust || !cust.email) return;
+
+  // 1. Welcome to Customer
+  const custWelcomeHtml = emailWrapper('Welcome to LankaVision', `
+    <h2 style="color:#38bdf8;margin-top:0;font-size:18px">🎉 Welcome to LankaVision Pro!</h2>
+    <p>ආයුබෝවන් <strong>${esc(cust.name || 'Customer')}</strong>, LankaVision Pro පද්ධතියට සාදරයෙන් පිළිගනිමු.</p>
+    <div class="detail-card">
+      <div class="row"><span class="lbl">Account Name</span><span class="val">${esc(cust.name)}</span></div>
+      <div class="row"><span class="lbl">Phone Number</span><span class="val" style="color:#34d399">${esc(cust.phone)}</span></div>
+      <div class="row"><span class="lbl">Email</span><span class="val">${esc(cust.email)}</span></div>
+      <div class="row"><span class="lbl">Account Type</span><span class="val">Customer (පාරිභෝගික)</span></div>
+    </div>
+    <p>දැන් ඔබට ඕනෑම වේලාවක CCTV, Satellite සහ Router Installation සේවාවන් සඳහා Jobs පහසුවෙන් පළ කර ඔබගේ ප්‍රදේශයේ හොඳම Technicians ලාගේ සේවාව ලබාගත හැක.</p>
+    <div style="text-align:center;margin-top:18px">
+      <a href="${APP_BASE_URL}" class="btn-link">Post a Job Now</a>
+    </div>
+  `);
+
+  sendEmailNotification({
+    to: cust.email,
+    subject: `🎉 Welcome to LankaVision Pro, ${cust.name || 'Customer'}!`,
+    html: custWelcomeHtml,
+    text: `Welcome to LankaVision Pro, ${cust.name}! You can now post CCTV, Satellite, and Router jobs.`
+  });
+
+  // 2. Alert Admin (Wait 2s to respect host rate limit)
+  setTimeout(() => {
+    const adminAlertHtml = emailWrapper('New Customer Registered', `
+      <h2 style="color:#38bdf8;margin-top:0;font-size:18px">👤 New Customer Registered!</h2>
+      <p>අලුත් පාරිභෝගිකයෙකු (Customer) පද්ධතියේ ලියාපදිංචි වී ඇත.</p>
+      <div class="detail-card">
+        <div class="row"><span class="lbl">Name</span><span class="val">${esc(cust.name)}</span></div>
+        <div class="row"><span class="lbl">Phone</span><span class="val" style="color:#34d399">${esc(cust.phone)}</span></div>
+        <div class="row"><span class="lbl">Email</span><span class="val">${esc(cust.email)}</span></div>
+      </div>
+      <div style="text-align:center;margin-top:18px">
+        <a href="${APP_BASE_URL}" class="btn-link">View in Admin Panel</a>
+      </div>
+    `);
+
+    sendEmailNotification({
+      to: ADMIN_EMAILS,
+      subject: `👤 New Customer: ${cust.name} (${cust.phone})`,
+      html: adminAlertHtml,
+      text: `New Customer registered: ${cust.name}, Phone: ${cust.phone}, Email: ${cust.email}`
+    });
+  }, 2000);
 }
 
 // ── INIT ───────────────────────────────────────────────────────
@@ -1265,6 +1381,7 @@ async function handleCustomerRegister(e) {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('Account හදාගත්තා! 🎉', 'success');
+    notifyCustomerRegistered({ name, phone, email });
   } catch (err) {
     errEl.textContent = authErr(err.code);
     errEl.classList.remove('hidden');
@@ -1984,12 +2101,14 @@ async function handleTechRegister(e) {
   if (city === '__other__') {
     city = document.getElementById('tech-city-custom')?.value.trim() || '';
   }
-  const serviceType = document.querySelector('input[name="svc-type"]:checked')?.value;
+  const checkedBoxes = document.querySelectorAll('input[name="tech-svc-opt"]:checked');
+  const services = Array.from(checkedBoxes).map(cb => cb.value);
+  const serviceType = services.join(', ');
   const errEl = document.getElementById('tech-error');
   errEl.classList.add('hidden');
 
   if (!district) { errEl.textContent = 'District Select කරන්න.'; errEl.classList.remove('hidden'); return; }
-  if (!serviceType) { errEl.textContent = 'Service Type Select කරන්න.'; errEl.classList.remove('hidden'); return; }
+  if (!services.length) { errEl.textContent = 'සේවා වර්ගයක් (CCTV, Satellite හෝ Router) Select කරන්න.'; errEl.classList.remove('hidden'); return; }
 
   // Strictly enforce live selfie capture
   if (!capturedTechSelfieDataUrl) {
@@ -2008,7 +2127,7 @@ async function handleTechRegister(e) {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     await db.collection('users').doc(cred.user.uid).set({
       name, phone, email, role: 'technician',
-      district, city, serviceType,
+      district, city, services, serviceType,
       photoUrl: capturedTechSelfieDataUrl,
       status: 'pending',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2017,7 +2136,7 @@ async function handleTechRegister(e) {
     stopTechCamera();
     capturedTechSelfieDataUrl = null;
     showToast('Application submit කළා! Admin approve වෙනතුරු wait කරන්න.', 'success');
-    await notifyTechRegistered({ name, phone, email, district, city, serviceType, photoUrl: selfieData });
+    await notifyTechRegistered({ name, phone, email, district, city, services, serviceType, photoUrl: selfieData });
   } catch (err) {
     console.error('handleTechRegister error:', err);
     errEl.textContent = authErr(err.code);
@@ -2027,6 +2146,8 @@ async function handleTechRegister(e) {
 
 async function handleLogout() {
   stopTechCamera();
+  const fab = document.getElementById('fab-post');
+  if (fab) fab.classList.add('hidden');
   await auth.signOut();
   currentUser = null; currentUserData = null;
   showScreen('screen-landing');
@@ -2172,6 +2293,149 @@ function useTechLiveGps() {
   );
 }
 
+// ── TECHNICIAN ROUTER UPGRADE & MAP LOGIC ─────────────────────
+let techAvailableJobsMap = null;
+let techMapMarkersLayer = null;
+let techHasActiveUnscheduledJob = false;
+
+async function addRouterServiceToCurrentTech() {
+  if (!currentUser || !currentUserData) return;
+  try {
+    const curServices = getTechServices(currentUserData);
+    if (!curServices.includes('Router')) {
+      curServices.push('Router');
+    }
+    await db.collection('users').doc(currentUser.uid).update({
+      services: curServices,
+      serviceType: curServices.join(', '),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    currentUserData.services = curServices;
+    currentUserData.serviceType = curServices.join(', ');
+    document.getElementById('banner-router-upgrade')?.remove();
+    showToast('Router Installation සේවාව profile එකට සාර්ථකව එකතු විය! 🎉', 'success');
+    loadTechJobs();
+  } catch (err) {
+    console.error('Error adding router service:', err);
+    showToast('Failed to add service: ' + err.message, 'error');
+  }
+}
+
+function dismissRouterUpgradePrompt() {
+  if (currentUser) {
+    localStorage.setItem('dismiss_router_prompt_' + currentUser.uid, '1');
+  }
+  document.getElementById('banner-router-upgrade')?.remove();
+}
+
+function renderTechJobsMap(jobs, techCoords) {
+  const mapEl = document.getElementById('tech-available-jobs-map');
+  if (!mapEl || typeof L === 'undefined') return;
+
+  if (!techAvailableJobsMap) {
+    const defaultCenter = techCoords || [7.8731, 80.7718];
+    techAvailableJobsMap = L.map('tech-available-jobs-map').setView(defaultCenter, 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap'
+    }).addTo(techAvailableJobsMap);
+    techMapMarkersLayer = L.layerGroup().addTo(techAvailableJobsMap);
+  } else {
+    techMapMarkersLayer.clearLayers();
+    setTimeout(() => { techAvailableJobsMap?.invalidateSize(); }, 200);
+  }
+
+  const boundsPoints = [];
+
+  // 1. Technician's Location Marker (Glowing/pulsing beacon)
+  if (techCoords) {
+    const techPinHtml = `
+      <div class="job-marker-pin marker-tech" title="Your Location">
+        <i class="fas fa-user-shield"></i>
+      </div>`;
+    const techMarker = L.marker(techCoords, {
+      icon: L.divIcon({
+        className: 'custom-job-marker',
+        html: techPinHtml,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+        popupAnchor: [0, -36]
+      })
+    }).bindPopup(`
+      <div style="font-weight:800;font-size:.9rem;color:var(--primary-l);margin-bottom:2px">
+        <i class="fas fa-map-marker-alt"></i> ඔබ සිටින ස්ථානය (Your Location)
+      </div>
+      <div style="font-size:.8rem;color:#333">Base: ${esc(currentUserData.city ? `${currentUserData.district}, ${currentUserData.city}` : currentUserData.district)}</div>
+      <div style="font-size:.75rem;color:#059669;font-weight:700;margin-top:4px">🎯 36 km Radius Monitoring Active</div>
+    `);
+    techMapMarkersLayer.addLayer(techMarker);
+    boundsPoints.push(techCoords);
+  }
+
+  // Update map counter badge
+  const countBadge = document.getElementById('tech-map-count');
+  if (countBadge) countBadge.textContent = `${jobs.length} open jobs`;
+
+  // 2. Open Job Pins with Distinct Icons (Satellite, CCTV, Router)
+  jobs.forEach(j => {
+    const jLat = j.location?.lat || (j.city && CITY_COORDS[j.city]?.[0]) || (j.district && DISTRICT_COORDS[j.district]?.[0]);
+    const jLng = j.location?.lng || (j.city && CITY_COORDS[j.city]?.[1]) || (j.district && DISTRICT_COORDS[j.district]?.[1]);
+    if (!jLat || !jLng) return;
+
+    let markerClass = 'marker-cctv';
+    let iconClass = 'fas fa-video';
+    if (j.type === 'Satellite') {
+      markerClass = 'marker-satellite';
+      iconClass = 'fas fa-satellite-dish';
+    } else if (j.type === 'Router') {
+      markerClass = 'marker-router';
+      iconClass = 'fas fa-wifi';
+    }
+
+    const pinHtml = `
+      <div class="job-marker-pin ${markerClass}" title="${esc(j.title)} (${esc(j.type)})">
+        <i class="${iconClass}"></i>
+      </div>`;
+
+    const distHtml = j._distanceKm != null ? `<span style="color:#059669;font-weight:700;font-size:.78rem">🎯 ${j._distanceKm} km දුරින්</span>` : '';
+    const acceptBtnHtml = techHasActiveUnscheduledJob
+      ? `<button class="btn btn-primary btn-sm btn-full" disabled style="opacity:.6;cursor:not-allowed;margin-top:8px;font-size:.76rem" title="කලින් භාරගත් Job එක අවසන් කරන්න හෝ Schedule කරන්න"><i class="fas fa-lock"></i> Active Job In Progress</button>`
+      : `<button class="btn btn-primary btn-sm btn-full" onclick="claimJob('${j.id}')" style="margin-top:8px;font-size:.78rem"><i class="fas fa-handshake"></i> Accept Job</button>`;
+
+    const popupHtml = `
+      <div style="min-width:180px;font-family:var(--font);color:#111">
+        <div style="font-weight:800;font-size:.9rem;margin-bottom:3px">${esc(j.title)}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+          <span class="type-badge ${esc(j.type)}" style="font-size:.68rem;padding:2px 6px">${esc(j.type)}</span>
+          ${distHtml}
+        </div>
+        <div style="font-size:.76rem;color:#555">📍 ${esc(j.city ? `${j.district}, ${j.city}` : j.district)}</div>
+        ${j.customerName ? `<div style="font-size:.74rem;color:#666">👤 ${esc(j.customerName)}</div>` : ''}
+        ${acceptBtnHtml}
+      </div>
+    `;
+
+    const jobMarker = L.marker([jLat, jLng], {
+      icon: L.divIcon({
+        className: 'custom-job-marker',
+        html: pinHtml,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+        popupAnchor: [0, -36]
+      })
+    }).bindPopup(popupHtml);
+
+    techMapMarkersLayer.addLayer(jobMarker);
+    boundsPoints.push([jLat, jLng]);
+  });
+
+  if (boundsPoints.length > 1) {
+    techAvailableJobsMap.fitBounds(boundsPoints, { padding: [35, 35], maxZoom: 13 });
+  } else if (boundsPoints.length === 1) {
+    techAvailableJobsMap.setView(boundsPoints[0], 11);
+  }
+}
+
 function showTechTab(tab) {
   setActiveTab('dash-tabs', tab);
   const c = document.getElementById('dash-content');
@@ -2182,7 +2446,40 @@ function showTechTab(tab) {
     const optDist = `${tFn('filter_my_dist', '📍 මගේ දිස්ත්‍රික්කය පමණක්')} (${esc(currentUserData.district)})`;
     const optAll = tFn('filter_all', '🌐 සියලුම Jobs (All)');
 
+    // Router upgrade banner if applicable
+    let routerPromptHtml = '';
+    const curServices = getTechServices(currentUserData);
+    const dismissed = currentUser ? localStorage.getItem('dismiss_router_prompt_' + currentUser.uid) : null;
+    if (!curServices.includes('Router') && !dismissed) {
+      routerPromptHtml = `
+        <div class="router-upgrade-banner" id="banner-router-upgrade">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:44px;height:44px;border-radius:50%;background:rgba(168,85,247,0.2);border:1.5px solid #a855f7;display:flex;align-items:center;justify-content:center;color:#c084fc;font-size:1.3rem;flex-shrink:0">
+              <i class="fas fa-wifi"></i>
+            </div>
+            <div>
+              <div style="font-weight:800;font-size:.92rem;color:#fff;margin-bottom:2px">
+                🚀 නව සේවා අවස්ථාව: Router Installation!
+              </div>
+              <div style="font-size:.8rem;color:var(--txt2);line-height:1.4">
+                ඔබ Wi-Fi Routers සහ Network උපකරණ සවිකිරීම සිදුකරනවාද? ඔබගේ ප්‍රදේශයේ Router jobs ලබා ගැනීමට ඔබගේ Profile එකට Router Installation එකතු කරගන්න!
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button type="button" class="btn btn-primary btn-sm" onclick="addRouterServiceToCurrentTech()" style="background:linear-gradient(135deg,#a855f7,#7c3aed);box-shadow:0 4px 14px rgba(168,85,247,0.4)">
+              <i class="fas fa-plus-circle"></i> Router Installation එකතු කරන්න
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="dismissRouterUpgradePrompt()">
+              දැන්ම එපා
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
     c.innerHTML = `
+      ${routerPromptHtml}
       <div class="filter-bar" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
         <div>
           <h2 style="font-size:1rem;font-weight:800;margin:0"><i class="fas fa-map-marker-alt" style="color:var(--primary-l)"></i> Available Jobs</h2>
@@ -2204,6 +2501,25 @@ function showTechTab(tab) {
           </button>
         </div>
       </div>
+
+      <!-- Jobs Map Section -->
+      <div class="panel" style="margin-bottom:16px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-l)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="font-weight:700;font-size:.86rem;display:flex;align-items:center;gap:7px">
+            <i class="fas fa-map-marked-alt" style="color:var(--primary-l)"></i>
+            <span>Jobs Map (36 km Radius)</span>
+            <span class="badge" id="tech-map-count" style="font-size:.72rem">0 open jobs</span>
+          </div>
+          <div style="display:flex;gap:12px;font-size:.74rem;font-weight:600;color:var(--txt2);flex-wrap:wrap">
+            <span><i class="fas fa-satellite-dish" style="color:#f59e0b"></i> Satellite</span>
+            <span><i class="fas fa-video" style="color:#06b6d4"></i> CCTV</span>
+            <span><i class="fas fa-wifi" style="color:#a855f7"></i> Router</span>
+            <span><i class="fas fa-user-shield" style="color:#3b82f6"></i> ඔබ සිටින ස්ථානය</span>
+          </div>
+        </div>
+        <div id="tech-available-jobs-map" style="width:100%;height:300px;border-radius:var(--r-m);border:1px solid var(--border);background:var(--bg2)"></div>
+      </div>
+
       <div id="tech-avail" class="jobs-grid"><div class="empty-state" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>`;
     loadTechJobs();
   } else if (tab === 'claims') {
@@ -2226,6 +2542,47 @@ async function loadTechJobs() {
       ? [currentUserData.location.lat, currentUserData.location.lng]
       : ((techCity && CITY_COORDS[techCity]) || (techDistrict && DISTRICT_COORDS[techDistrict])));
 
+    // Check if technician currently has an active claimed job that is UNSCHEDULED
+    let activeLockBannerHtml = '';
+    techHasActiveUnscheduledJob = false;
+
+    if (currentUser) {
+      try {
+        const activeClaimsSnap = await db.collection('jobs')
+          .where('claimedBy', '==', currentUser.uid)
+          .where('status', '==', 'claimed')
+          .get();
+
+        const unscheduledJobDoc = activeClaimsSnap.docs.find(d => {
+          const data = d.data();
+          return !data.isScheduled && !data.scheduledDate;
+        });
+
+        if (unscheduledJobDoc) {
+          techHasActiveUnscheduledJob = true;
+          const uj = unscheduledJobDoc.data();
+          activeLockBannerHtml = `
+            <div class="active-job-lock-banner" style="grid-column:1/-1">
+              <div style="font-size:1.6rem;color:var(--warning);flex-shrink:0"><i class="fas fa-lock"></i></div>
+              <div style="flex:1">
+                <div style="font-weight:800;font-size:.92rem;color:#fbbf24;margin-bottom:2px">
+                  ⚠️ ක්‍රියාකාරී Job එකක් භාරගෙන ඇත (Active Job Lock)
+                </div>
+                <div style="font-size:.82rem;color:var(--txt2);line-height:1.4">
+                  ඔබ විසින් <strong>"${esc(uj.title)}"</strong> Job එක භාරගෙන ඇත. නව Job එකක් භාරගැනීමට පෙර මෙම Job එක <strong>Complete කරන්න</strong> හෝ Customer Visit එක <strong>Schedule කරන්න</strong>.
+                </div>
+              </div>
+              <button type="button" class="btn btn-warning btn-sm" onclick="showTechTab('claims')" style="flex-shrink:0">
+                <i class="fas fa-briefcase"></i> View Claimed
+              </button>
+            </div>
+          `;
+        }
+      } catch (eActive) {
+        console.warn('Error checking active claims:', eActive);
+      }
+    }
+
     // Fetch open jobs
     const snap = await db.collection('jobs')
       .where('status', '==', 'open')
@@ -2233,10 +2590,8 @@ async function loadTechJobs() {
 
     let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // Filter by service type (CCTV, Satellite, Both)
-    if (currentUserData.serviceType !== 'Both') {
-      docs = docs.filter(j => j.type === currentUserData.serviceType);
-    }
+    // Filter by service type (multi-service support via techProvidesService)
+    docs = docs.filter(j => techProvidesService(currentUserData, j.type));
 
     // Compute distance in KM for every job relative to the technician's location
     docs.forEach(j => {
@@ -2251,41 +2606,21 @@ async function loadTechJobs() {
 
     // Filter jobs strictly based on distance radius requirement
     docs = docs.filter(j => {
-      // 1. If radius_36km (DEFAULT): Strictly show only jobs <= 36 km from technician
       if (scope === 'radius_36km') {
-        if (j._distanceKm !== null && j._distanceKm !== undefined) {
-          return j._distanceKm <= 36;
-        }
-        // Fallback for legacy jobs without coordinates: only show if same district
+        if (j._distanceKm !== null && j._distanceKm !== undefined) return j._distanceKm <= 36;
         return j.district === techDistrict;
       }
-
-      // 2. If radius_50km: Show jobs within 50 km
       if (scope === 'radius_50km') {
-        if (j._distanceKm !== null && j._distanceKm !== undefined) {
-          return j._distanceKm <= 50;
-        }
+        if (j._distanceKm !== null && j._distanceKm !== undefined) return j._distanceKm <= 50;
         return j.district === techDistrict;
       }
-
-      // 3. If my_district: Only jobs in same district
-      if (scope === 'my_district') {
-        return j.district === techDistrict;
-      }
-
-      // 4. If all_jobs: Show all available jobs
-      if (scope === 'all_jobs') {
-        return true;
-      }
-
-      // Default fallback: 36 km
-      if (j._distanceKm !== null && j._distanceKm !== undefined) {
-        return j._distanceKm <= 36;
-      }
+      if (scope === 'my_district') return j.district === techDistrict;
+      if (scope === 'all_jobs') return true;
+      if (j._distanceKm !== null && j._distanceKm !== undefined) return j._distanceKm <= 36;
       return j.district === techDistrict;
     });
 
-    // Sort: Nearest first (ascending distance), then latest date
+    // Sort: Nearest first, then latest date
     docs.sort((a, b) => {
       if (a._distanceKm != null && b._distanceKm != null && a._distanceKm !== b._distanceKm) {
         return a._distanceKm - b._distanceKm;
@@ -2295,6 +2630,9 @@ async function loadTechJobs() {
       return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
     });
 
+    // Render Leaflet Map with Custom Pins
+    renderTechJobsMap(docs, techCoords);
+
     const el = document.getElementById('tech-avail');
     if (!el) return;
     if (!docs.length) {
@@ -2302,6 +2640,7 @@ async function loadTechJobs() {
         ? 'ඔබ සිටින ස්ථානයේ සිට 36 km ඇතුළත'
         : (scope === 'radius_50km' ? 'ඔබ සිටින ස්ථානයේ සිට 50 km ඇතුළත' : 'ඔබේ ප්‍රදේශයේ');
       el.innerHTML = `
+        ${activeLockBannerHtml}
         <div class="empty-state" style="grid-column:1/-1;padding:36px 20px">
           <i class="fas fa-radar" style="font-size:2.4rem;color:var(--primary-l);margin-bottom:12px"></i>
           <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:6px">දැනට ${scopeDesc} open jobs නැත</h3>
@@ -2317,7 +2656,7 @@ async function loadTechJobs() {
         </div>`;
       return;
     }
-    el.innerHTML = docs.map(j => jobCard(j.id, j, 'tech')).join('');
+    el.innerHTML = activeLockBannerHtml + docs.map(j => jobCard(j.id, j, 'tech')).join('');
   } catch (err) {
     console.error(err);
     const el = document.getElementById('tech-avail');
@@ -2460,7 +2799,11 @@ function jobCard(id, job, view) {
   let actions = '';
   if (view === 'tech' && job.status === 'open') {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'Map')}</button>` : '';
-    actions = `<button class="btn btn-primary btn-sm" onclick="claimJob('${id}',event)"><i class="fas fa-handshake"></i> ${tFn('btn_accept_job', 'Accept Job')}</button>${mapBtn}`;
+    if (techHasActiveUnscheduledJob) {
+      actions = `<button class="btn btn-primary btn-sm" disabled style="opacity:.6;cursor:not-allowed" title="කලින් භාරගත් Job එක සම්පූර්ණ කරන්න හෝ Schedule කරන්න"><i class="fas fa-lock"></i> ${tFn('btn_accept_job', 'Accept Job')}</button>${mapBtn}`;
+    } else {
+      actions = `<button class="btn btn-primary btn-sm" onclick="claimJob('${id}',event)"><i class="fas fa-handshake"></i> ${tFn('btn_accept_job', 'Accept Job')}</button>${mapBtn}`;
+    }
   } else if (view === 'tech-claimed' || (myJob && view !== 'customer')) {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'Map')}</button>` : '';
     const schedBtn = `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openScheduleModal('${id}')"><i class="fas fa-calendar-alt"></i> ${job.scheduledDate ? tFn('btn_reschedule', 'Reschedule') : tFn('btn_schedule', 'Schedule')}</button>`;
@@ -2479,11 +2822,13 @@ function jobCard(id, job, view) {
                ${mapBtn}`;
   }
 
+  const jobTypeIcon = job.type === 'CCTV' ? 'video' : (job.type === 'Router' ? 'wifi' : 'satellite-dish');
+
   return `
   <div class="job-card type-${esc(job.type)}" id="jc-${id}">
     <div class="jc-header">
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span class="type-badge ${esc(job.type)}"><i class="fas fa-${job.type === 'CCTV' ? 'video' : 'satellite-dish'}"></i> ${esc(job.type)}</span>
+        <span class="type-badge ${esc(job.type)}"><i class="fas fa-${jobTypeIcon}"></i> ${esc(job.type)}</span>
         ${locationBadge}
       </div>
       <span class="status-badge s-${esc(job.status)}">${statusLabel(job.status)}</span>
@@ -2541,6 +2886,9 @@ function onLanguageChanged(lang) {
     } else if (curTab === 'technicians') {
       if (typeof allTechs !== 'undefined' && allTechs.length) renderTechs(allTechs);
       else loadAllTechs();
+    } else if (curTab === 'customers') {
+      if (typeof allAdminCustomers !== 'undefined' && allAdminCustomers.length) renderAdminCustomers(allAdminCustomers);
+      else loadAllCustomersAdmin();
     } else if (curTab === 'admins') {
       loadAllAdmins();
     }
@@ -2587,6 +2935,26 @@ async function claimJob(jobId, e) {
     showToast('Jobs භාරගැනීමට පෙර කරුණාකර Live Selfie එක ලබා දෙන්න', 'warning');
     promptMandatoryTechSelfie();
     return;
+  }
+
+  // Active Job Lock Rule: Must complete or schedule current active job before taking another
+  try {
+    const activeClaimsSnap = await db.collection('jobs')
+      .where('claimedBy', '==', currentUser.uid)
+      .where('status', '==', 'claimed')
+      .get();
+    const unscheduledJobDoc = activeClaimsSnap.docs.find(d => {
+      const data = d.data();
+      return !data.isScheduled && !data.scheduledDate;
+    });
+    if (unscheduledJobDoc) {
+      const uj = unscheduledJobDoc.data();
+      showToast(`ඔබ විසින් දැනට භාරගත් "${uj.title || 'Job'}" එක අවසන් කර නැත! වෙනත් Job එකක් භාරගැනීමට පෙර එය Schedule කරන්න හෝ Complete කරන්න.`, 'warning', 6000);
+      openScheduleModal(unscheduledJobDoc.id, uj);
+      return;
+    }
+  } catch (lockErr) {
+    console.warn('Error verifying active job lock in claimJob:', lockErr);
   }
 
   try {
@@ -3033,8 +3401,10 @@ async function openEditTechModal(uid) {
     onEditTechDistrictChange(t.city || '');
     document.getElementById('edit-tech-status').value = t.status || 'pending';
 
-    const svcRadio = document.querySelector(`input[name="edit-svc"][value="${t.serviceType}"]`);
-    if (svcRadio) svcRadio.checked = true;
+    const curServices = getTechServices(t);
+    document.querySelectorAll('input[name="edit-tech-svc-opt"]').forEach(cb => {
+      cb.checked = curServices.includes(cb.value);
+    });
 
     document.getElementById('edit-tech-error').classList.add('hidden');
     document.getElementById('modal-edit-tech').classList.remove('hidden');
@@ -3052,16 +3422,22 @@ async function handleEditTechSubmit(e) {
   if (city === '__other__') {
     city = document.getElementById('edit-tech-city-custom')?.value.trim() || '';
   }
-  const serviceType = document.querySelector('input[name="edit-svc"]:checked')?.value;
-  const status = document.getElementById('edit-tech-status').value;
+  const checkedBoxes = Array.from(document.querySelectorAll('input[name="edit-tech-svc-opt"]:checked'));
+  const services = checkedBoxes.map(cb => cb.value);
   const errEl = document.getElementById('edit-tech-error');
   errEl.classList.add('hidden');
 
-  if (!serviceType) { errEl.textContent = 'Service type select කරන්න.'; errEl.classList.remove('hidden'); return; }
+  if (!services.length) {
+    errEl.textContent = 'අවම වශයෙන් එක් Service එකක්වත් තෝරන්න (Select at least one service: CCTV, Satellite, Router).';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  const serviceType = services.join(', ');
+  const status = document.getElementById('edit-tech-status').value;
 
   try {
     await db.collection('users').doc(uid).update({
-      name, phone, district, city, serviceType, status,
+      name, phone, district, city, services, serviceType, status,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('Technician update කළා! ✅', 'success');
@@ -3336,7 +3712,7 @@ async function handlePostJob(e) {
   const errEl = document.getElementById('post-job-error');
   errEl.classList.add('hidden');
 
-  if (!jobType)    { errEl.textContent = 'CCTV හෝ Satellite select කරන්න.'; errEl.classList.remove('hidden'); return; }
+  if (!jobType)    { errEl.textContent = 'Service Type (CCTV / Satellite / Router) select කරන්න.'; errEl.classList.remove('hidden'); return; }
   if (!district)   { errEl.textContent = 'District select කරන්න.'; errEl.classList.remove('hidden'); return; }
   if (!selectedLoc){ errEl.textContent = 'Map එකෙන් location pin කරන්න.'; errEl.classList.remove('hidden'); return; }
 
@@ -3366,6 +3742,7 @@ async function handlePostJob(e) {
       customerName:  custName || posterName,
       customerPhone: custPhone,
       customerEmail: customerEmail || '',
+      customerId: (currentUser && currentUserData?.role === 'customer') ? currentUser.uid : (currentUser?.uid || null),
       postedBy, postedByName: posterName,
       status: 'open',
       claimedBy: null, claimedByName: null,
@@ -3422,17 +3799,22 @@ function initAdminDashboard() {
 
 async function loadAdminStats() {
   try {
-    const [pendSnap, openSnap, techSnap, doneSnap] = await Promise.all([
+    const [pendSnap, openSnap, techSnap, doneSnap, custSnap] = await Promise.all([
       db.collection('users').where('role', '==', 'technician').where('status', '==', 'pending').get(),
       db.collection('jobs').where('status', '==', 'open').get(),
       db.collection('users').where('role', '==', 'technician').where('status', '==', 'approved').get(),
-      db.collection('jobs').where('status', '==', 'completed').get()
+      db.collection('jobs').where('status', '==', 'completed').get(),
+      db.collection('users').where('role', '==', 'customer').get()
     ]);
     document.getElementById('st-pending').textContent = pendSnap.size;
     document.getElementById('st-open').textContent    = openSnap.size;
     document.getElementById('st-techs').textContent   = techSnap.size;
     document.getElementById('st-done').textContent    = doneSnap.size;
     document.getElementById('pending-count').textContent = pendSnap.size;
+    const custBadgeEl = document.getElementById('cust-count');
+    if (custBadgeEl) custBadgeEl.textContent = custSnap.size;
+    const totalCustEl = document.getElementById('total-cust-count');
+    if (totalCustEl) totalCustEl.textContent = custSnap.size;
 
     const recentSnap = await db.collection('jobs').get();
     const recent = recentSnap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -3539,18 +3921,137 @@ async function loadAllTechs() {
     const snap = await db.collection('users').where('role', '==', 'technician').get();
     allTechs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-    renderTechs(allTechs);
-  } catch (err) { console.error(err); }
+    filterTechnicians();
+  } catch (err) { console.error('Error loading techs:', err); }
+}
+
+function populateAdminCityDatalist() {
+  const dl = document.getElementById('adm-tech-city-list');
+  if (!dl || dl.children.length > 0) return;
+  const set = new Set();
+  Object.keys(CITY_COORDS).forEach(c => set.add(c));
+  SL_DISTRICTS.forEach(d => {
+    set.add(d);
+    (DISTRICT_CITIES[d] || []).forEach(c => set.add(c));
+  });
+  const sorted = Array.from(set).sort();
+  dl.innerHTML = sorted.map(c => `<option value="${esc(c)}">`).join('');
+}
+
+function clearTechLocationSearch() {
+  const input = document.getElementById('adm-tech-loc-search');
+  if (input) input.value = '';
+  const banner = document.getElementById('adm-tech-loc-banner');
+  if (banner) banner.classList.add('hidden');
+  filterTechnicians();
+}
+
+function resolveLocationCoords(query) {
+  if (!query) return null;
+  const qClean = query.trim();
+  const qLower = qClean.toLowerCase();
+
+  // 1. Direct match in CITY_COORDS
+  for (const [k, coords] of Object.entries(CITY_COORDS)) {
+    if (k.toLowerCase() === qLower) return { name: k, coords };
+  }
+  // 2. Direct match in DISTRICT_COORDS
+  for (const [k, coords] of Object.entries(DISTRICT_COORDS)) {
+    if (k.toLowerCase() === qLower) return { name: k, coords };
+  }
+  // 3. Partial match in CITY_COORDS
+  for (const [k, coords] of Object.entries(CITY_COORDS)) {
+    if (k.toLowerCase().includes(qLower) || qLower.includes(k.toLowerCase())) return { name: k, coords };
+  }
+  // 4. Partial match in DISTRICT_COORDS
+  for (const [k, coords] of Object.entries(DISTRICT_COORDS)) {
+    if (k.toLowerCase().includes(qLower) || qLower.includes(k.toLowerCase())) return { name: k, coords };
+  }
+  return null;
 }
 
 function filterTechnicians() {
-  const st  = document.getElementById('adm-tech-filter').value;
-  const svc = document.getElementById('adm-tech-svc').value;
-  const filtered = allTechs.filter(t =>
-    (st  === 'all' || t.status      === st) &&
-    (svc === 'all' || t.serviceType === svc)
-  );
-  renderTechs(filtered);
+  populateAdminCityDatalist();
+  const st  = document.getElementById('adm-tech-filter')?.value || 'all';
+  const svc = document.getElementById('adm-tech-svc')?.value || 'all';
+  const locQuery = document.getElementById('adm-tech-loc-search')?.value?.trim() || '';
+  const radiusVal = document.getElementById('adm-tech-radius')?.value || '36';
+  const radiusKm = radiusVal === 'all' ? Infinity : parseFloat(radiusVal);
+
+  const banner = document.getElementById('adm-tech-loc-banner');
+  const bannerText = document.getElementById('adm-tech-loc-banner-text');
+
+  let targetCoords = null;
+  let targetName = '';
+
+  if (locQuery) {
+    const resolved = resolveLocationCoords(locQuery);
+    if (resolved) {
+      targetCoords = resolved.coords;
+      targetName = resolved.name;
+    } else {
+      if (banner && bannerText) {
+        bannerText.innerHTML = `⚠️ "<strong>${esc(locQuery)}</strong>" සඳහා Coordinates හමු නොවීය. ලැයිස්තුවෙන් නගරයක් තෝරන්න.`;
+        banner.classList.remove('hidden');
+      }
+    }
+  } else {
+    if (banner) banner.classList.add('hidden');
+  }
+
+  let list = allTechs.map(t => {
+    const copy = { ...t };
+    if (targetCoords) {
+      const tLat = copy.lat || (copy.city && CITY_COORDS[copy.city]?.[0]) || (copy.district && DISTRICT_COORDS[copy.district]?.[0]);
+      const tLng = copy.lng || (copy.city && CITY_COORDS[copy.city]?.[1]) || (copy.district && DISTRICT_COORDS[copy.district]?.[1]);
+      if (tLat != null && tLng != null) {
+        copy._distanceKm = calcDistanceKm(targetCoords[0], targetCoords[1], tLat, tLng);
+      } else {
+        copy._distanceKm = null;
+      }
+    } else {
+      delete copy._distanceKm;
+    }
+    return copy;
+  });
+
+  // Filter status
+  if (st !== 'all') {
+    list = list.filter(t => t.status === st);
+  }
+
+  // Filter service (multi-service aware)
+  if (svc !== 'all') {
+    if (svc === 'Both') {
+      list = list.filter(t => {
+        const s = getTechServices(t);
+        return s.includes('CCTV') && s.includes('Satellite');
+      });
+    } else {
+      list = list.filter(t => techProvidesService(t, svc));
+    }
+  }
+
+  // Filter distance
+  if (targetCoords) {
+    if (radiusKm !== Infinity) {
+      list = list.filter(t => t._distanceKm != null && t._distanceKm <= radiusKm);
+    }
+    // Sort nearest first
+    list.sort((a, b) => {
+      if (a._distanceKm == null) return 1;
+      if (b._distanceKm == null) return -1;
+      return a._distanceKm - b._distanceKm;
+    });
+
+    if (banner && bannerText) {
+      const radLabel = radiusKm === Infinity ? 'සියලුම දුර' : `${radiusKm} km ඇතුළත`;
+      bannerText.innerHTML = `🎯 <strong>${esc(targetName || locQuery)}</strong> අසල ${radLabel} Technicians <strong>${list.length}</strong> දෙනෙක් හමුවිය:`;
+      banner.classList.remove('hidden');
+    }
+  }
+
+  renderTechs(list);
 }
 
 function renderTechs(techs) {
@@ -3584,6 +4085,14 @@ function techCardHtml(id, t, context) {
     ? `<img src="${t.photoUrl}" alt="${esc(t.name)}" onclick="previewPhoto('${t.photoUrl}','${esc(t.name)} - Technician Selfie')" title="Click to enlarge selfie" />`
     : `${(t.name || 'T').charAt(0).toUpperCase()}`;
 
+  const services = getTechServices(t);
+  const svcBadgesHtml = services.length
+    ? services.map(s => {
+        const icon = s === 'CCTV' ? 'video' : (s === 'Router' ? 'wifi' : 'satellite-dish');
+        return `<span class="type-badge ${esc(s)}" style="font-size:.7rem;padding:2px 8px"><i class="fas fa-${icon}"></i> ${esc(s)}</span>`;
+      }).join(' ')
+    : `<span class="type-badge ${esc(t.serviceType || '')}" style="font-size:.7rem;padding:2px 8px">${esc(t.serviceType || '')}</span>`;
+
   return `
   <div class="tech-card" id="tc-${id}">
     <div class="tech-info">
@@ -3594,7 +4103,8 @@ function techCardHtml(id, t, context) {
           <span><i class="fas fa-phone"></i> ${esc(t.phone)}</span>
           <span><i class="fas fa-envelope"></i> ${esc(t.email)}</span>
           <span><i class="fas fa-map-marker-alt"></i> ${esc(t.city ? `${t.district}, ${t.city}` : t.district)}</span>
-          <span class="type-badge ${esc(t.serviceType)}" style="font-size:.7rem;padding:2px 8px">${esc(t.serviceType)}</span>
+          ${t._distanceKm != null ? `<span style="color:#059669;font-weight:700;background:rgba(16,185,129,0.12);padding:2px 8px;border-radius:12px;border:1px solid rgba(16,185,129,0.3)"><i class="fas fa-location-arrow"></i> 🎯 ${t._distanceKm} km දුරින්</span>` : ''}
+          ${svcBadgesHtml}
           ${t.photoUrl ? `<span style="color:#34d399;font-weight:700;cursor:pointer" onclick="previewPhoto('${t.photoUrl}','${esc(t.name)} - Selfie')"><i class="fas fa-camera"></i> ${tFn('selfie_verified_badge', 'Selfie Verified 🔒')}</span>` : ''}
         </div>
         <div style="font-size:.7rem;color:var(--txt3);margin-top:3px">${tFn('applied_lbl', 'Applied')}: ${timeAgo(t.createdAt?.toDate?.())}</div>
@@ -3654,8 +4164,156 @@ function showAdminTab(tab) {
   document.getElementById(`atab-${tab}`)?.classList.add('active');
   if (tab === 'admins') {
     loadAllAdmins();
+  } else if (tab === 'customers') {
+    loadAllCustomersAdmin();
+  } else if (tab === 'technicians') {
+    populateAdminCityDatalist();
+    if (!allTechs.length) loadAllTechs();
   }
   updateMobileNavState('screen-admin');
+}
+
+// ── ADMIN CUSTOMER MANAGEMENT ─────────────────────────────────
+let allAdminCustomers = [];
+
+async function loadAllCustomersAdmin() {
+  const el = document.getElementById('customers-list');
+  if (!el) return;
+  try {
+    el.innerHTML = `<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading customers...</p></div>`;
+
+    const [custSnap, jobsSnap] = await Promise.all([
+      db.collection('users').where('role', '==', 'customer').get(),
+      db.collection('jobs').get()
+    ]);
+
+    const jobsMap = {};
+    jobsSnap.docs.forEach(d => {
+      const j = d.data();
+      const cId = j.customerId || j.createdBy;
+      if (cId) {
+        if (!jobsMap[cId]) jobsMap[cId] = [];
+        jobsMap[cId].push({ id: d.id, ...j });
+      }
+      if (j.customerPhone) {
+        const clean = cleanPhone(j.customerPhone);
+        if (clean) {
+          if (!jobsMap[clean]) jobsMap[clean] = [];
+          jobsMap[clean].push({ id: d.id, ...j });
+        }
+      }
+    });
+
+    allAdminCustomers = custSnap.docs.map(d => {
+      const data = d.data();
+      const phoneClean = cleanPhone(data.phone);
+      const matchedJobs = [
+        ...(jobsMap[d.id] || []),
+        ...(phoneClean && jobsMap[phoneClean] ? jobsMap[phoneClean] : [])
+      ];
+      // Deduplicate jobs by ID
+      const uniqueJobsMap = new Map();
+      matchedJobs.forEach(j => uniqueJobsMap.set(j.id, j));
+      return {
+        id: d.id,
+        ...data,
+        jobCount: uniqueJobsMap.size,
+        jobs: Array.from(uniqueJobsMap.values())
+      };
+    }).sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+
+    const totalEl = document.getElementById('total-cust-count');
+    const badgeEl = document.getElementById('cust-count');
+    if (totalEl) totalEl.textContent = allAdminCustomers.length;
+    if (badgeEl) badgeEl.textContent = allAdminCustomers.length;
+
+    renderAdminCustomers(allAdminCustomers);
+  } catch (err) {
+    console.error('Error loading customers:', err);
+    if (el) el.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Failed to load customers</p></div>`;
+  }
+}
+
+function renderAdminCustomers(custs) {
+  const el = document.getElementById('customers-list');
+  if (!el) return;
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+  if (!custs.length) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-user-friends" style="font-size:2.5rem;color:var(--txt3)"></i>
+        <h3 style="margin-top:10px;font-size:1rem;color:var(--txt)">Customers හමු නොවීය</h3>
+        <p style="font-size:.82rem;color:var(--txt2)">ලියාපදිංචි වූ පාරිභෝගිකයින් කිසිවකු නැත හෝ සෙවුමට ගැලපෙන ප්‍රතිඵල නැත.</p>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = custs.map(c => {
+    const waPhone = cleanPhone(c.phone);
+    const waLink = waPhone ? `https://wa.me/94${waPhone}?text=${encodeURIComponent(`ආයුබෝවන් ${c.name || 'Customer'}, LankaVision Pro ආයතනයෙන් අමතන්නේ.`)}` : '';
+    const initial = (c.name || 'C').charAt(0).toUpperCase();
+    const joinedAgo = timeAgo(c.createdAt?.toDate?.() || c.createdAt);
+
+    return `
+      <div class="customer-card" id="cust-card-${c.id}">
+        <div class="cust-info-main">
+          <div class="cust-avatar">${initial}</div>
+          <div style="flex:1;min-width:180px">
+            <div class="cust-name-row">
+              <span class="cust-name">${esc(c.name || 'Unnamed Customer')}</span>
+              <span class="cust-jobs-badge"><i class="fas fa-briefcase"></i> ${c.jobCount || 0} Jobs Posted</span>
+            </div>
+            <div class="cust-meta-list">
+              ${c.phone ? `<span><i class="fas fa-phone"></i> <a href="tel:${esc(c.phone)}" style="color:inherit">${esc(c.phone)}</a></span>` : ''}
+              ${c.email ? `<span><i class="fas fa-envelope"></i> ${esc(c.email)}</span>` : ''}
+              ${(c.district || c.city) ? `<span><i class="fas fa-map-marker-alt"></i> ${esc(c.city ? `${c.district}, ${c.city}` : c.district)}</span>` : ''}
+              <span style="color:var(--txt3)"><i class="fas fa-clock"></i> Joined: ${joinedAgo}</span>
+            </div>
+          </div>
+        </div>
+        <div class="cust-actions">
+          ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener" class="btn btn-success btn-sm" title="WhatsApp Message"><i class="fab fa-whatsapp"></i> WhatsApp</a>` : ''}
+          ${c.phone ? `<a href="tel:${esc(c.phone)}" class="btn btn-outline btn-sm" title="Call Customer"><i class="fas fa-phone"></i> Call</a>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteCustomer('${c.id}','${esc(c.name || 'Customer')}')" title="Delete Customer"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterAdminCustomers() {
+  const query = document.getElementById('adm-cust-search')?.value?.trim().toLowerCase() || '';
+  if (!query) {
+    renderAdminCustomers(allAdminCustomers);
+    return;
+  }
+  const filtered = allAdminCustomers.filter(c => {
+    const nameMatch = (c.name || '').toLowerCase().includes(query);
+    const phoneMatch = (c.phone || '').toLowerCase().includes(query);
+    const emailMatch = (c.email || '').toLowerCase().includes(query);
+    const distMatch = (c.district || '').toLowerCase().includes(query);
+    const cityMatch = (c.city || '').toLowerCase().includes(query);
+    return nameMatch || phoneMatch || emailMatch || distMatch || cityMatch;
+  });
+  renderAdminCustomers(filtered);
+}
+
+async function deleteCustomer(uid, name) {
+  if (!confirm(`"${name}" පාරිභෝගික ගිණුම සම්පූර්ණයෙන්ම Delete කිරීමට අවශ්‍ය බව තහවුරු කරන්නද?`)) return;
+  try {
+    await db.collection('users').doc(uid).delete();
+    showToast('Customer account deleted', 'info');
+    document.getElementById(`cust-card-${uid}`)?.remove();
+    allAdminCustomers = allAdminCustomers.filter(c => c.id !== uid);
+    const totalEl = document.getElementById('total-cust-count');
+    const badgeEl = document.getElementById('cust-count');
+    if (totalEl) totalEl.textContent = allAdminCustomers.length;
+    if (badgeEl) badgeEl.textContent = allAdminCustomers.length;
+    loadAdminStats();
+  } catch (err) {
+    console.error('Error deleting customer:', err);
+    showToast('Failed to delete customer: ' + err.message, 'error');
+  }
 }
 
 // ── ADMIN MANAGEMENT ──────────────────────────────────────────

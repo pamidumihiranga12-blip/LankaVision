@@ -2,6 +2,7 @@ from http.server import BaseHTTPRequestHandler
 import json
 import ssl
 import smtplib
+import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.header import Header
@@ -46,29 +47,68 @@ class handler(BaseHTTPRequestHandler):
                 self._send_json(400, {"success": False, "error": "No valid recipients"})
                 return
 
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = Header(subject, "utf-8").encode()
-            sender_header = Header(SMTP_CONFIG["sender_name"], "utf-8").encode()
-            msg["From"] = f"{sender_header} <{SMTP_CONFIG['from_email']}>"
-            msg["To"] = ", ".join(valid_recipients)
-            msg["Date"] = email.utils.formatdate(localtime=True)
-            msg["Message-ID"] = email.utils.make_msgid(domain="smartzonelk.lk")
-            msg["Reply-To"] = SMTP_CONFIG["from_email"]
-            msg["X-Mailer"] = "LankaVision Pro Mailer"
-            msg["Auto-Submitted"] = "auto-generated"
-            msg["X-Auto-Response-Suppress"] = "All"
-
-            if text:
-                msg.attach(MIMEText(text, "plain", "utf-8"))
-            if html:
-                msg.attach(MIMEText(html, "html", "utf-8"))
-
+            plain_body = text or "LankaVision Pro Notification"
             context = ssl.create_default_context()
+            sent_count = 0
+            errors = []
+
             with smtplib.SMTP_SSL(SMTP_CONFIG["server"], SMTP_CONFIG["port"], context=context, timeout=15) as s:
                 s.login(SMTP_CONFIG["user"], SMTP_CONFIG["password"])
-                s.sendmail(SMTP_CONFIG["from_email"], valid_recipients, msg.as_bytes())
 
-            self._send_json(200, {"success": True, "message": "Email sent successfully", "recipients": valid_recipients})
+                for idx, recipient in enumerate(valid_recipients):
+                    if idx > 0:
+                        # 2 second pause between multiple recipients to respect host rate limit
+                        time.sleep(2.0)
+
+                    msg = MIMEMultipart("alternative")
+                    msg["From"] = f"{SMTP_CONFIG['sender_name']} <{SMTP_CONFIG['from_email']}>"
+                    msg["To"] = recipient
+                    msg["Subject"] = Header(subject, "utf-8")
+                    msg["Date"] = email.utils.formatdate(localtime=True)
+                    msg["Message-ID"] = email.utils.make_msgid(domain="smartzonelk.lk")
+                    msg["Reply-To"] = SMTP_CONFIG["from_email"]
+
+                    msg.attach(MIMEText(plain_body, "plain", "utf-8"))
+                    if html:
+                        msg.attach(MIMEText(html, "html", "utf-8"))
+
+                    success = False
+                    for attempt in range(2):
+                        try:
+                            s.sendmail(SMTP_CONFIG["from_email"], [recipient], msg.as_string())
+                            sent_count += 1
+                            success = True
+                            break
+                        except Exception as rec_err:
+                            err_str = str(rec_err)
+                            # If rate limited (550) or blocked, wait 3 seconds and retry with clean plain-text fallback
+                            if attempt == 0 and ("550" in err_str or "suspicious" in err_str.lower()):
+                                time.sleep(3.0)
+                                try:
+                                    s.rset()
+                                except Exception:
+                                    pass
+                                try:
+                                    fallback_msg = (
+                                        f"From: {SMTP_CONFIG['sender_name']} <{SMTP_CONFIG['from_email']}>\r\n"
+                                        f"To: {recipient}\r\n"
+                                        f"Subject: {subject}\r\n"
+                                        f"Content-Type: text/plain; charset=utf-8\r\n\r\n"
+                                        f"{plain_body}"
+                                    )
+                                    s.sendmail(SMTP_CONFIG["from_email"], [recipient], fallback_msg.encode("utf-8"))
+                                    sent_count += 1
+                                    success = True
+                                    break
+                                except Exception as fb_err:
+                                    pass
+                            if attempt == 1:
+                                errors.append(f"{recipient}: {rec_err}")
+
+            if sent_count > 0:
+                self._send_json(200, {"success": True, "message": f"Email sent successfully to {sent_count} recipients", "recipients": valid_recipients, "errors": errors})
+            else:
+                self._send_json(500, {"success": False, "error": "; ".join(errors) or "Failed to send to any recipient"})
         except Exception as e:
             self._send_json(500, {"success": False, "error": str(e)})
 

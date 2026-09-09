@@ -9,6 +9,7 @@ import json
 import ssl
 import smtplib
 import threading
+import time
 import os
 import sys
 
@@ -37,7 +38,7 @@ SMTP_CONFIG = {
 
 
 def send_smtp_email(to_addresses, subject, html_content, text_content=""):
-    """Sends an email synchronously using SMTP_SSL."""
+    """Sends an email synchronously using SMTP_SSL with clean per-recipient headers and fallback."""
     if isinstance(to_addresses, str):
         to_addresses = [to_addresses]
 
@@ -45,40 +46,74 @@ def send_smtp_email(to_addresses, subject, html_content, text_content=""):
     if not valid_recipients:
         return False, "No valid recipient email addresses provided."
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = Header(subject, "utf-8").encode()
-    sender_header = Header(SMTP_CONFIG["sender_name"], "utf-8").encode()
-    msg["From"] = f"{sender_header} <{SMTP_CONFIG['from_email']}>"
-    msg["To"] = ", ".join(valid_recipients)
-    msg["Date"] = email.utils.formatdate(localtime=True)
-    msg["Message-ID"] = email.utils.make_msgid(domain="smartzonelk.lk")
-    msg["Reply-To"] = SMTP_CONFIG["from_email"]
-    msg["X-Mailer"] = "LankaVision Pro Mailer"
-    msg["Auto-Submitted"] = "auto-generated"
-    msg["X-Auto-Response-Suppress"] = "All"
-
-    if text_content:
-        msg.attach(MIMEText(text_content, "plain", "utf-8"))
-    if html_content:
-        msg.attach(MIMEText(html_content, "html", "utf-8"))
-
     context = ssl.create_default_context()
+    sent_count = 0
+    errors = []
+
     try:
         with smtplib.SMTP_SSL(SMTP_CONFIG["server"], SMTP_CONFIG["port"], context=context, timeout=15) as server:
             server.login(SMTP_CONFIG["user"], SMTP_CONFIG["password"])
-            server.sendmail(SMTP_CONFIG["from_email"], valid_recipients, msg.as_bytes())
+            for idx, recipient in enumerate(valid_recipients):
+                if idx > 0:
+                    time.sleep(2.0)
+
+                # Construct clean message for this specific recipient so envelope matches To: header
+                msg = MIMEMultipart("alternative")
+                msg["From"] = f"{SMTP_CONFIG['sender_name']} <{SMTP_CONFIG['from_email']}>"
+                msg["To"] = recipient
+                msg["Subject"] = Header(subject, "utf-8")
+                msg["Date"] = email.utils.formatdate(localtime=True)
+                msg["Message-ID"] = email.utils.make_msgid(domain="smartzonelk.lk")
+                msg["Reply-To"] = SMTP_CONFIG["from_email"]
+
+                plain_part = text_content or "LankaVision Pro System Notification"
+                msg.attach(MIMEText(plain_part, "plain", "utf-8"))
+                if html_content:
+                    msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+                for attempt in range(2):
+                    try:
+                        server.sendmail(SMTP_CONFIG["from_email"], [recipient], msg.as_string())
+                        sent_count += 1
+                        break
+                    except Exception as rec_err:
+                        err_str = str(rec_err)
+                        if attempt == 0 and ("550" in err_str or "suspicious" in err_str.lower()):
+                            time.sleep(3.0)
+                            try:
+                                server.rset()
+                            except Exception:
+                                pass
+                            try:
+                                fallback_msg = (
+                                    f"From: {SMTP_CONFIG['sender_name']} <{SMTP_CONFIG['from_email']}>\r\n"
+                                    f"To: {recipient}\r\n"
+                                    f"Subject: {subject}\r\n"
+                                    f"Content-Type: text/plain; charset=utf-8\r\n\r\n"
+                                    f"{plain_part}"
+                                )
+                                server.sendmail(SMTP_CONFIG["from_email"], [recipient], fallback_msg.encode("utf-8"))
+                                sent_count += 1
+                                break
+                            except Exception:
+                                pass
+                        if attempt == 1:
+                            errors.append(f"{recipient}: {rec_err}")
     except Exception as err:
         try:
-            print(f"[EMAIL ERROR] Failed sending to {valid_recipients}: {err}", flush=True)
+            print(f"[EMAIL ERROR] Connection failed for {valid_recipients}: {err}", flush=True)
         except Exception:
             pass
         return False, str(err)
 
-    try:
-        print(f"[EMAIL] Sent successfully to: {valid_recipients} | Subject: {subject}", flush=True)
-    except Exception:
-        pass
-    return True, "Email sent successfully"
+    if sent_count > 0:
+        try:
+            print(f"[EMAIL] Sent successfully to {sent_count} recipients: {valid_recipients} | Subject: {subject}", flush=True)
+        except Exception:
+            pass
+        return True, "Email sent successfully"
+    else:
+        return False, "; ".join(errors) or "Failed to send email"
 
 
 
@@ -174,9 +209,9 @@ class LankaVisionRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    # Allow address reuse
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), LankaVisionRequestHandler) as httpd:
+    # Allow address reuse and multi-threaded request processing
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    with socketserver.ThreadingTCPServer(("", PORT), LankaVisionRequestHandler) as httpd:
         print(f"=================================================")
         print(f" LankaVision Pro Server running at:")
         print(f" http://localhost:{PORT}")
