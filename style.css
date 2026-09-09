@@ -332,3 +332,367 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   .hero-stats{justify-content:flex-start}
   .features-section{padding:60px 80px 80px;grid-template-columns:repeat(3,1fr)}
 }
+
+/* ── LIVE SELFIE CAMERA WIDGET ── */
+.selfie-form-group {
+  margin-bottom: 20px;
+}
+.selfie-hint {
+  font-size: .78rem;
+  color: var(--txt3);
+  margin-bottom: 10px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.selfie-hint i {
+  color: var(--accent);
+}
+.selfie-box {
+  background: var(--bg2);
+  border: 1.5px dashed rgba(59,130,246,0.35);
+  border-radius: var(--r-l);
+  padding: 16px;
+  text-align: center;
+  transition: var(--ease);
+  position: relative;
+  overflow: hidden;
+}
+.selfie-box:hover {
+  border-color: var(--primary-l);
+}
+.selfie-idle-state {
+  padding: 20px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.selfie-idle-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(37,99,235,0.12);
+  border: 1px solid rgba(37,99,235,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: var(--primary-l);
+}
+.selfie-idle-txt {
+  font-size: .86rem;
+  color: var(--txt2);
+  font-weight: 500;
+}
+.selfie-camera-wrap {
+  width: 100%;
+}
+.selfie-viewport {
+  position: relative;
+  width: 100%;
+  height: 270px;
+  background: #030712;
+  border-radius: var(--r-m);
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.selfie-viewport video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror preview */
+}
+.selfie-guide-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150px;
+  height: 190px;
+  border: 2px dashed rgba(255,255,255,0.55);
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+.guide-text {
+  font-size: .68rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0,0,0,0.65);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.live-rec-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(239,68,68,0.25);
+  border: 1px solid rgba(239,68,68,0.5);
+  color: #fca5a5;
+  font-size: .68rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: .5px;
+}
+.rec-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulse 1.2s infinite;
+}
+.selfie-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+/* Captured Preview State */
+.selfie-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.selfie-preview-circle {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid var(--success);
+  box-shadow: 0 0 20px rgba(16,185,129,0.3);
+  overflow: hidden;
+  background: #000;
+}
+.selfie-preview-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.selfie-check-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: var(--success);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  border: 2px solid var(--card);
+}
+.selfie-preview-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.selfie-status-success {
+  font-size: .84rem;
+  font-weight: 700;
+  color: #34d399;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── ASSIGNED TECHNICIAN CARD (CUSTOMER VIEW) ── */
+.assigned-tech-card {
+  background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(16,185,129,0.08) 100%);
+  border: 1.5px solid rgba(59,130,246,0.35);
+  border-radius: var(--r-l);
+  padding: 14px;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  transition: var(--ease);
+}
+.assigned-tech-card:hover {
+  border-color: var(--primary-l);
+}
+.assigned-tech-photo-wrap {
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.assigned-tech-img {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2.5px solid var(--primary-l);
+  box-shadow: 0 0 12px rgba(59,130,246,0.4);
+  display: block;
+  transition: var(--ease);
+}
+.assigned-tech-img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(59,130,246,0.6);
+}
+.assigned-tech-initial {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  border: 2px solid var(--primary-l);
+}
+.assigned-tech-verify-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: var(--success);
+  color: #fff;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .65rem;
+  border: 2px solid var(--card);
+}
+.assigned-tech-details {
+  flex: 1;
+  min-width: 0;
+}
+.assigned-tech-lbl {
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--accent-l);
+  letter-spacing: .5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 2px;
+}
+.assigned-tech-name {
+  font-size: .98rem;
+  font-weight: 800;
+  color: var(--txt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.assigned-tech-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* In Modal: Larger Display */
+.modal-tech-card {
+  background: linear-gradient(135deg, rgba(37,99,235,0.1) 0%, rgba(16,185,129,0.08) 100%);
+  border: 1.5px solid rgba(59,130,246,0.4);
+  border-radius: var(--r-l);
+  padding: 18px;
+  margin-bottom: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.modal-tech-photo-wrap {
+  position: relative;
+  cursor: pointer;
+}
+.modal-tech-photo-wrap .assigned-tech-img {
+  width: 96px;
+  height: 96px;
+  border: 3px solid var(--primary-l);
+  box-shadow: 0 0 24px rgba(59,130,246,0.5);
+}
+.modal-tech-photo-wrap .assigned-tech-initial {
+  width: 96px;
+  height: 96px;
+  font-size: 2.4rem;
+  border: 3px solid var(--primary-l);
+}
+.modal-tech-photo-wrap .assigned-tech-verify-badge {
+  width: 26px;
+  height: 26px;
+  font-size: .8rem;
+  bottom: 0;
+  right: 0;
+}
+.modal-tech-zoom-hint {
+  font-size: .7rem;
+  color: var(--txt3);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* ── TECH AVATAR IMAGE IN DIRECTORY & ADMIN ── */
+.tech-av {
+  overflow: hidden;
+  position: relative;
+}
+.tech-av img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* ── PHOTO LIGHTBOX MODAL ── */
+.photo-modal-box {
+  max-width: 480px;
+  text-align: center;
+}
+.photo-modal-img-wrap {
+  position: relative;
+  background: #000;
+  border-radius: var(--r-l);
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 65vh;
+}
+.photo-modal-img-wrap img {
+  max-width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  display: block;
+}
+.photo-modal-caption {
+  font-size: .84rem;
+  color: var(--txt2);
+  margin-top: 12px;
+}
+

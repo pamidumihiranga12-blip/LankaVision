@@ -448,6 +448,7 @@ async function notifyTechRegistered(tech) {
     const adminHtml = emailWrapper('New Technician Application', `
       <h2 style="color:#60a5fa;margin-top:0;font-size:18px">👤 New Technician Registration!</h2>
       <p>නව Technician කෙනෙක් system එකට register වී ඇත. Review කර approve කරන්න.</p>
+      ${tech.photoUrl ? `<div style="text-align:center;margin:12px 0"><img src="${tech.photoUrl}" style="width:76px;height:76px;border-radius:50%;border:3px solid #3b82f6;object-fit:cover" alt="Technician Selfie" /></div>` : ''}
       <div class="detail-card">
         <div class="row"><span class="lbl">Name</span><span class="val">${esc(tech.name)}</span></div>
         <div class="row"><span class="lbl">Phone</span><span class="val" style="color:#34d399;font-family:monospace">${esc(tech.phone)}</span></div>
@@ -533,6 +534,7 @@ async function notifyJobClaimed(job, tech) {
     const custHtml = emailWrapper('Technician Assigned', `
       <h2 style="color:#34d399;margin-top:0;font-size:18px">🤝 Technician Accepted Your Job!</h2>
       <p>ආයුබෝවන් <strong>${esc(job.customerName || 'Customer')}</strong>, ඔබගේ Job එක සඳහා Technician කෙනෙක් පත් විය.</p>
+      ${tech.photoUrl ? `<div style="text-align:center;margin:12px 0"><img src="${tech.photoUrl}" style="width:72px;height:72px;border-radius:50%;border:3px solid #3b82f6;object-fit:cover" alt="Technician" /></div>` : ''}
       <div class="detail-card">
         <div class="row"><span class="lbl">Job Title</span><span class="val">${esc(job.title)}</span></div>
         <div class="row"><span class="lbl">Technician</span><span class="val" style="color:#60a5fa">${esc(tech.name)}</span></div>
@@ -677,6 +679,9 @@ function populateAllDistricts() {
 
 // ── SCREENS ───────────────────────────────────────────────────
 function showScreen(id) {
+  if (id !== 'screen-register') {
+    stopTechCamera();
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(id);
   if (el) { el.classList.add('active'); }
@@ -811,6 +816,161 @@ async function handleCustomerRegister(e) {
   }
 }
 
+// ── TECHNICIAN LIVE CAMERA CAPTURE ────────────────────────────
+let techCameraStream = null;
+let techCameraFacingMode = 'user'; // default front-facing selfie camera
+let capturedTechSelfieDataUrl = null;
+
+async function startTechCamera() {
+  const errEl = document.getElementById('selfie-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (errEl) {
+      errEl.textContent = 'ඔබගේ Browser එක කැමරා භාවිතයට සහය නොදක්වයි. (Camera not supported in this browser).';
+      errEl.classList.remove('hidden');
+    }
+    showToast('Camera not supported in this browser', 'error');
+    return;
+  }
+
+  stopTechCamera();
+
+  const constraints = {
+    video: {
+      facingMode: techCameraFacingMode,
+      width: { ideal: 640 },
+      height: { ideal: 640 }
+    },
+    audio: false
+  };
+
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (e1) {
+      // Fallback to generic video device
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
+
+    techCameraStream = stream;
+    const video = document.getElementById('tech-selfie-video');
+    if (video) {
+      video.srcObject = stream;
+      await video.play().catch(() => {});
+    }
+
+    document.getElementById('selfie-idle')?.classList.add('hidden');
+    document.getElementById('selfie-camera-wrap')?.classList.remove('hidden');
+    document.getElementById('selfie-preview-wrap')?.classList.add('hidden');
+  } catch (err) {
+    console.error('Camera access error:', err);
+    if (errEl) {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errEl.textContent = 'කැමරාව Access කිරීමට අවසර නොලැබුණි (Permission Denied). කරුණාකර Browser settings වලින් Camera permission ලබා දී නැවත උත්සාහ කරන්න.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errEl.textContent = 'කැමරාවක් හමු නොවීය. කරුණාකර Device එකෙහි කැමරාවක් තිබේදැයි පරීක්ෂා කරන්න.';
+      } else {
+        errEl.textContent = 'කැමරාව On කිරීමේදී දෝෂයක් ඇතිවිය: ' + (err.message || 'Error accessing camera');
+      }
+      errEl.classList.remove('hidden');
+    }
+    showToast('Camera permission required for selfie verification', 'error');
+  }
+}
+
+function stopTechCamera() {
+  if (techCameraStream) {
+    techCameraStream.getTracks().forEach(track => {
+      try { track.stop(); } catch(e) {}
+    });
+    techCameraStream = null;
+  }
+  const video = document.getElementById('tech-selfie-video');
+  if (video) {
+    video.srcObject = null;
+  }
+}
+
+async function switchTechCamera() {
+  techCameraFacingMode = (techCameraFacingMode === 'user') ? 'environment' : 'user';
+  await startTechCamera();
+}
+
+function captureTechSelfie() {
+  const video = document.getElementById('tech-selfie-video');
+  const canvas = document.getElementById('tech-selfie-canvas');
+  const errEl = document.getElementById('selfie-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!video || !canvas || !video.videoWidth) {
+    showToast('Camera is not ready yet', 'error');
+    return;
+  }
+
+  const vWidth = video.videoWidth;
+  const vHeight = video.videoHeight;
+  const targetSize = 480;
+  canvas.width = targetSize;
+  canvas.height = targetSize;
+
+  const ctx = canvas.getContext('2d');
+  const minDim = Math.min(vWidth, vHeight);
+  const startX = (vWidth - minDim) / 2;
+  const startY = (vHeight - minDim) / 2;
+
+  // Mirror horizontally if user-facing so captured photo matches preview
+  if (techCameraFacingMode === 'user') {
+    ctx.translate(targetSize, 0);
+    ctx.scale(-1, 1);
+  }
+
+  ctx.drawImage(video, startX, startY, minDim, minDim, 0, 0, targetSize, targetSize);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+  capturedTechSelfieDataUrl = dataUrl;
+
+  const previewImg = document.getElementById('tech-selfie-preview-img');
+  if (previewImg) {
+    previewImg.src = dataUrl;
+  }
+
+  stopTechCamera();
+
+  document.getElementById('selfie-camera-wrap')?.classList.add('hidden');
+  document.getElementById('selfie-idle')?.classList.add('hidden');
+  document.getElementById('selfie-preview-wrap')?.classList.remove('hidden');
+
+  showToast('Live Selfie Capture කළා! 🎉', 'success');
+}
+
+function retakeTechSelfie() {
+  capturedTechSelfieDataUrl = null;
+  const previewImg = document.getElementById('tech-selfie-preview-img');
+  if (previewImg) previewImg.src = '';
+  document.getElementById('selfie-preview-wrap')?.classList.add('hidden');
+  startTechCamera();
+}
+
+function previewPhoto(url, title) {
+  if (!url) return;
+  const modal = document.getElementById('modal-photo-preview');
+  const img = document.getElementById('modal-photo-img');
+  const titleEl = document.getElementById('modal-photo-title');
+  const capEl = document.getElementById('modal-photo-caption');
+  if (!modal || !img) return;
+  img.src = url;
+  if (titleEl) {
+    titleEl.innerHTML = `<i class="fas fa-id-badge" style="color:var(--primary-l)"></i> <span>${esc(title || 'Technician Photo')}</span>`;
+  }
+  if (capEl) {
+    capEl.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> Verified Live Selfie · Camera එකෙන්ම ලබාගත් ඡායාරූපයකි';
+  }
+  modal.classList.remove('hidden');
+}
+
 async function handleTechRegister(e) {
   e.preventDefault();
   const name = document.getElementById('tech-name').value.trim();
@@ -830,15 +990,33 @@ async function handleTechRegister(e) {
   if (!district) { errEl.textContent = 'District Select කරන්න.'; errEl.classList.remove('hidden'); return; }
   if (!serviceType) { errEl.textContent = 'Service Type Select කරන්න.'; errEl.classList.remove('hidden'); return; }
 
+  // Strictly enforce live selfie capture
+  if (!capturedTechSelfieDataUrl) {
+    const selfieErr = document.getElementById('selfie-error');
+    if (selfieErr) {
+      selfieErr.textContent = 'කරුණාකර Camera එකෙන් ඔබගේ Live Selfie එකක් ලබාගන්න (Selfie photo required).';
+      selfieErr.classList.remove('hidden');
+    }
+    errEl.textContent = 'කරුණාකර Camera එකෙන් Selfie ඡායාරූපය ලබාගන්න (Selfie is required).';
+    errEl.classList.remove('hidden');
+    document.getElementById('tech-selfie-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     await db.collection('users').doc(cred.user.uid).set({
       name, phone, email, role: 'technician',
-      district, city, serviceType, status: 'pending',
+      district, city, serviceType,
+      photoUrl: capturedTechSelfieDataUrl,
+      status: 'pending',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    const selfieData = capturedTechSelfieDataUrl;
+    stopTechCamera();
+    capturedTechSelfieDataUrl = null;
     showToast('Application submit කළා! Admin approve වෙනතුරු wait කරන්න.', 'success');
-    await notifyTechRegistered({ name, phone, email, district, city, serviceType });
+    await notifyTechRegistered({ name, phone, email, district, city, serviceType, photoUrl: selfieData });
   } catch (err) {
     console.error('handleTechRegister error:', err);
     errEl.textContent = authErr(err.code);
@@ -847,6 +1025,7 @@ async function handleTechRegister(e) {
 }
 
 async function handleLogout() {
+  stopTechCamera();
   await auth.signOut();
   currentUser = null; currentUserData = null;
   showScreen('screen-landing');
@@ -855,10 +1034,14 @@ async function handleLogout() {
 // ── REGISTER NAV ──────────────────────────────────────────────
 function showRegisterOptions() { showScreen('screen-register'); showRegisterRoleSelect(); }
 function showRegisterRoleSelect() {
+  stopTechCamera();
   document.getElementById('reg-role-select').classList.remove('hidden');
   ['reg-cust-form','reg-tech-form'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
 }
 function showRegisterForm(type) {
+  if (type !== 'technician') {
+    stopTechCamera();
+  }
   document.getElementById('reg-role-select').classList.add('hidden');
   document.getElementById('reg-cust-form').classList.toggle('hidden', type !== 'customer');
   document.getElementById('reg-tech-form').classList.toggle('hidden', type !== 'technician');
@@ -1088,6 +1271,36 @@ function jobCard(id, job, view) {
          <span style="margin-left:auto;font-size:.72rem;color:var(--txt3)">🔒 Accept කළ පසු පෙනේ</span>
        </div>`;
 
+  // Assigned Technician Card for Customer view
+  let assignedTechCardHtml = '';
+  if (view === 'customer' && (job.status === 'claimed' || job.status === 'completed' || job.claimedByName)) {
+    const techName = job.claimedByName || 'Technician';
+    const techPhone = job.claimedByPhone || '';
+    const techPhoto = job.claimedByPhoto || '';
+    const cleanTechPhone = cleanPhone(techPhone);
+
+    const avatarHtml = techPhoto
+      ? `<img src="${techPhoto}" class="assigned-tech-img" alt="${esc(techName)}" onclick="event.stopPropagation();previewPhoto('${techPhoto}', '${esc(techName)} - Technician Selfie')" title="Click to view full photo" />`
+      : `<div class="assigned-tech-initial">${(techName || 'T').charAt(0).toUpperCase()}</div>`;
+
+    assignedTechCardHtml = `
+    <div class="assigned-tech-card" onclick="openJobModal('${id}')">
+      <div class="assigned-tech-photo-wrap" onclick="event.stopPropagation();if('${techPhoto}') previewPhoto('${techPhoto}', '${esc(techName)} - Technician Selfie')">
+        ${avatarHtml}
+        <div class="assigned-tech-verify-badge" title="Verified Technician"><i class="fas fa-check"></i></div>
+      </div>
+      <div class="assigned-tech-details">
+        <div class="assigned-tech-lbl"><i class="fas fa-user-check"></i> භාරගත් Technician</div>
+        <div class="assigned-tech-name">${esc(techName)}</div>
+        ${techPhone ? `
+        <div class="assigned-tech-actions">
+          <a href="tel:${esc(techPhone)}" class="btn btn-success btn-sm" onclick="event.stopPropagation()"><i class="fas fa-phone"></i> Call</a>
+          <a href="https://wa.me/94${cleanTechPhone}" target="_blank" class="btn btn-whatsapp btn-sm" onclick="event.stopPropagation()"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }
+
   let actions = '';
   if (view === 'tech' && job.status === 'open') {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> Map</button>` : '';
@@ -1124,7 +1337,7 @@ function jobCard(id, job, view) {
       <span class="meta-item"><i class="fas fa-clock"></i>${ago}</span>
       ${job.claimedByName ? `<span class="meta-item"><i class="fas fa-tools"></i>${esc(job.claimedByName)}</span>` : ''}
     </div>
-    ${phoneHtml}
+    ${view === 'customer' && assignedTechCardHtml ? assignedTechCardHtml : phoneHtml}
     <div class="jc-actions">${actions}</div>
   </div>`;
 }
@@ -1165,6 +1378,7 @@ async function claimJob(jobId, e) {
       claimedBy: currentUser.uid,
       claimedByName: currentUserData.name,
       claimedByPhone: currentUserData.phone || '',
+      claimedByPhoto: currentUserData.photoUrl || '',
       claimedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -1230,6 +1444,50 @@ async function openJobModal(jobId) {
         </div>`;
     }
 
+    // Assigned Technician Card for Modal
+    let techCardModalHtml = '';
+    if (job.claimedByName || job.claimedBy) {
+      let techPhoto = job.claimedByPhoto || '';
+      if (!techPhoto && job.claimedBy) {
+        try {
+          const uDoc = await db.collection('users').doc(job.claimedBy).get();
+          if (uDoc.exists && uDoc.data().photoUrl) {
+            techPhoto = uDoc.data().photoUrl;
+          }
+        } catch (e) {}
+      }
+
+      const techName = job.claimedByName || 'Technician';
+      const techPhone = job.claimedByPhone || '';
+      const cleanTechPhone = cleanPhone(techPhone);
+
+      const avatarHtml = techPhoto
+        ? `<img src="${techPhoto}" class="assigned-tech-img" alt="${esc(techName)}" onclick="previewPhoto('${techPhoto}','${esc(techName)} - Technician Selfie')" />`
+        : `<div class="assigned-tech-initial">${(techName || 'T').charAt(0).toUpperCase()}</div>`;
+
+      techCardModalHtml = `
+        <div class="modal-tech-card">
+          <div class="modal-tech-photo-wrap" onclick="if('${techPhoto}') previewPhoto('${techPhoto}','${esc(techName)} - Technician Selfie')">
+            ${avatarHtml}
+            <div class="assigned-tech-verify-badge" title="Verified Technician"><i class="fas fa-check"></i></div>
+          </div>
+          ${techPhoto ? `<div class="modal-tech-zoom-hint" onclick="previewPhoto('${techPhoto}','${esc(techName)} - Technician Selfie')"><i class="fas fa-search-plus"></i> Photo එක විශාල කර බලන්න (Click to enlarge)</div>` : ''}
+          <div>
+            <div class="assigned-tech-lbl"><i class="fas fa-user-check"></i> භාරගත් Technician (Assigned Technician)</div>
+            <div style="font-size:1.15rem;font-weight:800;color:var(--txt);margin-top:2px">${esc(techName)}</div>
+            ${techPhone ? `<div style="font-size:.92rem;font-weight:700;color:var(--success);font-family:monospace;margin-top:4px"><i class="fas fa-phone"></i> ${esc(techPhone)}</div>` : ''}
+          </div>
+          ${techPhone ? `
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%">
+            <a href="tel:${esc(techPhone)}" class="btn btn-success btn-sm"><i class="fas fa-phone"></i> Call Technician</a>
+            <a href="https://wa.me/94${cleanTechPhone}" target="_blank" class="btn btn-whatsapp btn-sm"><i class="fab fa-whatsapp"></i> WhatsApp Chat</a>
+          </div>` : ''}
+          <div style="font-size:.78rem;color:var(--txt2);background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:8px 12px;width:100%">
+            <i class="fas fa-info-circle" style="color:var(--primary-l)"></i> මෙම Technician ඔබගේ Job එක භාරගෙන ඇති අතර ඉතා ඉක්මනින් ඔබව සම්බන්ධ කරගනු ඇත.
+          </div>
+        </div>`;
+    }
+
     document.getElementById('modal-job-body').innerHTML = `
       <h2 style="margin-bottom:8px;padding-right:28px">${esc(job.title)}</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
@@ -1237,6 +1495,7 @@ async function openJobModal(jobId) {
         <span class="status-badge s-${esc(job.status)}">${statusLabel(job.status)}</span>
       </div>
       ${mapHtml}
+      ${techCardModalHtml}
       <div style="display:grid;gap:10px">
         <div class="detail-box"><div class="dl">Description</div><div class="dv">${esc(job.description)}</div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1247,7 +1506,7 @@ async function openJobModal(jobId) {
           <div class="dl"><i class="fas fa-phone"></i> Phone Number</div>
           ${phoneHtml}
         </div>
-        ${job.claimedByName ? `<div class="detail-box" style="background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.2)"><div class="dl">Claimed by</div><div class="dv" style="color:var(--accent)">${esc(job.claimedByName)}</div></div>` : ''}
+        ${!techCardModalHtml && job.claimedByName ? `<div class="detail-box" style="background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.2)"><div class="dl">Claimed by</div><div class="dv" style="color:var(--accent)">${esc(job.claimedByName)}</div></div>` : ''}
         ${isAdmin ? `<button class="btn btn-warning btn-full" onclick="closeModal('modal-job');openEditJobModal('${jobId}')"><i class="fas fa-edit"></i> Edit This Job</button>` : ''}
       </div>`;
 
@@ -1884,10 +2143,14 @@ function techCardHtml(id, t, context) {
     actions += `<button class="btn btn-danger btn-sm" onclick="deleteTech('${id}')"><i class="fas fa-trash"></i></button>`;
   }
 
+  const avHtml = t.photoUrl
+    ? `<img src="${t.photoUrl}" alt="${esc(t.name)}" onclick="previewPhoto('${t.photoUrl}','${esc(t.name)} - Technician Selfie')" title="Click to enlarge selfie" />`
+    : `${(t.name || 'T').charAt(0).toUpperCase()}`;
+
   return `
   <div class="tech-card" id="tc-${id}">
     <div class="tech-info">
-      <div class="tech-av">${(t.name || 'T').charAt(0).toUpperCase()}</div>
+      <div class="tech-av" ${t.photoUrl ? `onclick="previewPhoto('${t.photoUrl}','${esc(t.name)} - Technician Selfie')"` : ''}>${avHtml}</div>
       <div style="flex:1">
         <div class="tech-name">${esc(t.name)} <span style="font-size:.72rem;color:${statusColor};font-weight:700">${statusIcon} ${t.status}</span></div>
         <div class="tech-meta">
@@ -1895,6 +2158,7 @@ function techCardHtml(id, t, context) {
           <span><i class="fas fa-envelope"></i> ${esc(t.email)}</span>
           <span><i class="fas fa-map-marker-alt"></i> ${esc(t.city ? `${t.district}, ${t.city}` : t.district)}</span>
           <span class="type-badge ${esc(t.serviceType)}" style="font-size:.7rem;padding:2px 8px">${esc(t.serviceType)}</span>
+          ${t.photoUrl ? `<span style="color:#34d399;font-weight:700;cursor:pointer" onclick="previewPhoto('${t.photoUrl}','${esc(t.name)} - Selfie')"><i class="fas fa-camera"></i> Selfie Verified</span>` : ''}
         </div>
         <div style="font-size:.7rem;color:var(--txt3);margin-top:3px">Applied: ${timeAgo(t.createdAt?.toDate?.())}</div>
       </div>
@@ -2131,10 +2395,15 @@ function renderProfileCard() {
   if (!currentUserData) return '';
   const u = currentUserData;
   const statusColor = u.status === 'approved' ? 'var(--success)' : u.status === 'pending' ? 'var(--warning)' : 'var(--danger)';
+  const avStyle = u.photoUrl
+    ? `background-image:url(${u.photoUrl});background-size:cover;background-position:center;border:2.5px solid var(--primary-l);cursor:pointer;`
+    : '';
   return `
   <div class="profile-wrap">
     <div class="panel">
-      <div class="profile-av">${(u.name || 'U').charAt(0).toUpperCase()}</div>
+      <div class="profile-av" style="${avStyle}" ${u.photoUrl ? `onclick="previewPhoto('${u.photoUrl}','${esc(u.name)} - Selfie')"` : ''}>
+        ${u.photoUrl ? '' : (u.name || 'U').charAt(0).toUpperCase()}
+      </div>
       <h2 style="text-align:center;margin-bottom:24px">${esc(u.name)}</h2>
       <div class="profile-row"><label><i class="fas fa-envelope"></i> Email</label><span>${esc(u.email)}</span></div>
       ${u.phone ? `<div class="profile-row"><label><i class="fas fa-phone"></i> Phone</label><span>${esc(u.phone)}</span></div>` : ''}
@@ -2142,6 +2411,7 @@ function renderProfileCard() {
       ${u.district ? `<div class="profile-row"><label><i class="fas fa-map-marker-alt"></i> District / City</label><span>${esc(u.city ? `${u.district}, ${u.city}` : u.district)}</span></div>` : ''}
       ${u.serviceType ? `<div class="profile-row"><label><i class="fas fa-tools"></i> Service</label><span class="type-badge ${esc(u.serviceType)}" style="font-size:.85rem">${esc(u.serviceType)}</span></div>` : ''}
       ${u.status ? `<div class="profile-row"><label><i class="fas fa-circle"></i> Status</label><span style="color:${statusColor};font-weight:700">${u.status}</span></div>` : ''}
+      ${u.photoUrl ? `<div class="profile-row"><label><i class="fas fa-camera"></i> Live Selfie</label><span style="color:var(--success);font-weight:700;cursor:pointer" onclick="previewPhoto('${u.photoUrl}','${esc(u.name)}')"><i class="fas fa-check-circle"></i> Verified (View)</span></div>` : ''}
       <div style="margin-top:20px"><button class="btn btn-outline btn-full" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
   </div>`;
