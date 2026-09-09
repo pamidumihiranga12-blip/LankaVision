@@ -6,9 +6,10 @@ const projectRoot = process.cwd();
 const html = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(projectRoot, 'style.css'), 'utf8');
 const js = fs.readFileSync(path.join(projectRoot, 'app.js'), 'utf8');
+const i18nContent = fs.readFileSync(path.join(projectRoot, 'i18n.js'), 'utf8');
 
 console.log('====================================================');
-console.log('🔍 RUNNING COMPREHENSIVE VERIFICATION SUITE');
+console.log('🔍 RUNNING COMPREHENSIVE VERIFICATION SUITE (v16 - i18n)');
 console.log('====================================================\n');
 
 let passCount = 0;
@@ -24,8 +25,59 @@ function assert(condition, testName) {
   }
 }
 
-// 1. TECHNICIAN LIVE SELFIE ON REGISTRATION (NO GALLERY UPLOAD)
-console.log('--- 1. Technician Live Selfie Registration ---');
+// 1. TRILINGUAL LANGUAGE SUPPORT (SINHALA, ENGLISH, TAMIL)
+console.log('--- 1. Trilingual Multi-Language Support (i18n) ---');
+assert(fs.existsSync(path.join(projectRoot, 'i18n.js')), 'i18n.js file exists');
+assert(html.includes('<script src="i18n.js'), 'index.html imports i18n.js');
+assert(html.includes('class="lang-switcher"'), 'Language switcher UI container rendered in index.html');
+assert(css.includes('.lang-switcher'), 'style.css contains styles for .lang-switcher');
+assert(css.includes('.lang-btn.active'), 'style.css contains active button styles');
+
+// Test i18n dictionary contents
+const vm = require('vm');
+const i18nSandbox = {
+  localStorage: {
+    data: {},
+    getItem(k) { return this.data[k] || null; },
+    setItem(k, v) { this.data[k] = v; }
+  },
+  document: {
+    documentElement: {},
+    querySelectorAll() { return []; },
+    addEventListener() {}
+  }
+};
+vm.createContext(i18nSandbox);
+vm.runInContext(i18nContent, i18nSandbox);
+
+const I18N = i18nSandbox.I18N;
+assert(!!I18N, 'I18N dictionary object loaded');
+assert(!!I18N.si, 'Sinhala (si) language dictionary exists');
+assert(!!I18N.en, 'English (en) language dictionary exists');
+assert(!!I18N.ta, 'Tamil (ta) language dictionary exists');
+
+// Verify sample keys in each language
+assert(I18N.si.btn_post_job === 'Job එකක් දාන්න', 'Sinhala translation for btn_post_job verified');
+assert(I18N.en.btn_post_job === 'Post a Job', 'English translation for btn_post_job verified');
+assert(I18N.ta.btn_post_job === 'வேலையை பதிவு செய்க', 'Tamil translation for btn_post_job verified');
+
+// Test t() and setLanguage()
+const t = i18nSandbox.t;
+const setLanguage = i18nSandbox.setLanguage;
+assert(typeof t === 'function', 't(key) translation function exists');
+assert(typeof setLanguage === 'function', 'setLanguage(lang) function exists');
+
+setLanguage('si');
+assert(t('btn_login') === 'Login වන්න', 't() returns Sinhala string when active');
+setLanguage('en');
+assert(t('btn_login') === 'Login', 't() returns English string when active');
+setLanguage('ta');
+assert(t('btn_login') === 'உள்நுழைக', 't() returns Tamil string when active');
+
+assert(js.includes('onLanguageChanged'), 'app.js: onLanguageChanged listener defined');
+
+// 2. TECHNICIAN LIVE SELFIE ON REGISTRATION (NO GALLERY UPLOAD)
+console.log('\n--- 2. Technician Live Selfie Registration ---');
 assert(html.includes('id="reg-tech-form"'), 'Technician registration form exists');
 assert(html.includes('id="tech-selfie-box"'), 'Live selfie container exists');
 assert(html.includes('id="tech-selfie-video"'), 'Live selfie video element exists');
@@ -42,8 +94,8 @@ assert(js.includes('captureTechSelfie'), 'app.js: captureTechSelfie function exi
 assert(js.includes('retakeTechSelfie'), 'app.js: retakeTechSelfie function exists');
 assert(js.includes('photoUrl: capturedTechSelfieDataUrl'), 'app.js: live selfie saved to technician profile');
 
-// 2. CUSTOMER VIEW OF TECHNICIAN PHOTO
-console.log('\n--- 2. Customer View of Technician Photo ---');
+// 3. CUSTOMER VIEW OF TECHNICIAN PHOTO
+console.log('\n--- 3. Customer View of Technician Photo ---');
 assert(html.includes('id="modal-photo-preview"'), 'Photo preview lightbox modal exists in index.html');
 assert(html.includes('id="modal-photo-img"'), 'Photo preview img element exists in index.html');
 assert(js.includes('previewPhoto'), 'app.js: previewPhoto lightbox viewer function exists');
@@ -51,8 +103,8 @@ assert(js.includes('claimedByPhoto'), 'app.js: job stores claimedByPhoto on clai
 assert(js.includes('assignedTechCardHtml'), 'app.js: assigned technician card rendered for customer');
 assert(js.includes('techCardModalHtml'), 'app.js: technician photo card rendered in job details modal');
 
-// 3. WORK COMPLETION LIVE CAMERA PROOF (NO GALLERY UPLOAD)
-console.log('\n--- 3. Work Completion Live Camera Proof ---');
+// 4. WORK COMPLETION LIVE CAMERA PROOF (NO GALLERY UPLOAD)
+console.log('\n--- 4. Work Completion Live Camera Proof ---');
 assert(html.includes('id="modal-complete-job"'), 'Work completion modal exists in index.html');
 assert(html.includes('id="work-proof-video"'), 'Work proof live video element exists');
 assert(html.includes('id="work-proof-canvas"'), 'Work proof canvas exists');
@@ -72,14 +124,14 @@ assert(js.includes('retakeWorkProof'), 'app.js: retakeWorkProof function exists'
 assert(js.includes('confirmJobCompletion'), 'app.js: confirmJobCompletion function exists');
 assert(js.includes('completionPhoto: capturedWorkPhotoDataUrl'), 'app.js: completion photo saved to job doc');
 
-// 4. CUSTOMER COMPLETION EMAIL WITH WORK PHOTO
-console.log('\n--- 4. Customer Completion Email Notification ---');
+// 5. CUSTOMER COMPLETION EMAIL WITH WORK PHOTO
+console.log('\n--- 5. Customer Completion Email Notification ---');
 assert(js.includes('notifyJobCompleted'), 'app.js: notifyJobCompleted function exists');
 assert(js.includes('job.completionPhoto'), 'app.js: completion photo embedded in completion email');
 assert(js.includes('Job Completed:'), 'app.js: Completion email subject line defined');
 
-// 5. 5-STAR RATING & FEEDBACK SYSTEM
-console.log('\n--- 5. 5-Star Rating & Feedback System ---');
+// 6. 5-STAR RATING & FEEDBACK SYSTEM
+console.log('\n--- 6. 5-Star Rating & Feedback System ---');
 assert(html.includes('id="modal-feedback"'), 'Customer feedback modal exists in index.html');
 assert(html.includes('id="star-picker"'), '5-Star picker container exists in index.html');
 assert(html.includes('id="feedback-comment"'), 'Feedback comment textarea exists in index.html');
@@ -89,8 +141,8 @@ assert(js.includes('previewStars'), 'app.js: previewStars function exists');
 assert(js.includes('submitFeedback'), 'app.js: submitFeedback function exists');
 assert(js.includes('avgRating: Number(newAvg)'), 'app.js: average rating recalculated and updated on technician profile');
 
-// 6. SHOWING TECHNICIAN AVERAGE STAR RATING TO CUSTOMERS
-console.log('\n--- 6. Showing Star Rating Out of 5 to Customers ---');
+// 7. SHOWING TECHNICIAN AVERAGE STAR RATING TO CUSTOMERS
+console.log('\n--- 7. Showing Star Rating Out of 5 to Customers ---');
 assert(js.includes('renderStarRating'), 'app.js: renderStarRating helper exists');
 assert(js.includes('claimedByRating: techRating'), 'app.js: claimJob stores technician rating on job');
 assert(js.includes('claimedByRatingCount: techRatingCount'), 'app.js: claimJob stores technician rating count on job');
@@ -98,8 +150,32 @@ assert(css.includes('.star-rating-badge'), 'style.css: .star-rating-badge styled
 assert(css.includes('.star-picker'), 'style.css: .star-picker styled');
 assert(css.includes('.customer-review-card'), 'style.css: .customer-review-card styled');
 
-// 7. HTTP SERVER HEALTH CHECK
-console.log('\n--- 7. HTTP Server Health Check ---');
+// 8. MANDATORY LIVE SELFIE ENFORCEMENT FOR EXISTING TECHNICIANS
+console.log('\n--- 8. Mandatory Live Selfie for Existing Technicians ---');
+assert(html.includes('id="modal-mandatory-selfie"'), 'Mandatory selfie modal exists in index.html');
+assert(html.includes('id="mandatory-selfie-video"'), 'Mandatory selfie live video element exists');
+assert(html.includes('id="mandatory-selfie-canvas"'), 'Mandatory selfie canvas exists');
+assert(html.includes('id="mandatory-selfie-preview-img"'), 'Mandatory selfie preview image exists');
+
+const mandatoryModalMatch = html.match(/<div id="modal-mandatory-selfie"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/);
+const mandatoryHasFileInput = mandatoryModalMatch ? mandatoryModalMatch[0].includes('type="file"') : false;
+assert(!mandatoryHasFileInput, 'Strict check: NO <input type="file"> in mandatory selfie modal (Gallery upload blocked)');
+
+const mandatoryHasCloseBtn = mandatoryModalMatch ? mandatoryModalMatch[0].includes('modal-close') : false;
+assert(!mandatoryHasCloseBtn, 'Strict check: NO close button in mandatory selfie modal (Non-dismissible)');
+
+assert(js.includes('promptMandatoryTechSelfie'), 'app.js: promptMandatoryTechSelfie function exists');
+assert(js.includes('startMandatoryCamera'), 'app.js: startMandatoryCamera function exists');
+assert(js.includes('stopMandatoryCamera'), 'app.js: stopMandatoryCamera function exists');
+assert(js.includes('switchMandatoryCamera'), 'app.js: switchMandatoryCamera function exists');
+assert(js.includes('captureMandatorySelfie'), 'app.js: captureMandatorySelfie function exists');
+assert(js.includes('retakeMandatorySelfie'), 'app.js: retakeMandatorySelfie function exists');
+assert(js.includes('saveMandatorySelfie'), 'app.js: saveMandatorySelfie function exists');
+assert(js.includes('if (!currentUserData.photoUrl)'), 'app.js: loadUserData checks missing photoUrl for technicians');
+assert(js.includes('currentUserData.role === \'technician\' && !currentUserData.photoUrl'), 'app.js: claimJob blocks claims if photoUrl missing');
+
+// 9. HTTP SERVER HEALTH CHECK
+console.log('\n--- 9. HTTP Server Health Check ---');
 const req = http.get('http://localhost:8080/index.html', (res) => {
   assert(res.statusCode === 200, `Local HTTP server is responding with status 200 OK (got ${res.statusCode})`);
   

@@ -752,6 +752,9 @@ async function loadUserData(uid) {
         } else {
           showScreen('screen-dashboard');
           initTechDashboard();
+          if (!currentUserData.photoUrl) {
+            promptMandatoryTechSelfie();
+          }
         }
         break;
       default:
@@ -984,6 +987,200 @@ function previewPhoto(url, title) {
   modal.classList.remove('hidden');
 }
 
+// ── MANDATORY LIVE SELFIE FOR EXISTING TECHNICIANS ────────────
+let mandatoryCameraStream = null;
+let mandatoryCameraFacingMode = 'user';
+let capturedMandatorySelfieDataUrl = null;
+
+function promptMandatoryTechSelfie() {
+  capturedMandatorySelfieDataUrl = null;
+  const modal = document.getElementById('modal-mandatory-selfie');
+  if (!modal) return;
+
+  const errEl = document.getElementById('mandatory-selfie-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  const previewImg = document.getElementById('mandatory-selfie-preview-img');
+  if (previewImg) previewImg.src = '';
+  document.getElementById('mandatory-preview-wrap')?.classList.add('hidden');
+  document.getElementById('mandatory-camera-wrap')?.classList.add('hidden');
+  document.getElementById('mandatory-idle')?.classList.remove('hidden');
+
+  modal.classList.remove('hidden');
+  startMandatoryCamera();
+}
+
+async function startMandatoryCamera() {
+  const errEl = document.getElementById('mandatory-selfie-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (errEl) {
+      errEl.textContent = 'ඔබගේ Browser එක කැමරා භාවිතයට සහය නොදක්වයි.';
+      errEl.classList.remove('hidden');
+    }
+    showToast('Camera not supported', 'error');
+    return;
+  }
+
+  stopMandatoryCamera();
+
+  const constraints = {
+    video: {
+      facingMode: mandatoryCameraFacingMode,
+      width: { ideal: 640 },
+      height: { ideal: 640 }
+    },
+    audio: false
+  };
+
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch(e1) {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
+
+    mandatoryCameraStream = stream;
+    const video = document.getElementById('mandatory-selfie-video');
+    if (video) {
+      video.srcObject = stream;
+      await video.play().catch(() => {});
+    }
+
+    document.getElementById('mandatory-idle')?.classList.add('hidden');
+    document.getElementById('mandatory-camera-wrap')?.classList.remove('hidden');
+    document.getElementById('mandatory-preview-wrap')?.classList.add('hidden');
+  } catch (err) {
+    console.error('Mandatory camera error:', err);
+    if (errEl) {
+      errEl.textContent = 'කැමරාව On කිරීමට අවසර නොලැබුණි (Permission Denied). කරුණාකර Camera access ලබා දෙන්න.';
+      errEl.classList.remove('hidden');
+    }
+  }
+}
+
+function stopMandatoryCamera() {
+  if (mandatoryCameraStream) {
+    mandatoryCameraStream.getTracks().forEach(track => {
+      try { track.stop(); } catch(e) {}
+    });
+    mandatoryCameraStream = null;
+  }
+  const video = document.getElementById('mandatory-selfie-video');
+  if (video) video.srcObject = null;
+}
+
+async function switchMandatoryCamera() {
+  mandatoryCameraFacingMode = (mandatoryCameraFacingMode === 'user') ? 'environment' : 'user';
+  await startMandatoryCamera();
+}
+
+function captureMandatorySelfie() {
+  const video = document.getElementById('mandatory-selfie-video');
+  const canvas = document.getElementById('mandatory-selfie-canvas');
+  const errEl = document.getElementById('mandatory-selfie-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!video || !canvas || !video.videoWidth) {
+    showToast('Camera not ready', 'error');
+    return;
+  }
+
+  const vW = video.videoWidth;
+  const vH = video.videoHeight;
+  const size = Math.min(vW, vH);
+  const startX = (vW - size) / 2;
+  const startY = (vH - size) / 2;
+  const targetSize = 400;
+
+  canvas.width = targetSize;
+  canvas.height = targetSize;
+  const ctx = canvas.getContext('2d');
+
+  if (mandatoryCameraFacingMode === 'user') {
+    ctx.translate(targetSize, 0);
+    ctx.scale(-1, 1);
+  }
+
+  ctx.drawImage(video, startX, startY, size, size, 0, 0, targetSize, targetSize);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+  capturedMandatorySelfieDataUrl = dataUrl;
+
+  const previewImg = document.getElementById('mandatory-selfie-preview-img');
+  if (previewImg) previewImg.src = dataUrl;
+
+  stopMandatoryCamera();
+
+  document.getElementById('mandatory-camera-wrap')?.classList.add('hidden');
+  document.getElementById('mandatory-idle')?.classList.add('hidden');
+  document.getElementById('mandatory-preview-wrap')?.classList.remove('hidden');
+
+  showToast('Selfie Capture සාර්ථකයි! 📸 කරුණාකර Save කරන්න.', 'success');
+}
+
+function retakeMandatorySelfie() {
+  capturedMandatorySelfieDataUrl = null;
+  const previewImg = document.getElementById('mandatory-selfie-preview-img');
+  if (previewImg) previewImg.src = '';
+  document.getElementById('mandatory-preview-wrap')?.classList.add('hidden');
+  startMandatoryCamera();
+}
+
+async function saveMandatorySelfie() {
+  const errEl = document.getElementById('mandatory-selfie-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!capturedMandatorySelfieDataUrl) {
+    if (errEl) {
+      errEl.textContent = 'කරුණාකර Camera එකෙන් ඔබගේ Live Selfie එක Capture කර ගන්න.';
+      errEl.classList.remove('hidden');
+    }
+    showToast('Please capture your selfie first', 'error');
+    return;
+  }
+
+  if (!currentUser) return;
+
+  const btn = document.getElementById('btn-save-mandatory-selfie');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Selfie...';
+  }
+
+  try {
+    await db.collection('users').doc(currentUser.uid).update({
+      photoUrl: capturedMandatorySelfieDataUrl,
+      selfieUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    if (currentUserData) {
+      currentUserData.photoUrl = capturedMandatorySelfieDataUrl;
+    }
+
+    stopMandatoryCamera();
+    document.getElementById('modal-mandatory-selfie')?.classList.add('hidden');
+
+    showToast('Live Selfie සාර්ථකව සුරක්ෂිත විය! ✅ දැන් ඔබට Jobs ලබාගත හැක.', 'success');
+
+    if (document.getElementById('tech-avail')) loadTechJobs();
+    if (document.getElementById('tech-claims')) loadTechClaims();
+  } catch (err) {
+    console.error('saveMandatorySelfie error:', err);
+    if (errEl) {
+      errEl.textContent = 'සුරැකීමේදී දෝෂයක් සිදුවිය: ' + (err.message || 'Error');
+      errEl.classList.remove('hidden');
+    }
+    showToast('Failed to save selfie', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check-double"></i> Selfie එක Save කර ඉදිරියට යන්න';
+    }
+  }
+}
+
 // ── WORK COMPLETION LIVE CAMERA CAPTURE ───────────────────────
 let workCameraStream = null;
 let workCameraFacingMode = 'environment'; // default rear camera for physical equipment
@@ -1183,10 +1380,12 @@ async function confirmJobCompletion() {
 function renderStarRating(rating, count) {
   const r = Number(rating);
   const c = Number(count || 0);
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
   if (!r || isNaN(r) || c === 0) {
-    return `<span class="star-rating-badge" title="New Technician (No reviews yet)"><i class="fas fa-star"></i> <strong>New</strong></span>`;
+    return `<span class="star-rating-badge" title="New"><i class="fas fa-star"></i> <strong>New</strong></span>`;
   }
-  return `<span class="star-rating-badge" title="${r.toFixed(1)} out of 5 (${c} reviews)"><i class="fas fa-star"></i> <strong>${r.toFixed(1)}</strong>/5 <small style="color:var(--txt3);margin-left:2px">(${c})</small></span>`;
+  const revText = tFn('reviews_count', 'reviews');
+  return `<span class="star-rating-badge" title="${r.toFixed(1)} / 5 (${c} ${revText})"><i class="fas fa-star"></i> <strong>${r.toFixed(1)}</strong>/5 <small style="color:var(--txt3);margin-left:2px">(${c})</small></span>`;
 }
 
 async function openFeedbackModal(jobId) {
@@ -1227,12 +1426,13 @@ function setStarRating(val) {
     const sVal = Number(s.dataset.val);
     s.classList.toggle('active', sVal <= val);
   });
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
   const labels = {
-    1: '⭐ 1/5 - Poor (දුර්වලයි)',
-    2: '⭐⭐ 2/5 - Fair (සාමාන්‍යයි)',
-    3: '⭐⭐⭐ 3/5 - Good (හොඳයි)',
-    4: '⭐⭐⭐⭐ 4/5 - Very Good (ඉතා හොඳයි)',
-    5: '⭐⭐⭐⭐⭐ 5/5 - Excellent (විශිෂ්ටයි)'
+    1: tFn('star_1', '⭐ 1/5 - Poor'),
+    2: tFn('star_2', '⭐⭐ 2/5 - Fair'),
+    3: tFn('star_3', '⭐⭐⭐ 3/5 - Good'),
+    4: tFn('star_4', '⭐⭐⭐⭐ 4/5 - Very Good'),
+    5: tFn('star_5', '⭐⭐⭐⭐⭐ 5/5 - Excellent')
   };
   const labelEl = document.getElementById('star-label');
   if (labelEl) labelEl.textContent = labels[val] || `${val}/5 Stars`;
@@ -1414,10 +1614,11 @@ function initCustomerDashboard() {
   document.getElementById('nav-user-name').textContent = currentUserData.name;
   document.getElementById('fab-post').classList.remove('hidden');
 
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
   document.getElementById('dash-tabs').innerHTML = `
-    <button class="tab-btn active" data-tab="jobs" onclick="showCustTab('jobs')"><i class="fas fa-briefcase"></i> My Jobs</button>
-    <button class="tab-btn" data-tab="post" onclick="showCustTab('post')"><i class="fas fa-plus"></i> Post Job</button>
-    <button class="tab-btn" data-tab="profile" onclick="showCustTab('profile')"><i class="fas fa-user"></i> Profile</button>`;
+    <button class="tab-btn active" data-tab="jobs" onclick="showCustTab('jobs')"><i class="fas fa-briefcase"></i> ${tFn('tab_my_jobs', 'My Posted Jobs')}</button>
+    <button class="tab-btn" data-tab="post" onclick="showCustTab('post')"><i class="fas fa-plus"></i> ${tFn('tab_post_job', 'Post Job')}</button>
+    <button class="tab-btn" data-tab="profile" onclick="showCustTab('profile')"><i class="fas fa-user"></i> ${tFn('tab_profile', 'Profile')}</button>`;
   showCustTab('jobs');
 }
 
@@ -1466,11 +1667,12 @@ function initTechDashboard() {
   document.getElementById('nav-user-name').textContent = currentUserData.name;
   document.getElementById('fab-post').classList.remove('hidden');
 
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
   document.getElementById('dash-tabs').innerHTML = `
-    <button class="tab-btn active" data-tab="avail" onclick="showTechTab('avail')"><i class="fas fa-list"></i> Available Jobs</button>
-    <button class="tab-btn" data-tab="claims" onclick="showTechTab('claims')"><i class="fas fa-handshake"></i> My Claimed</button>
-    <button class="tab-btn" data-tab="post" onclick="showTechTab('post')"><i class="fas fa-plus"></i> Post Job</button>
-    <button class="tab-btn" data-tab="profile" onclick="showTechTab('profile')"><i class="fas fa-user"></i> Profile</button>`;
+    <button class="tab-btn active" data-tab="avail" onclick="showTechTab('avail')"><i class="fas fa-list"></i> ${tFn('tab_available', 'Available Jobs')}</button>
+    <button class="tab-btn" data-tab="claims" onclick="showTechTab('claims')"><i class="fas fa-handshake"></i> ${tFn('tab_claimed', 'My Claimed')}</button>
+    <button class="tab-btn" data-tab="post" onclick="showTechTab('post')"><i class="fas fa-plus"></i> ${tFn('tab_post_job', 'Post Job')}</button>
+    <button class="tab-btn" data-tab="profile" onclick="showTechTab('profile')"><i class="fas fa-user"></i> ${tFn('tab_profile', 'Profile')}</button>`;
   showTechTab('avail');
 }
 
@@ -1688,17 +1890,18 @@ function jobCard(id, job, view) {
     }
   }
 
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
   let actions = '';
   if (view === 'tech' && job.status === 'open') {
-    const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> Map</button>` : '';
-    actions = `<button class="btn btn-primary btn-sm" onclick="claimJob('${id}',event)"><i class="fas fa-handshake"></i> Accept Job</button>${mapBtn}`;
+    const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'Map')}</button>` : '';
+    actions = `<button class="btn btn-primary btn-sm" onclick="claimJob('${id}',event)"><i class="fas fa-handshake"></i> ${tFn('btn_accept_job', 'Accept Job')}</button>${mapBtn}`;
   } else if (view === 'tech-claimed' || (myJob && view !== 'customer')) {
-    const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> Map</button>` : '';
-    actions = `<button class="btn btn-success btn-sm" onclick="openCompleteJobModal('${id}')"><i class="fas fa-camera"></i> Complete Job</button>${mapBtn}`;
+    const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'Map')}</button>` : '';
+    actions = `<button class="btn btn-success btn-sm" onclick="openCompleteJobModal('${id}')"><i class="fas fa-camera"></i> ${tFn('btn_complete_job', 'Complete Job')}</button>${mapBtn}`;
   } else if (view === 'customer') {
-    const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> View Map</button>` : '';
+    const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'View Map')}</button>` : '';
     const rateBtn = (job.status === 'completed' && !job.rating)
-      ? `<button class="btn btn-rate-tech btn-sm" onclick="openFeedbackModal('${id}')"><i class="fas fa-star"></i> Rate</button>`
+      ? `<button class="btn btn-rate-tech btn-sm" onclick="openFeedbackModal('${id}')"><i class="fas fa-star"></i> ${tFn('btn_rate_tech', 'Rate')}</button>`
       : '';
     actions = `<button class="btn btn-ghost btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-eye"></i> View</button>${rateBtn}${mapBtn}`;
   } else if (view === 'admin') {
@@ -1735,8 +1938,34 @@ function jobCard(id, job, view) {
 }
 
 function statusLabel(s) {
-  const labels = { open: '🟢 Open', claimed: '🟡 Claimed', completed: '✅ Completed', cancelled: '🔴 Cancelled' };
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+  const labels = {
+    open: '🟢 ' + tFn('status_open', 'Open'),
+    claimed: '🟡 ' + tFn('status_claimed', 'In Progress'),
+    completed: '✅ ' + tFn('status_completed', 'Completed'),
+    cancelled: '🔴 ' + tFn('status_cancelled', 'Cancelled')
+  };
   return labels[s] || s;
+}
+
+// ── LANGUAGE CHANGE LISTENER ──────────────────────────────────
+function onLanguageChanged(lang) {
+  if (!currentUserData) return;
+  if (currentUserData.role === 'technician') {
+    const activeBtn = document.querySelector('#dash-tabs .tab-btn.active');
+    const curTab = activeBtn ? activeBtn.dataset.tab : 'avail';
+    initTechDashboard();
+    showTechTab(curTab);
+  } else if (currentUserData.role === 'customer') {
+    const activeBtn = document.querySelector('#dash-tabs .tab-btn.active');
+    const curTab = activeBtn ? activeBtn.dataset.tab : 'jobs';
+    initCustomerDashboard();
+    showCustTab(curTab);
+  } else if (currentUserData.role === 'admin') {
+    const activeBtn = document.querySelector('.admin-tabs .tab-btn.active');
+    const curTab = activeBtn ? activeBtn.dataset.tab : 'overview';
+    showAdminTab(curTab);
+  }
 }
 
 function maskPhone(p) {
@@ -1756,6 +1985,13 @@ function cleanPhone(p) {
 async function claimJob(jobId, e) {
   if (e) e.stopPropagation();
   if (!currentUser || !currentUserData) { showToast('Login කරන්න', 'error'); return; }
+
+  // Strict guard: Enforce live selfie for technicians who have not yet added one
+  if (currentUserData.role === 'technician' && !currentUserData.photoUrl) {
+    showToast('Jobs භාරගැනීමට පෙර කරුණාකර Live Selfie එක ලබා දෙන්න', 'warning');
+    promptMandatoryTechSelfie();
+    return;
+  }
 
   try {
     const ref = db.collection('jobs').doc(jobId);
