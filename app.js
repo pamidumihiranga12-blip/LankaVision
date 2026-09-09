@@ -4,6 +4,9 @@
 // =============================================================
 
 const MAIN_ADMIN_EMAIL = 'lankavisionadmin@gmail.com';
+const APP_BASE_URL = (typeof window !== 'undefined' && window.location && window.location.origin && !window.location.origin.includes('localhost') && !window.location.origin.includes('127.0.0.1'))
+  ? window.location.origin
+  : 'https://lanka-vision.vercel.app';
 
 const SL_DISTRICTS = [
   'Ampara','Anuradhapura','Badulla','Batticaloa','Colombo',
@@ -253,7 +256,7 @@ async function sendAdminTestEmail() {
         </div>
         <p style="color:#94a3b8;font-size:13px">ඔබට මෙම ඊමේල් පණිවිඩය ලැබුණේ නම්, නව Jobs, Technicians ලියාපදිංචි වීම් ආදී සියලුම Admin Alerts නිවැරදිව ලැබෙනු ඇත.</p>
         <div style="text-align:center;margin-top:18px">
-          <a href="http://localhost:8080/index.html" class="btn-link">Open Admin Panel</a>
+          <a href="${APP_BASE_URL}" class="btn-link">Open Admin Panel</a>
         </div>
       `),
       text: `LankaVision Pro Admin Email Test. System verified for ${adminRecipients.join(', ')}`
@@ -335,7 +338,7 @@ async function notifyNewJobPosted(job) {
     </div>
     <p style="color:#94a3b8;font-size:13px;line-height:1.5"><strong>Description:</strong> ${esc(job.description)}</p>
     <div style="text-align:center;margin-top:20px">
-      <a href="http://localhost:8080/index.html" class="btn-link">Open Admin Panel</a>
+      <a href="${APP_BASE_URL}" class="btn-link">Open Admin Panel</a>
     </div>
   `);
 
@@ -422,7 +425,7 @@ async function notifyNewJobPosted(job) {
         </div>
         <p style="color:#94a3b8;font-size:13px">Job එක Accept කිරීමට වහාම LankaVision Pro app එකට log වන්න.</p>
         <div style="text-align:center;margin-top:18px">
-          <a href="http://localhost:8080/index.html" class="btn-link">View & Accept Job</a>
+          <a href="${APP_BASE_URL}" class="btn-link">View & Accept Job</a>
         </div>
       `);
 
@@ -457,7 +460,7 @@ async function notifyTechRegistered(tech) {
         <div class="row"><span class="lbl">Service</span><span class="val">${esc(tech.serviceType)}</span></div>
       </div>
       <div style="text-align:center;margin-top:18px">
-        <a href="http://localhost:8080/index.html" class="btn-link">Review in Admin Panel</a>
+        <a href="${APP_BASE_URL}" class="btn-link">Review in Admin Panel</a>
       </div>
     `);
 
@@ -506,7 +509,7 @@ async function notifyTechApproved(tech) {
     </div>
     <p>ඔබට දැන් LankaVision Pro වෙත login වී ඔබගේ District එකේ සහ ළඟම ප්‍රදේශ වල CCTV සහ Satellite Jobs භාරගත (Accept කළ) හැකිය.</p>
     <div style="text-align:center;margin-top:18px">
-      <a href="http://localhost:8080/index.html" class="btn-link">Login & View Jobs</a>
+      <a href="${APP_BASE_URL}" class="btn-link">Login & View Jobs</a>
     </div>
   `);
   sendEmailNotification({
@@ -593,7 +596,7 @@ async function notifyJobCompleted(job) {
       <div style="text-align:center;margin:20px 0;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:16px">
         <h3 style="color:#fbbf24;margin-top:0;font-size:16px">⭐ Technician සඳහා Rating & Review ලබා දෙන්න</h3>
         <p style="font-size:13px;color:#94a3b8;margin-bottom:12px">කරුණාකර LankaVision Pro වෙත පිවිස Technician හට තරු 1-5 අතර Rating එකක් සහ ඔබගේ අදහස් (Feedback) ලබා දෙන්න.</p>
-        <a href="http://localhost:8080/index.html" style="display:inline-block;background:#f59e0b;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Review Technician Now</a>
+        <a href="${APP_BASE_URL}" style="display:inline-block;background:#f59e0b;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Review Technician Now</a>
       </div>
       <p>LankaVision Pro සේවාව භාවිත කළාට ස්තූතියි!</p>
     `);
@@ -1950,6 +1953,35 @@ function statusLabel(s) {
 
 // ── LANGUAGE CHANGE LISTENER ──────────────────────────────────
 function onLanguageChanged(lang) {
+  const adminScreen = document.getElementById('screen-admin');
+  const isAdminActive = (adminScreen && adminScreen.classList.contains('active')) || (currentUserData && currentUserData.role === 'admin');
+
+  if (isAdminActive) {
+    const isMain = (currentUser?.email === MAIN_ADMIN_EMAIL) || !!currentUserData?.isMainAdmin;
+    const pill = document.querySelector('.admin-pill');
+    if (pill) {
+      pill.innerHTML = isMain 
+        ? '<i class="fas fa-crown" style="color:#fbbf24"></i> ' + (typeof t === 'function' ? t('adm_pill_main', 'Main Admin') : 'Main Admin')
+        : '<i class="fas fa-shield-alt"></i> ' + (typeof t === 'function' ? t('adm_pill_sub', 'Admin') : 'Admin');
+    }
+    const activeBtn = document.querySelector('.admin-tabs .tab-btn.active');
+    const curTab = activeBtn ? activeBtn.dataset.tab : 'overview';
+    loadAdminStats();
+    if (curTab === 'pending') {
+      loadPendingTechs();
+    } else if (curTab === 'jobs') {
+      if (typeof allAdminJobs !== 'undefined' && allAdminJobs.length) renderAdminJobs(allAdminJobs);
+      else loadAllJobsAdmin();
+    } else if (curTab === 'technicians') {
+      if (typeof allTechs !== 'undefined' && allTechs.length) renderTechs(allTechs);
+      else loadAllTechs();
+    } else if (curTab === 'admins') {
+      loadAllAdmins();
+    }
+    showAdminTab(curTab);
+    return;
+  }
+
   if (!currentUserData) return;
   if (currentUserData.role === 'technician') {
     const activeBtn = document.querySelector('#dash-tabs .tab-btn.active');
@@ -1961,10 +1993,6 @@ function onLanguageChanged(lang) {
     const curTab = activeBtn ? activeBtn.dataset.tab : 'jobs';
     initCustomerDashboard();
     showCustTab(curTab);
-  } else if (currentUserData.role === 'admin') {
-    const activeBtn = document.querySelector('.admin-tabs .tab-btn.active');
-    const curTab = activeBtn ? activeBtn.dataset.tab : 'overview';
-    showAdminTab(curTab);
   }
 }
 
@@ -2649,8 +2677,8 @@ function initAdminDashboard() {
   const pill = document.querySelector('.admin-pill');
   if (pill) {
     pill.innerHTML = isMain 
-      ? '<i class="fas fa-crown" style="color:#fbbf24"></i> Main Admin' 
-      : '<i class="fas fa-shield-alt"></i> Admin';
+      ? '<i class="fas fa-crown" style="color:#fbbf24"></i> ' + (typeof t === 'function' ? t('adm_pill_main', 'Main Admin') : 'Main Admin')
+      : '<i class="fas fa-shield-alt"></i> ' + (typeof t === 'function' ? t('adm_pill_sub', 'Admin') : 'Admin');
   }
   loadAdminStats();
   loadPendingTechs();
@@ -2681,7 +2709,8 @@ async function loadAdminStats() {
 
     const el = document.getElementById('recent-jobs-list');
     if (!el) return;
-    if (!recent.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-briefcase"></i><p>Jobs නැත</p></div>'; return; }
+    const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+    if (!recent.length) { el.innerHTML = `<div class="empty-state"><i class="fas fa-briefcase"></i><p>${tFn('empty_no_jobs', 'Jobs නැත')}</p></div>`; return; }
     el.innerHTML = recent.map(j => `
       <div class="recent-row">
         <div>
@@ -2704,7 +2733,8 @@ async function loadPendingTechs() {
     const snap = await db.collection('users').where('role', '==', 'technician').where('status', '==', 'pending').get();
     const el = document.getElementById('pending-list');
     if (!el) return;
-    if (snap.empty) { el.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle" style="color:var(--success)"></i><p>Pending applications නැත</p></div>'; return; }
+    const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+    if (snap.empty) { el.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="color:var(--success)"></i><p>${tFn('empty_no_pending', 'Pending applications නැත')}</p></div>`; return; }
     el.innerHTML = snap.docs.map(d => techCardHtml(d.id, d.data(), 'pending')).join('');
   } catch (err) { console.error(err); }
 }
@@ -2733,7 +2763,8 @@ function filterAdminJobs() {
 function renderAdminJobs(jobs) {
   const el = document.getElementById('admin-jobs-list');
   if (!el) return;
-  if (!jobs.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-briefcase"></i><p>Jobs නැත</p></div>'; return; }
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+  if (!jobs.length) { el.innerHTML = `<div class="empty-state"><i class="fas fa-briefcase"></i><p>${tFn('empty_no_jobs', 'Jobs නැත')}</p></div>`; return; }
   el.innerHTML = jobs.map(j => `
     <div class="adm-job-row">
       <div>
@@ -2793,24 +2824,27 @@ function filterTechnicians() {
 function renderTechs(techs) {
   const el = document.getElementById('technicians-list');
   if (!el) return;
-  if (!techs.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>Technicians නැත</p></div>'; return; }
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+  if (!techs.length) { el.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><p>${tFn('empty_no_techs', 'Technicians නැත')}</p></div>`; return; }
   el.innerHTML = techs.map(t => techCardHtml(t.id, t, 'admin')).join('');
 }
 
 function techCardHtml(id, t, context) {
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
   const statusColor = t.status === 'approved' ? 'var(--success)' : t.status === 'pending' ? 'var(--warning)' : 'var(--danger)';
   const statusIcon  = t.status === 'approved' ? '✅' : t.status === 'pending' ? '⏳' : '❌';
+  const statusTxt   = t.status === 'approved' ? tFn('adm_tech_approved', 'Approved') : t.status === 'pending' ? tFn('adm_tech_pending', 'Pending') : tFn('adm_tech_rejected', 'Rejected');
 
   let actions = '';
   if (context === 'pending') {
     actions = `
-      <button class="btn btn-success btn-sm" onclick="approveTech('${id}')"><i class="fas fa-check"></i> Approve</button>
-      <button class="btn btn-danger btn-sm" onclick="rejectTech('${id}')"><i class="fas fa-times"></i> Reject</button>
-      <button class="btn btn-warning btn-sm" onclick="openEditTechModal('${id}')"><i class="fas fa-edit"></i> Edit</button>`;
+      <button class="btn btn-success btn-sm" onclick="approveTech('${id}')"><i class="fas fa-check"></i> ${tFn('btn_approve', 'Approve')}</button>
+      <button class="btn btn-danger btn-sm" onclick="rejectTech('${id}')"><i class="fas fa-times"></i> ${tFn('btn_reject', 'Reject')}</button>
+      <button class="btn btn-warning btn-sm" onclick="openEditTechModal('${id}')"><i class="fas fa-edit"></i> ${tFn('btn_edit', 'Edit')}</button>`;
   } else {
-    if (t.status !== 'approved') actions += `<button class="btn btn-success btn-sm" onclick="approveTech('${id}')"><i class="fas fa-check"></i> Approve</button>`;
-    if (t.status === 'approved') actions += `<button class="btn btn-warning btn-sm" onclick="suspendTech('${id}')"><i class="fas fa-ban"></i> Suspend</button>`;
-    actions += `<button class="btn btn-ghost btn-sm" onclick="openEditTechModal('${id}')"><i class="fas fa-edit"></i> Edit</button>`;
+    if (t.status !== 'approved') actions += `<button class="btn btn-success btn-sm" onclick="approveTech('${id}')"><i class="fas fa-check"></i> ${tFn('btn_approve', 'Approve')}</button>`;
+    if (t.status === 'approved') actions += `<button class="btn btn-warning btn-sm" onclick="suspendTech('${id}')"><i class="fas fa-ban"></i> ${tFn('btn_suspend', 'Suspend')}</button>`;
+    actions += `<button class="btn btn-ghost btn-sm" onclick="openEditTechModal('${id}')"><i class="fas fa-edit"></i> ${tFn('btn_edit', 'Edit')}</button>`;
     actions += `<button class="btn btn-danger btn-sm" onclick="deleteTech('${id}')"><i class="fas fa-trash"></i></button>`;
   }
 
@@ -2823,15 +2857,15 @@ function techCardHtml(id, t, context) {
     <div class="tech-info">
       <div class="tech-av" ${t.photoUrl ? `onclick="previewPhoto('${t.photoUrl}','${esc(t.name)} - Technician Selfie')"` : ''}>${avHtml}</div>
       <div style="flex:1">
-        <div class="tech-name">${esc(t.name)} ${renderStarRating(t.avgRating, t.ratingCount)} <span style="font-size:.72rem;color:${statusColor};font-weight:700">${statusIcon} ${t.status}</span></div>
+        <div class="tech-name">${esc(t.name)} ${renderStarRating(t.avgRating, t.ratingCount)} <span style="font-size:.72rem;color:${statusColor};font-weight:700">${statusIcon} ${statusTxt}</span></div>
         <div class="tech-meta">
           <span><i class="fas fa-phone"></i> ${esc(t.phone)}</span>
           <span><i class="fas fa-envelope"></i> ${esc(t.email)}</span>
           <span><i class="fas fa-map-marker-alt"></i> ${esc(t.city ? `${t.district}, ${t.city}` : t.district)}</span>
           <span class="type-badge ${esc(t.serviceType)}" style="font-size:.7rem;padding:2px 8px">${esc(t.serviceType)}</span>
-          ${t.photoUrl ? `<span style="color:#34d399;font-weight:700;cursor:pointer" onclick="previewPhoto('${t.photoUrl}','${esc(t.name)} - Selfie')"><i class="fas fa-camera"></i> Selfie Verified</span>` : ''}
+          ${t.photoUrl ? `<span style="color:#34d399;font-weight:700;cursor:pointer" onclick="previewPhoto('${t.photoUrl}','${esc(t.name)} - Selfie')"><i class="fas fa-camera"></i> ${tFn('selfie_verified_badge', 'Selfie Verified 🔒')}</span>` : ''}
         </div>
-        <div style="font-size:.7rem;color:var(--txt3);margin-top:3px">Applied: ${timeAgo(t.createdAt?.toDate?.())}</div>
+        <div style="font-size:.7rem;color:var(--txt3);margin-top:3px">${tFn('applied_lbl', 'Applied')}: ${timeAgo(t.createdAt?.toDate?.())}</div>
       </div>
     </div>
     <div class="tech-actions">${actions}</div>
@@ -2907,8 +2941,9 @@ async function loadAllAdmins() {
       return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
     });
 
+    const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
     if (!admins.length) {
-      el.innerHTML = '<div class="empty-state"><i class="fas fa-users-cog"></i><p>Admins නැත</p></div>';
+      el.innerHTML = `<div class="empty-state"><i class="fas fa-users-cog"></i><p>${tFn('empty_no_admins', 'Admins නැත')}</p></div>`;
       return;
     }
 
@@ -2916,16 +2951,16 @@ async function loadAllAdmins() {
       const isMain = a.email === MAIN_ADMIN_EMAIL || a.isMainAdmin;
       const isSelf = currentUser && (a.id === currentUser.uid || a.email === currentUser.email);
       const roleBadge = isMain
-        ? `<span class="badge" style="background:rgba(245,158,11,0.18);color:#fbbf24;border:1px solid rgba(245,158,11,0.4);font-size:.74rem;padding:3px 10px"><i class="fas fa-crown"></i> Main Admin</span>`
-        : `<span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);font-size:.74rem;padding:3px 10px"><i class="fas fa-shield-alt"></i> Sub-Admin</span>`;
+        ? `<span class="badge" style="background:rgba(245,158,11,0.18);color:#fbbf24;border:1px solid rgba(245,158,11,0.4);font-size:.74rem;padding:3px 10px"><i class="fas fa-crown"></i> ${tFn('adm_pill_main', 'Main Admin')}</span>`
+        : `<span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);font-size:.74rem;padding:3px 10px"><i class="fas fa-shield-alt"></i> ${tFn('adm_pill_sub_badge', 'Sub-Admin')}</span>`;
 
       let actionBtn = '';
       if (isMain) {
-        actionBtn = `<span style="font-size:.75rem;color:#f59e0b;font-weight:700;display:flex;align-items:center;gap:5px"><i class="fas fa-lock"></i> Protected</span>`;
+        actionBtn = `<span style="font-size:.75rem;color:#f59e0b;font-weight:700;display:flex;align-items:center;gap:5px"><i class="fas fa-lock"></i> ${tFn('admin_protected', 'Protected')}</span>`;
       } else if (isSelf) {
-        actionBtn = `<span style="font-size:.75rem;color:var(--txt3);font-weight:600">(ඔබගේ ගිණුම)</span>`;
+        actionBtn = `<span style="font-size:.75rem;color:var(--txt3);font-weight:600">${tFn('admin_your_account', '(ඔබගේ ගිණුම)')}</span>`;
       } else {
-        actionBtn = `<button class="btn btn-danger btn-sm" onclick="deleteAdminUser('${a.id}','${esc(a.email)}')"><i class="fas fa-trash"></i> Remove</button>`;
+        actionBtn = `<button class="btn btn-danger btn-sm" onclick="deleteAdminUser('${a.id}','${esc(a.email)}')"><i class="fas fa-trash"></i> ${tFn('btn_delete', 'Delete')}</button>`;
       }
 
       return `
@@ -3022,7 +3057,7 @@ async function handleCreateAdminSubmit(e) {
         </div>
         <p style="color:#94a3b8;font-size:13px">පද්ධතියට Log වී ඔබගේ කළමනාකරණ කටයුතු සිදු කළ හැකිය.</p>
         <div style="text-align:center;margin-top:20px">
-          <a href="http://localhost:8080/index.html" class="btn-link">Login to Admin Panel</a>
+          <a href="${APP_BASE_URL}" class="btn-link">Login to Admin Panel</a>
         </div>
       `),
       text: `Your LankaVision Pro Admin account has been created. Email: ${email}, Password: ${password}`

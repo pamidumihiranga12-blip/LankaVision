@@ -1,4 +1,4 @@
-﻿# LankaVision Pro - Setup Guide
+# LankaVision Pro - Setup Guide
 # CCTV & Satellite Job Management System
 
 ## Files
@@ -7,8 +7,12 @@
 - app.js          - App logic
 - firebase-config.js - Firebase connection
 
+## Live Production URL
+Website: https://lanka-vision.vercel.app/
+
 ## How to Open
-Double-click "index.html" OR open it in Chrome/Edge/Firefox.
+- Online: Visit https://lanka-vision.vercel.app/
+- Locally: Double-click "index.html" OR run `python server.py` and open http://localhost:8080.
 Needs internet connection (loads Firebase + Map libraries).
 
 ## STEP 1: Create Your Admin Account

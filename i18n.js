@@ -137,7 +137,71 @@ const I18N = {
     star_3: '⭐⭐⭐ 3/5 - හොඳයි (Good)',
     star_4: '⭐⭐⭐⭐ 4/5 - ඉතා හොඳයි (Very Good)',
     star_5: '⭐⭐⭐⭐⭐ 5/5 - විශිෂ්ටයි (Excellent)',
-    reviews_count: 'reviews'
+    reviews_count: 'reviews',
+
+    // Admin Panel
+    admin_panel_title: 'Admin Panel (පරිපාලක)',
+    adm_btn_test_email: 'Test Email',
+    adm_pill_main: 'Main Admin',
+    adm_pill_sub: 'Admin',
+    adm_pill_sub_badge: 'Sub-Admin',
+
+    // Admin Tabs
+    adm_tab_overview: 'Overview (දළ විශ්ලේෂණය)',
+    adm_tab_pending: 'Pending (අනුමත කිරීමට)',
+    adm_tab_jobs: 'All Jobs (සියලු Jobs)',
+    adm_tab_techs: 'Technicians ලා',
+    adm_tab_admins: 'Admins ලා',
+
+    // Stats Grid
+    adm_stat_pending_techs: 'Pending Technicians',
+    adm_stat_open_jobs: 'Open Jobs (විවෘත)',
+    adm_stat_active_techs: 'Active Technicians',
+    adm_stat_completed_jobs: 'Completed (අවසන් කළ)',
+
+    // Section Headings & Buttons
+    adm_recent_jobs: 'Recent Jobs (මෑතකදී ලැබුණු)',
+    adm_heading_admins: 'පද්ධති පරිපාලකවරුන් (System Administrators)',
+    adm_btn_test_admin_email: 'Test Admin Email',
+    adm_btn_new_admin: '+ New Admin සාදන්න',
+
+    // Filters & Statuses
+    opt_all_status: 'සියලුම තත්වයන් (All Status)',
+    opt_all_types: 'සියලුම වර්ග (All Types)',
+    opt_all_districts: 'සියලුම දිස්ත්‍රික්ක (All Districts)',
+    adm_tech_pending: 'Pending (අනුමත නොවූ)',
+    adm_tech_approved: 'Approved (අනුමත)',
+    adm_tech_rejected: 'Rejected (ප්‍රතික්ෂේපිත)',
+    svc_both: 'දෙකම (Both CCTV & Satellite)',
+
+    // Action Buttons & Labels
+    btn_approve: 'Approve (අනුමත)',
+    btn_reject: 'Reject (ප්‍රතික්ෂේප)',
+    btn_edit: 'Edit (වෙනස් කරන්න)',
+    btn_suspend: 'Suspend (අත්හිටුවන්න)',
+    btn_delete: 'Delete (මකන්න)',
+    selfie_verified_badge: 'Selfie Verified 🔒',
+    applied_lbl: 'අයදුම් කළේ',
+    empty_no_jobs: 'Jobs නැත',
+    empty_no_pending: 'Pending අයදුම්පත් නැත',
+    empty_no_techs: 'Technicians ලා නැත',
+    empty_no_admins: 'Admins ලා නැත',
+    admin_protected: 'ආරක්ෂිතයි (Protected)',
+    admin_your_account: '(ඔබගේ ගිණුම)',
+    loading: 'Loading...',
+
+    // Admin Modals
+    modal_edit_job_title: 'Job එක සංස්කරණය කරන්න (Edit Job)',
+    modal_edit_tech_title: 'Technician සංස්කරණය කරන්න (Edit Technician)',
+    adm_modal_create_title: 'New Admin සාදන්න',
+    adm_modal_create_sub: 'නව Admin ගිණුමක් සාදා access ලබා දෙන්න',
+    adm_name_label: 'Admin නම',
+    btn_create_admin_account: 'Account එක හදන්න',
+    btn_cancel: 'Cancel (අවලංගු)',
+    btn_save_changes: 'Save Changes (සුරකින්න)',
+    cust_name_label: 'පාරිභෝගික නම (Customer Name)',
+    cust_phone_label: 'දුරකථන අංකය (Customer Phone)',
+    status_label: 'තත්වය (Status)'
   },
 
   // ── ENGLISH 🇬🇧 ───────────────────────────────────────────────
@@ -273,13 +337,77 @@ const I18N = {
     star_3: '⭐⭐⭐ 3/5 - Good',
     star_4: '⭐⭐⭐⭐ 4/5 - Very Good',
     star_5: '⭐⭐⭐⭐⭐ 5/5 - Excellent',
-    reviews_count: 'reviews'
+    reviews_count: 'reviews',
+
+    // Admin Panel
+    admin_panel_title: 'Admin Panel',
+    adm_btn_test_email: 'Test Email',
+    adm_pill_main: 'Main Admin',
+    adm_pill_sub: 'Admin',
+    adm_pill_sub_badge: 'Sub-Admin',
+
+    // Admin Tabs
+    adm_tab_overview: 'Overview',
+    adm_tab_pending: 'Pending',
+    adm_tab_jobs: 'All Jobs',
+    adm_tab_techs: 'Technicians',
+    adm_tab_admins: 'Admins',
+
+    // Stats Grid
+    adm_stat_pending_techs: 'Pending Techs',
+    adm_stat_open_jobs: 'Open Jobs',
+    adm_stat_active_techs: 'Active Techs',
+    adm_stat_completed_jobs: 'Completed',
+
+    // Section Headings & Buttons
+    adm_recent_jobs: 'Recent Jobs',
+    adm_heading_admins: 'System Administrators',
+    adm_btn_test_admin_email: 'Test Admin Email',
+    adm_btn_new_admin: '+ Create New Admin',
+
+    // Filters & Statuses
+    opt_all_status: 'All Status',
+    opt_all_types: 'All Types',
+    opt_all_districts: 'All Districts',
+    adm_tech_pending: 'Pending',
+    adm_tech_approved: 'Approved',
+    adm_tech_rejected: 'Rejected',
+    svc_both: 'Both (CCTV & Satellite)',
+
+    // Action Buttons & Labels
+    btn_approve: 'Approve',
+    btn_reject: 'Reject',
+    btn_edit: 'Edit',
+    btn_suspend: 'Suspend',
+    btn_delete: 'Delete',
+    selfie_verified_badge: 'Selfie Verified 🔒',
+    applied_lbl: 'Applied',
+    empty_no_jobs: 'No Jobs Found',
+    empty_no_pending: 'No Pending Applications',
+    empty_no_techs: 'No Technicians Found',
+    empty_no_admins: 'No Admins Found',
+    admin_protected: 'Protected',
+    admin_your_account: '(Your Account)',
+    loading: 'Loading...',
+
+    // Admin Modals
+    modal_edit_job_title: 'Edit Job',
+    modal_edit_tech_title: 'Edit Technician',
+    adm_modal_create_title: 'Create New Admin',
+    adm_modal_create_sub: 'Create a new Admin account and grant access',
+    adm_name_label: 'Admin Name',
+    btn_create_admin_account: 'Create Admin Account',
+    btn_cancel: 'Cancel',
+    btn_save_changes: 'Save Changes',
+    cust_name_label: 'Customer Name',
+    cust_phone_label: 'Customer Phone',
+    status_label: 'Status'
   },
 
-  // ── TAMIL 🇮🇳 ─────────────────────────────────────────────────
+  // ── TAMIL 🇱🇰 ─────────────────────────────────────────────────
   ta: {
     lang_name: 'தமிழ்',
-    lang_flag: '🇮🇳',
+    lang_flag: '🇱🇰',
 
     // Brand & Nav
     brand_name: 'LankaVision Pro',
@@ -409,25 +537,89 @@ const I18N = {
     star_3: '⭐⭐⭐ 3/5 - நன்று (Good)',
     star_4: '⭐⭐⭐⭐ 4/5 - மிக நன்று (Very Good)',
     star_5: '⭐⭐⭐⭐⭐ 5/5 - அற்புதம் (Excellent)',
-    reviews_count: 'மதிப்பீடுகள்'
+    reviews_count: 'மதிப்பீடுகள்',
+
+    // Admin Panel
+    admin_panel_title: 'நிர்வாக குழு (Admin Panel)',
+    adm_btn_test_email: 'மின்னஞ்சல் சோதனை (Test Email)',
+    adm_pill_main: 'முதன்மை நிர்வாகி (Main Admin)',
+    adm_pill_sub: 'நிர்வாகி (Admin)',
+    adm_pill_sub_badge: 'துணை நிர்வாகி (Sub-Admin)',
+
+    // Admin Tabs
+    adm_tab_overview: 'கண்ணோட்டம் (Overview)',
+    adm_tab_pending: 'நிலுவையில் உள்ளவை (Pending)',
+    adm_tab_jobs: 'அனைத்து வேலைகள் (All Jobs)',
+    adm_tab_techs: 'தொழில்நுட்ப வல்லுநர்கள் (Technicians)',
+    adm_tab_admins: 'நிர்வாகிகள் (Admins)',
+
+    // Stats Grid
+    adm_stat_pending_techs: 'நிலுவை Technicians',
+    adm_stat_open_jobs: 'திறந்த வேலைகள் (Open Jobs)',
+    adm_stat_active_techs: 'செயலில் உள்ள Technicians',
+    adm_stat_completed_jobs: 'முடிக்கப்பட்டவை (Completed)',
+
+    // Section Headings & Buttons
+    adm_recent_jobs: 'சமீபத்திய வேலைகள் (Recent Jobs)',
+    adm_heading_admins: 'கணினி நிர்வாகிகள் (System Administrators)',
+    adm_btn_test_admin_email: 'நிர்வாக மின்னஞ்சல் சோதனை',
+    adm_btn_new_admin: '+ புதிய நிர்வாகி உருவாக்கு',
+
+    // Filters & Statuses
+    opt_all_status: 'அனைத்து நிலைகள் (All Status)',
+    opt_all_types: 'அனைத்து வகைகள் (All Types)',
+    opt_all_districts: 'அனைத்து மாவட்டங்கள் (All Districts)',
+    adm_tech_pending: 'நிலுவையில் உள்ளது (Pending)',
+    adm_tech_approved: 'அங்கீகரிக்கப்பட்டது (Approved)',
+    adm_tech_rejected: 'நிராகரிக்கப்பட்டது (Rejected)',
+    svc_both: 'இரண்டும் (Both CCTV & Satellite)',
+
+    // Action Buttons & Labels
+    btn_approve: 'அங்கீகரிக்கவும் (Approve)',
+    btn_reject: 'நிராகரி (Reject)',
+    btn_edit: 'திருத்து (Edit)',
+    btn_suspend: 'இடைநிறுத்து (Suspend)',
+    btn_delete: 'நீக்கு (Delete)',
+    selfie_verified_badge: 'சுயபடம் சரிபார்க்கப்பட்டது 🔒',
+    applied_lbl: 'விண்ணப்பித்தது',
+    empty_no_jobs: 'வேலைகள் இல்லை (No Jobs)',
+    empty_no_pending: 'நிலுவையில் உள்ள விண்ணப்பங்கள் இல்லை',
+    empty_no_techs: 'தொழில்நுட்ப வல்லுநர்கள் இல்லை',
+    empty_no_admins: 'நிர்வாகிகள் இல்லை',
+    admin_protected: 'பாதுகாக்கப்பட்டது (Protected)',
+    admin_your_account: '(உங்கள் கணக்கு)',
+    loading: 'ஏற்றுகிறது (Loading)...',
+
+    // Admin Modals
+    modal_edit_job_title: 'வேலையை திருத்தவும் (Edit Job)',
+    modal_edit_tech_title: 'தொழில்நுட்ப வல்லுநரை திருத்தவும் (Edit Technician)',
+    adm_modal_create_title: 'புதிய நிர்வாகியை உருவாக்கவும்',
+    adm_modal_create_sub: 'புதிய நிர்வாகி கணக்கை உருவாக்கி அனுமதி வழங்கவும்',
+    adm_name_label: 'நிர்வாகி பெயர்',
+    btn_create_admin_account: 'நிர்வாகி கணக்கை உருவாக்கவும்',
+    btn_cancel: 'ரத்து செய் (Cancel)',
+    btn_save_changes: 'மாற்றங்களை சேமி (Save Changes)',
+    cust_name_label: 'வாடிக்கையாளர் பெயர்',
+    cust_phone_label: 'தொலைபேசி எண்',
+    status_label: 'நிலை (Status)'
   }
 };
 
-// Current active language - persisted in localStorage (defaults to 'si')
-let currentLang = localStorage.getItem('app_lang') || 'si';
-if (!I18N[currentLang]) currentLang = 'si';
+// Current active language - persisted in localStorage (defaults to 'en')
+let currentLang = localStorage.getItem('app_lang') || 'en';
+if (!I18N[currentLang]) currentLang = 'en';
 
 /**
  * Returns translated string for a given key in current active language
  */
 function t(key, fallback) {
-  const langDict = I18N[currentLang] || I18N['si'];
+  const langDict = I18N[currentLang] || I18N['en'];
   if (langDict && langDict[key] !== undefined) {
     return langDict[key];
   }
-  // Fallback to Sinhala or English
-  if (I18N['si'] && I18N['si'][key] !== undefined) return I18N['si'][key];
+  // Fallback to English, then Sinhala
   if (I18N['en'] && I18N['en'][key] !== undefined) return I18N['en'][key];
+  if (I18N['si'] && I18N['si'][key] !== undefined) return I18N['si'][key];
   return fallback !== undefined ? fallback : key;
 }
 
@@ -482,15 +674,9 @@ function setLanguage(lang) {
 function renderLangSwitcherHtml(customClass = '') {
   return `
     <div class="lang-switcher ${customClass}" id="lang-switcher">
-      <button type="button" class="lang-btn ${currentLang === 'si' ? 'active' : ''}" onclick="setLanguage('si')" title="සිංහල">
-        <span class="lang-flag">🇱🇰</span> <span class="lang-label">සිංහල</span>
-      </button>
-      <button type="button" class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="setLanguage('en')" title="English">
-        <span class="lang-flag">🇬🇧</span> <span class="lang-label">Eng</span>
-      </button>
-      <button type="button" class="lang-btn ${currentLang === 'ta' ? 'active' : ''}" onclick="setLanguage('ta')" title="தமிழ்">
-        <span class="lang-flag">🇮🇳</span> <span class="lang-label">தமிழ்</span>
-      </button>
+      <button type="button" class="lang-btn ${currentLang === 'en' ? 'active' : ''}" onclick="setLanguage('en')" title="English">English</button>
+      <button type="button" class="lang-btn ${currentLang === 'si' ? 'active' : ''}" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
+      <button type="button" class="lang-btn ${currentLang === 'ta' ? 'active' : ''}" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
     </div>
   `;
 }
@@ -507,11 +693,15 @@ function updateLangSwitcherUI() {
   });
 }
 
-// Automatically apply initial language on load
+// Automatically apply initial language on load (defaults to 'en')
 if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', () => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setLanguage(currentLang);
+    });
+  } else {
     setLanguage(currentLang);
-  });
+  }
 }
 
 // Global scope export for browser and Node.js testing

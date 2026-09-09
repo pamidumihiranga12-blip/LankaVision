@@ -6,10 +6,11 @@
   <title>LankaVision Pro – CCTV & Satellite Job Platform</title>
   <meta name="description" content="Sri Lanka's #1 CCTV and Satellite technician job management platform. Connect customers with skilled technicians across all 25 districts." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="style.css?v=16" />
 </head>
 <body>
 <div id="app">
@@ -35,9 +36,9 @@
       <div class="nav-brand"><i class="fas fa-satellite-dish"></i><span data-i18n="brand_name">LankaVision Pro</span></div>
       <div class="nav-actions">
         <div class="lang-switcher">
-          <button type="button" class="lang-btn active" onclick="setLanguage('si')" title="සිංහල"><span class="lang-flag">🇱🇰</span> <span class="lang-label">සිංහල</span></button>
-          <button type="button" class="lang-btn" onclick="setLanguage('en')" title="English"><span class="lang-flag">🇬🇧</span> <span class="lang-label">Eng</span></button>
-          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="தமிழ்"><span class="lang-flag">🇮🇳</span> <span class="lang-label">தமிழ்</span></button>
+          <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English">English</button>
+          <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
+          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-login')"><i class="fas fa-sign-in-alt"></i> <span data-i18n="nav_login">Login</span></button>
         <button class="btn btn-primary btn-sm" onclick="showRegisterOptions()"><i class="fas fa-user-plus"></i> <span data-i18n="nav_register">Register</span></button>
@@ -84,9 +85,9 @@
       <div class="auth-card">
         <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
           <div class="lang-switcher lang-switcher-compact">
-            <button type="button" class="lang-btn active" onclick="setLanguage('si')" title="සිංහල"><span class="lang-flag">🇱🇰</span> <span class="lang-label">සිංහල</span></button>
-            <button type="button" class="lang-btn" onclick="setLanguage('en')" title="English"><span class="lang-flag">🇬🇧</span> <span class="lang-label">Eng</span></button>
-            <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="தமிழ்"><span class="lang-flag">🇮🇳</span> <span class="lang-label">தமிழ்</span></button>
+            <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English">English</button>
+            <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
+            <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
           </div>
         </div>
         <h2 data-i18n="login_title">Welcome Back 👋</h2>
@@ -121,9 +122,9 @@
       <div id="reg-role-select" class="role-select-wrap">
         <div style="display:flex;justify-content:center;margin-bottom:14px">
           <div class="lang-switcher lang-switcher-compact">
-            <button type="button" class="lang-btn active" onclick="setLanguage('si')" title="සිංහල"><span class="lang-flag">🇱🇰</span> <span class="lang-label">සිංහල</span></button>
-            <button type="button" class="lang-btn" onclick="setLanguage('en')" title="English"><span class="lang-flag">🇬🇧</span> <span class="lang-label">Eng</span></button>
-            <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="தமிழ்"><span class="lang-flag">🇮🇳</span> <span class="lang-label">தமிழ்</span></button>
+            <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English">English</button>
+            <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
+            <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
           </div>
         </div>
         <h2 style="text-align:center;margin-bottom:6px" data-i18n="reg_role_title">LankaVision හා එක්වන්න ✨</h2>
@@ -330,9 +331,9 @@
       <div class="nav-brand"><i class="fas fa-satellite-dish"></i><span data-i18n="brand_name">LankaVision</span></div>
       <div class="nav-user">
         <div class="lang-switcher lang-switcher-compact">
-          <button type="button" class="lang-btn active" onclick="setLanguage('si')" title="සිංහල"><span class="lang-flag">🇱🇰</span> <span class="lang-label">සිංහල</span></button>
-          <button type="button" class="lang-btn" onclick="setLanguage('en')" title="English"><span class="lang-flag">🇬🇧</span> <span class="lang-label">Eng</span></button>
-          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="தமிழ்"><span class="lang-flag">🇮🇳</span> <span class="lang-label">தமிழ்</span></button>
+          <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English">English</button>
+          <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
+          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
         </div>
         <span id="nav-user-name" class="nav-name"></span>
         <div class="menu-wrap">
@@ -353,72 +354,94 @@
   <!-- ====== ADMIN ====== -->
   <div id="screen-admin" class="screen">
     <nav class="app-nav">
-      <div class="nav-brand"><i class="fas fa-satellite-dish"></i><span>Admin Panel</span></div>
+      <div class="nav-brand"><i class="fas fa-satellite-dish"></i><span data-i18n="admin_panel_title">Admin Panel</span></div>
       <div class="nav-user">
         <div class="lang-switcher lang-switcher-compact">
-          <button type="button" class="lang-btn active" onclick="setLanguage('si')" title="සිංහල"><span class="lang-flag">🇱🇰</span> <span class="lang-label">සිංහල</span></button>
-          <button type="button" class="lang-btn" onclick="setLanguage('en')" title="English"><span class="lang-flag">🇬🇧</span> <span class="lang-label">Eng</span></button>
-          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="தமிழ்"><span class="lang-flag">🇮🇳</span> <span class="lang-label">தமிழ்</span></button>
+          <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English">English</button>
+          <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
+          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="sendAdminTestEmail()" title="Test Email to Admin"><i class="fas fa-paper-plane"></i> Test Email</button>
-        <span class="admin-pill"><i class="fas fa-shield-alt"></i> Admin</span>
+        <button class="btn btn-outline btn-sm" onclick="sendAdminTestEmail()" title="Test Email to Admin"><i class="fas fa-paper-plane"></i> <span data-i18n="adm_btn_test_email">Test Email</span></button>
+        <span class="admin-pill"><i class="fas fa-shield-alt"></i> <span data-i18n="adm_pill_sub">Admin</span></span>
         <button class="btn btn-ghost btn-sm" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> <span data-i18n="nav_logout">Logout</span></button>
       </div>
     </nav>
     <div class="admin-tabs">
-      <button class="tab-btn active" data-tab="overview" onclick="showAdminTab('overview')"><i class="fas fa-chart-pie"></i> Overview</button>
-      <button class="tab-btn" data-tab="pending" onclick="showAdminTab('pending')"><i class="fas fa-clock"></i> Pending <span class="badge" id="pending-count">0</span></button>
-      <button class="tab-btn" data-tab="jobs" onclick="showAdminTab('jobs')"><i class="fas fa-briefcase"></i> All Jobs</button>
-      <button class="tab-btn" data-tab="technicians" onclick="showAdminTab('technicians')"><i class="fas fa-users"></i> Technicians</button>
-      <button class="tab-btn" data-tab="admins" onclick="showAdminTab('admins')" id="adm-tab-admins"><i class="fas fa-user-shield"></i> Admins</button>
+      <button class="tab-btn active" data-tab="overview" onclick="showAdminTab('overview')"><i class="fas fa-chart-pie"></i> <span data-i18n="adm_tab_overview">Overview</span></button>
+      <button class="tab-btn" data-tab="pending" onclick="showAdminTab('pending')"><i class="fas fa-clock"></i> <span data-i18n="adm_tab_pending">Pending</span> <span class="badge" id="pending-count">0</span></button>
+      <button class="tab-btn" data-tab="jobs" onclick="showAdminTab('jobs')"><i class="fas fa-briefcase"></i> <span data-i18n="adm_tab_jobs">All Jobs</span></button>
+      <button class="tab-btn" data-tab="technicians" onclick="showAdminTab('technicians')"><i class="fas fa-users"></i> <span data-i18n="adm_tab_techs">Technicians</span></button>
+      <button class="tab-btn" data-tab="admins" onclick="showAdminTab('admins')" id="adm-tab-admins"><i class="fas fa-user-shield"></i> <span data-i18n="adm_tab_admins">Admins</span></button>
     </div>
     <div class="admin-content">
 
       <!-- Overview -->
       <div id="atab-overview" class="atab active">
         <div class="stats-grid">
-          <div class="stat-card"><div class="stat-icon" style="color:#f59e0b"><i class="fas fa-clock"></i></div><div><div class="sn" id="st-pending">0</div><div class="sl">Pending Techs</div></div></div>
-          <div class="stat-card"><div class="stat-icon" style="color:#10b981"><i class="fas fa-briefcase"></i></div><div><div class="sn" id="st-open">0</div><div class="sl">Open Jobs</div></div></div>
-          <div class="stat-card"><div class="stat-icon" style="color:#3b82f6"><i class="fas fa-users"></i></div><div><div class="sn" id="st-techs">0</div><div class="sl">Active Techs</div></div></div>
-          <div class="stat-card"><div class="stat-icon" style="color:#8b5cf6"><i class="fas fa-check-circle"></i></div><div><div class="sn" id="st-done">0</div><div class="sl">Completed</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#f59e0b"><i class="fas fa-clock"></i></div><div><div class="sn" id="st-pending">0</div><div class="sl" data-i18n="adm_stat_pending_techs">Pending Techs</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#10b981"><i class="fas fa-briefcase"></i></div><div><div class="sn" id="st-open">0</div><div class="sl" data-i18n="adm_stat_open_jobs">Open Jobs</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#3b82f6"><i class="fas fa-users"></i></div><div><div class="sn" id="st-techs">0</div><div class="sl" data-i18n="adm_stat_active_techs">Active Techs</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#8b5cf6"><i class="fas fa-check-circle"></i></div><div><div class="sn" id="st-done">0</div><div class="sl" data-i18n="adm_stat_completed_jobs">Completed</div></div></div>
         </div>
-        <div class="panel" id="recent-jobs-panel"><h3 class="panel-title"><i class="fas fa-list"></i> Recent Jobs</h3><div id="recent-jobs-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div></div>
+        <div class="panel" id="recent-jobs-panel"><h3 class="panel-title"><i class="fas fa-list"></i> <span data-i18n="adm_recent_jobs">Recent Jobs</span></h3><div id="recent-jobs-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div></div></div>
       </div>
 
       <!-- Pending -->
       <div id="atab-pending" class="atab">
-        <div id="pending-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+        <div id="pending-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div></div>
       </div>
 
       <!-- All Jobs -->
       <div id="atab-jobs" class="atab">
         <div class="filter-bar">
-          <select id="adm-filter-status" onchange="filterAdminJobs()"><option value="all">All Status</option><option value="open">Open</option><option value="claimed">Claimed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select>
-          <select id="adm-filter-type" onchange="filterAdminJobs()"><option value="all">All Types</option><option value="CCTV">CCTV</option><option value="Satellite">Satellite</option></select>
-          <select id="adm-filter-district" onchange="filterAdminJobs()"><option value="all">All Districts</option></select>
+          <select id="adm-filter-status" onchange="filterAdminJobs()">
+            <option value="all" data-i18n="opt_all_status">All Status</option>
+            <option value="open" data-i18n="status_open">Open</option>
+            <option value="claimed" data-i18n="status_claimed">Claimed</option>
+            <option value="completed" data-i18n="status_completed">Completed</option>
+            <option value="cancelled" data-i18n="status_cancelled">Cancelled</option>
+          </select>
+          <select id="adm-filter-type" onchange="filterAdminJobs()">
+            <option value="all" data-i18n="opt_all_types">All Types</option>
+            <option value="CCTV">CCTV</option>
+            <option value="Satellite">Satellite</option>
+          </select>
+          <select id="adm-filter-district" onchange="filterAdminJobs()">
+            <option value="all" data-i18n="opt_all_districts">All Districts</option>
+          </select>
         </div>
-        <div id="admin-jobs-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+        <div id="admin-jobs-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div></div>
       </div>
 
       <!-- Technicians -->
       <div id="atab-technicians" class="atab">
         <div class="filter-bar">
-          <select id="adm-tech-filter" onchange="filterTechnicians()"><option value="all">All Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
-          <select id="adm-tech-svc" onchange="filterTechnicians()"><option value="all">All Types</option><option value="CCTV">CCTV</option><option value="Satellite">Satellite</option><option value="Both">Both</option></select>
+          <select id="adm-tech-filter" onchange="filterTechnicians()">
+            <option value="all" data-i18n="opt_all_status">All Status</option>
+            <option value="pending" data-i18n="adm_tech_pending">Pending</option>
+            <option value="approved" data-i18n="adm_tech_approved">Approved</option>
+            <option value="rejected" data-i18n="adm_tech_rejected">Rejected</option>
+          </select>
+          <select id="adm-tech-svc" onchange="filterTechnicians()">
+            <option value="all" data-i18n="opt_all_types">All Types</option>
+            <option value="CCTV">CCTV</option>
+            <option value="Satellite">Satellite</option>
+            <option value="Both" data-i18n="svc_both">Both</option>
+          </select>
         </div>
-        <div id="technicians-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+        <div id="technicians-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div></div>
       </div>
 
       <!-- Admins -->
       <div id="atab-admins" class="atab">
         <div class="filter-bar" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
-          <h3 style="margin:0;font-size:1rem;font-weight:700"><i class="fas fa-users-cog" style="color:var(--primary-l)"></i> System Administrators</h3>
+          <h3 style="margin:0;font-size:1rem;font-weight:700"><i class="fas fa-users-cog" style="color:var(--primary-l)"></i> <span data-i18n="adm_heading_admins">System Administrators</span></h3>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-outline btn-sm" onclick="sendAdminTestEmail()"><i class="fas fa-envelope"></i> Test Admin Email</button>
-            <button class="btn btn-primary btn-sm" onclick="openCreateAdminModal()"><i class="fas fa-user-plus"></i> + New Admin සාදන්න</button>
+            <button class="btn btn-outline btn-sm" onclick="sendAdminTestEmail()"><i class="fas fa-envelope"></i> <span data-i18n="adm_btn_test_admin_email">Test Admin Email</span></button>
+            <button class="btn btn-primary btn-sm" onclick="openCreateAdminModal()"><i class="fas fa-user-plus"></i> <span data-i18n="adm_btn_new_admin">+ New Admin සාදන්න</span></button>
           </div>
         </div>
-        <div id="admins-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+        <div id="admins-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div></div>
       </div>
     </div>
   </div>
@@ -437,33 +460,33 @@
     <div class="modal-backdrop" onclick="closeModal('modal-edit-job')"></div>
     <div class="modal-box">
       <button class="modal-close" onclick="closeModal('modal-edit-job')"><i class="fas fa-times"></i></button>
-      <h2 style="margin-bottom:20px"><i class="fas fa-edit" style="color:var(--primary-l)"></i> Job Edit කරන්න</h2>
+      <h2 style="margin-bottom:20px"><i class="fas fa-edit" style="color:var(--primary-l)"></i> <span data-i18n="modal_edit_job_title">Job Edit කරන්න</span></h2>
       <form id="edit-job-form" onsubmit="handleEditJobSubmit(event)">
         <input type="hidden" id="edit-job-id" />
-        <div class="form-group"><label><i class="fas fa-heading"></i> Job Title</label><input type="text" id="edit-title" required /></div>
+        <div class="form-group"><label><i class="fas fa-heading"></i> <span data-i18n="job_title_label">Job Title</span></label><input type="text" id="edit-title" required /></div>
         <div class="form-group">
-          <label><i class="fas fa-tools"></i> Job Type</label>
+          <label><i class="fas fa-tools"></i> <span data-i18n="job_type_label">Job Type</span></label>
           <div class="type-select">
             <label class="type-opt"><input type="radio" name="edit-job-type" value="CCTV" /><span><i class="fas fa-video"></i> CCTV</span></label>
             <label class="type-opt"><input type="radio" name="edit-job-type" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
           </div>
         </div>
-        <div class="form-group"><label><i class="fas fa-align-left"></i> Description</label><textarea id="edit-desc" rows="3" required></textarea></div>
+        <div class="form-group"><label><i class="fas fa-align-left"></i> <span data-i18n="job_desc_label">Description</span></label><textarea id="edit-desc" rows="3" required></textarea></div>
         <div class="form-group">
-          <label><i class="fas fa-map-marker-alt"></i> District</label>
+          <label><i class="fas fa-map-marker-alt"></i> <span data-i18n="district_label">District</span></label>
           <select id="edit-district" required onchange="onEditDistrictChange()"><option value="">Select District</option></select>
         </div>
         <div class="form-group hidden" id="edit-city-group">
-          <label><i class="fas fa-city"></i> City / Town (නගරය)</label>
+          <label><i class="fas fa-city"></i> <span data-i18n="city_label">City / Town (නගරය)</span></label>
           <select id="edit-city" onchange="onEditCityChange()">
             <option value="">Select City / Town</option>
           </select>
           <input type="text" id="edit-city-custom" class="hidden" placeholder="නගරයේ නම ලියන්න" style="margin-top:8px" />
         </div>
-        <div class="form-group"><label><i class="fas fa-user"></i> Customer Name</label><input type="text" id="edit-cust-name" /></div>
-        <div class="form-group"><label><i class="fas fa-phone"></i> Customer Phone</label><input type="tel" id="edit-cust-phone" /></div>
+        <div class="form-group"><label><i class="fas fa-user"></i> <span data-i18n="cust_name_label">Customer Name</span></label><input type="text" id="edit-cust-name" /></div>
+        <div class="form-group"><label><i class="fas fa-phone"></i> <span data-i18n="cust_phone_label">Customer Phone</span></label><input type="tel" id="edit-cust-phone" /></div>
         <div class="form-group">
-          <label><i class="fas fa-info-circle"></i> Status</label>
+          <label><i class="fas fa-info-circle"></i> <span data-i18n="status_label">Status</span></label>
           <select id="edit-status">
             <option value="open">Open</option>
             <option value="claimed">Claimed</option>
@@ -473,8 +496,8 @@
         </div>
         <div id="edit-job-error" class="error-msg hidden"></div>
         <div style="display:flex;gap:10px;margin-top:4px">
-          <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-edit-job')">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-full" id="edit-job-btn"><i class="fas fa-save"></i> Save Changes</button>
+          <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-edit-job')"><span data-i18n="btn_cancel">Cancel</span></button>
+          <button type="submit" class="btn btn-primary btn-full" id="edit-job-btn"><i class="fas fa-save"></i> <span data-i18n="btn_save_changes">Save Changes</span></button>
         </div>
       </form>
     </div>
@@ -485,32 +508,32 @@
     <div class="modal-backdrop" onclick="closeModal('modal-edit-tech')"></div>
     <div class="modal-box">
       <button class="modal-close" onclick="closeModal('modal-edit-tech')"><i class="fas fa-times"></i></button>
-      <h2 style="margin-bottom:20px"><i class="fas fa-user-edit" style="color:var(--primary-l)"></i> Technician Edit කරන්න</h2>
+      <h2 style="margin-bottom:20px"><i class="fas fa-user-edit" style="color:var(--primary-l)"></i> <span data-i18n="modal_edit_tech_title">Technician Edit කරන්න</span></h2>
       <form id="edit-tech-form" onsubmit="handleEditTechSubmit(event)">
         <input type="hidden" id="edit-tech-id" />
-        <div class="form-group"><label><i class="fas fa-user"></i> Name</label><input type="text" id="edit-tech-name" required /></div>
-        <div class="form-group"><label><i class="fas fa-phone"></i> Phone</label><input type="tel" id="edit-tech-phone" /></div>
+        <div class="form-group"><label><i class="fas fa-user"></i> <span data-i18n="name_label">Name</span></label><input type="text" id="edit-tech-name" required /></div>
+        <div class="form-group"><label><i class="fas fa-phone"></i> <span data-i18n="phone_label">Phone</span></label><input type="tel" id="edit-tech-phone" /></div>
         <div class="form-group">
-          <label><i class="fas fa-map-marker-alt"></i> District</label>
+          <label><i class="fas fa-map-marker-alt"></i> <span data-i18n="district_label">District</span></label>
           <select id="edit-tech-district" onchange="onEditTechDistrictChange()"><option value="">Select District</option></select>
         </div>
         <div class="form-group hidden" id="edit-tech-city-group">
-          <label><i class="fas fa-city"></i> City / Town</label>
+          <label><i class="fas fa-city"></i> <span data-i18n="city_label">City / Town</span></label>
           <select id="edit-tech-city" onchange="onEditTechCityChange()">
             <option value="">Select City / Town</option>
           </select>
           <input type="text" id="edit-tech-city-custom" class="hidden" placeholder="Other city name..." style="margin-top:8px" />
         </div>
         <div class="form-group">
-          <label><i class="fas fa-tools"></i> Service Type</label>
+          <label><i class="fas fa-tools"></i> <span data-i18n="service_type_label">Service Type</span></label>
           <div class="type-select">
             <label class="type-opt"><input type="radio" name="edit-svc" value="CCTV" /><span><i class="fas fa-video"></i> CCTV</span></label>
             <label class="type-opt"><input type="radio" name="edit-svc" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
-            <label class="type-opt"><input type="radio" name="edit-svc" value="Both" /><span><i class="fas fa-tools"></i> Both</span></label>
+            <label class="type-opt"><input type="radio" name="edit-svc" value="Both" /><span><i class="fas fa-tools"></i> <span data-i18n="svc_both">Both</span></span></label>
           </div>
         </div>
         <div class="form-group">
-          <label><i class="fas fa-circle"></i> Status</label>
+          <label><i class="fas fa-circle"></i> <span data-i18n="status_label">Status</span></label>
           <select id="edit-tech-status">
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
@@ -519,8 +542,8 @@
         </div>
         <div id="edit-tech-error" class="error-msg hidden"></div>
         <div style="display:flex;gap:10px;margin-top:4px">
-          <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-edit-tech')">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-save"></i> Save Changes</button>
+          <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-edit-tech')"><span data-i18n="btn_cancel">Cancel</span></button>
+          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-save"></i> <span data-i18n="btn_save_changes">Save Changes</span></button>
         </div>
       </form>
     </div>
@@ -531,26 +554,26 @@
     <div class="modal-backdrop" onclick="closeModal('modal-create-admin')"></div>
     <div class="modal-box">
       <button class="modal-close" onclick="closeModal('modal-create-admin')"><i class="fas fa-times"></i></button>
-      <h2 style="margin-bottom:6px"><i class="fas fa-user-shield" style="color:var(--primary-l)"></i> New Admin සාදන්න</h2>
-      <p class="auth-sub" style="margin-bottom:18px">නව Admin ගිණුමක් සාදා access ලබා දෙන්න</p>
+      <h2 style="margin-bottom:6px"><i class="fas fa-user-shield" style="color:var(--primary-l)"></i> <span data-i18n="adm_modal_create_title">New Admin සාදන්න</span></h2>
+      <p class="auth-sub" style="margin-bottom:18px" data-i18n="adm_modal_create_sub">නව Admin ගිණුමක් සාදා access ලබා දෙන්න</p>
       <form id="create-admin-form" onsubmit="handleCreateAdminSubmit(event)">
         <div class="form-group">
-          <label><i class="fas fa-user"></i> Admin Name</label>
+          <label><i class="fas fa-user"></i> <span data-i18n="adm_name_label">Admin Name</span></label>
           <input type="text" id="new-admin-name" placeholder="Admin නම" required />
         </div>
         <div class="form-group">
-          <label><i class="fas fa-envelope"></i> Email</label>
+          <label><i class="fas fa-envelope"></i> <span data-i18n="email_label">Email</span></label>
           <input type="email" id="new-admin-email" placeholder="admin@example.com" required />
         </div>
         <div class="form-group pwd-group">
-          <label><i class="fas fa-lock"></i> Password</label>
+          <label><i class="fas fa-lock"></i> <span data-i18n="password_label">Password</span></label>
           <input type="password" id="new-admin-password" placeholder="Min 6 characters" required />
           <button type="button" class="pwd-toggle" onclick="togglePwd('new-admin-password',this)"><i class="fas fa-eye"></i></button>
         </div>
         <div id="create-admin-error" class="error-msg hidden"></div>
         <div style="display:flex;gap:10px;margin-top:12px">
-          <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-create-admin')">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-full" id="create-admin-btn"><i class="fas fa-check"></i> Account එක හදන්න</button>
+          <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-create-admin')"><span data-i18n="btn_cancel">Cancel</span></button>
+          <button type="submit" class="btn btn-primary btn-full" id="create-admin-btn"><i class="fas fa-check"></i> <span data-i18n="btn_create_admin_account">Account එක හදන්න</span></button>
         </div>
       </form>
     </div>
@@ -803,8 +826,8 @@
 
 <!-- App Logic -->
 <script src="firebase-config.js?v=12"></script>
-<script src="i18n.js?v=1"></script>
-<script src="app.js?v=16"></script>
+<script src="i18n.js?v=5"></script>
+<script src="app.js?v=17"></script>
 
 <!-- Guaranteed loading overlay removal after 2s -->
 <script>

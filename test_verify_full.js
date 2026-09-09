@@ -30,6 +30,12 @@ console.log('--- 1. Trilingual Multi-Language Support (i18n) ---');
 assert(fs.existsSync(path.join(projectRoot, 'i18n.js')), 'i18n.js file exists');
 assert(html.includes('<script src="i18n.js'), 'index.html imports i18n.js');
 assert(html.includes('class="lang-switcher"'), 'Language switcher UI container rendered in index.html');
+assert(!html.includes('lang-flag'), 'Strict check: NO flag emojis/containers in language switcher');
+assert(html.includes('>English</button>'), 'Clean text button for English present');
+assert(html.includes('>සිංහල</button>'), 'Clean text button for Sinhala present');
+assert(html.includes('>தமிழ்</button>'), 'Clean text button for Tamil present');
+assert(html.includes('Noto+Sans+Sinhala') && html.includes('Noto+Sans+Tamil'), 'Google Fonts Noto Sans Sinhala & Tamil loaded in index.html');
+assert(css.includes('Noto Sans Sinhala') && css.includes('Noto Sans Tamil'), 'CSS font-family includes Noto Sans Sinhala & Tamil');
 assert(css.includes('.lang-switcher'), 'style.css contains styles for .lang-switcher');
 assert(css.includes('.lang-btn.active'), 'style.css contains active button styles');
 
@@ -74,7 +80,20 @@ assert(t('btn_login') === 'Login', 't() returns English string when active');
 setLanguage('ta');
 assert(t('btn_login') === 'உள்நுழைக', 't() returns Tamil string when active');
 
+// Verify default language is English (en)
+assert(i18nContent.includes("localStorage.getItem('app_lang') || 'en'"), "Default language falls back to 'en'");
+
+// Verify admin panel keys
+assert(!!I18N.si.admin_panel_title && !!I18N.en.admin_panel_title && !!I18N.ta.admin_panel_title, 'Admin panel title translated in all 3 languages');
+assert(!!I18N.si.adm_tab_overview && !!I18N.en.adm_tab_overview && !!I18N.ta.adm_tab_overview, 'Admin tabs translated in all 3 languages');
+assert(!!I18N.si.adm_stat_pending_techs && !!I18N.en.adm_stat_pending_techs && !!I18N.ta.adm_stat_pending_techs, 'Admin stats translated in all 3 languages');
+assert(html.includes('data-i18n="admin_panel_title"'), 'index.html: Admin Panel nav brand has data-i18n');
+assert(html.includes('data-i18n="adm_tab_overview"'), 'index.html: Admin Overview tab has data-i18n');
+assert(html.includes('data-i18n="adm_stat_pending_techs"'), 'index.html: Admin pending techs stat has data-i18n');
+assert(html.includes('data-i18n="adm_recent_jobs"'), 'index.html: Admin recent jobs heading has data-i18n');
+
 assert(js.includes('onLanguageChanged'), 'app.js: onLanguageChanged listener defined');
+assert(js.includes("isAdminActive"), 'app.js: onLanguageChanged handles admin screen');
 
 // 2. TECHNICIAN LIVE SELFIE ON REGISTRATION (NO GALLERY UPLOAD)
 console.log('\n--- 2. Technician Live Selfie Registration ---');
