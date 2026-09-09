@@ -8,6 +8,20 @@ const APP_BASE_URL = (typeof window !== 'undefined' && window.location && window
   ? window.location.origin
   : 'https://lanka-vision.vercel.app';
 
+// Leaflet default icon asset fallback to prevent broken images
+if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) {
+  try {
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    });
+  } catch (e) {
+    console.warn('Leaflet icon fallback setup error:', e);
+  }
+}
+
 const SL_DISTRICTS = [
   'Ampara','Anuradhapura','Badulla','Batticaloa','Colombo',
   'Galle','Gampaha','Hambantota','Jaffna','Kalutara',
@@ -3301,8 +3315,32 @@ async function openJobModal(jobId) {
       setTimeout(() => {
         if (modalMap) { modalMap.remove(); modalMap = null; }
         modalMap = L.map('modal-map-el').setView([job.location.lat, job.location.lng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(modalMap);
-        L.marker([job.location.lat, job.location.lng]).addTo(modalMap);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(modalMap);
+
+        let markerClass = 'marker-cctv';
+        let iconClass = 'fas fa-video';
+        if (job.type === 'Satellite') {
+          markerClass = 'marker-satellite';
+          iconClass = 'fas fa-satellite-dish';
+        } else if (job.type === 'Router') {
+          markerClass = 'marker-router';
+          iconClass = 'fas fa-wifi';
+        }
+
+        const pinHtml = `
+          <div class="job-marker-pin ${markerClass}" title="${esc(job.title || '')} (${esc(job.type || '')})">
+            <i class="${iconClass}"></i>
+          </div>`;
+
+        L.marker([job.location.lat, job.location.lng], {
+          icon: L.divIcon({
+            className: 'custom-job-marker',
+            html: pinHtml,
+            iconSize: [36, 36],
+            iconAnchor: [18, 36],
+            popupAnchor: [0, -36]
+          })
+        }).addTo(modalMap);
       }, 120);
     }
   } catch (err) { console.error(err); }
@@ -3471,7 +3509,19 @@ function initPostJobMap() {
     const { lat, lng } = ev.latlng;
     selectedLoc = { lat, lng };
     if (marker) marker.remove();
-    marker = L.marker([lat, lng]).addTo(postJobMap);
+    const pinHtml = `
+      <div class="job-marker-pin marker-pick" title="Selected Location">
+        <i class="fas fa-map-marker-alt"></i>
+      </div>`;
+    marker = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: 'custom-job-marker',
+        html: pinHtml,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+        popupAnchor: [0, -36]
+      })
+    }).addTo(postJobMap);
     const ld = document.getElementById('loc-display');
     const lt = document.getElementById('loc-text');
     if (ld && lt) {

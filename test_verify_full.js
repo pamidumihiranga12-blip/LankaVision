@@ -80,9 +80,15 @@ assert(css.includes('.job-marker-pin.marker-router'), '.marker-router pin stylin
 assert(css.includes('.job-marker-pin.marker-satellite'), '.marker-satellite pin styling defined');
 assert(css.includes('.job-marker-pin.marker-cctv'), '.marker-cctv pin styling defined');
 assert(css.includes('.job-marker-pin.marker-tech'), '.marker-tech pin beacon defined');
+assert(css.includes('.job-marker-pin.marker-pick'), '.marker-pick location pin defined');
 assert(css.includes('.customer-card'), '.customer-card styling defined');
 assert(css.includes('.active-job-lock-banner'), '.active-job-lock-banner styling defined');
 assert(css.includes('.router-upgrade-banner'), '.router-upgrade-banner styling defined');
+
+// Check Map Marker Icons in openJobModal & initPostJobMap
+assert(appJsContent.includes('job-marker-pin ${markerClass}'), 'openJobModal uses custom divIcon pin with markerClass');
+assert(appJsContent.includes('marker-pick'), 'initPostJobMap uses custom marker-pick pin');
+assert(appJsContent.includes('L.Icon.Default.mergeOptions'), 'Leaflet icon CDN fallback configured');
 
 // 4. Test Logic from app.js in sandbox
 console.log('\n🔹 Test 4: Business Logic & Distance Formulas from app.js');
