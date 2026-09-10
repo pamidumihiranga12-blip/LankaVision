@@ -2045,6 +2045,108 @@ async function handleLogin(e) {
   }
 }
 
+// ── FORGOT PASSWORD ────────────────────────────────────────────
+function openForgotPasswordModal() {
+  const loginEmail = document.getElementById('login-email')?.value?.trim() || '';
+  const forgotEmailInput = document.getElementById('forgot-email');
+  if (forgotEmailInput) {
+    forgotEmailInput.value = loginEmail;
+  }
+  const errEl = document.getElementById('forgot-error');
+  if (errEl) {
+    errEl.textContent = '';
+    errEl.classList.add('hidden');
+  }
+  const successEl = document.getElementById('forgot-success');
+  if (successEl) {
+    successEl.classList.add('hidden');
+  }
+  const btn = document.getElementById('btn-send-forgot-reset');
+  if (btn) {
+    btn.disabled = false;
+    const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+    btn.innerHTML = `<i class="fas fa-paper-plane"></i> <span data-i18n="btn_send_reset">${tFn('btn_send_reset', 'Send Reset Link 📨')}</span>`;
+  }
+  openModal('modal-forgot-password');
+}
+
+function closeForgotPasswordModal() {
+  closeModal('modal-forgot-password');
+  const errEl = document.getElementById('forgot-error');
+  if (errEl) {
+    errEl.textContent = '';
+    errEl.classList.add('hidden');
+  }
+  const successEl = document.getElementById('forgot-success');
+  if (successEl) {
+    successEl.classList.add('hidden');
+  }
+}
+
+async function handleForgotPasswordSubmit(e) {
+  if (e) e.preventDefault();
+  const emailInput = document.getElementById('forgot-email');
+  const email = emailInput?.value?.trim() || '';
+  const errEl = document.getElementById('forgot-error');
+  const successEl = document.getElementById('forgot-success');
+  const successText = document.getElementById('forgot-success-text');
+  const btn = document.getElementById('btn-send-forgot-reset');
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+
+  if (errEl) { errEl.textContent = ''; errEl.classList.add('hidden'); }
+  if (successEl) { successEl.classList.add('hidden'); }
+
+  if (!email) {
+    if (errEl) {
+      errEl.textContent = 'කරුණාකර ඔබගේ Email ලිපිනය ඇතුළත් කරන්න.';
+      errEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (!isDeviceOnline()) {
+    if (errEl) {
+      errEl.textContent = '⚠️ ඔබ Offline සිටී. කරුණාකර Internet සම්බන්ධ කරන්න.';
+      errEl.classList.remove('hidden');
+    }
+    showToast('⚠️ Offline: Internet සම්බන්ධ කරන්න', 'warning');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> යවමින් පවතී...';
+  }
+
+  try {
+    await auth.sendPasswordResetEmail(email);
+    const sentMsg = tFn('reset_email_sent', 'Password reset link එක සාර්ථකව ඔබගේ email ලිපිනයට යවන ලදී! කරුණාකර Inbox හෝ Spam පරීක්ෂා කරන්න.');
+    if (successText) successText.textContent = sentMsg;
+    if (successEl) successEl.classList.remove('hidden');
+    showToast(sentMsg, 'success');
+
+    if (btn) {
+      btn.innerHTML = '<i class="fas fa-check"></i> යවන ලදී (Sent)';
+    }
+
+    setTimeout(() => {
+      closeForgotPasswordModal();
+    }, 4000);
+  } catch (err) {
+    console.error('Password reset error:', err.code, err.message);
+    const msg = authErr(err.code);
+    if (errEl) {
+      errEl.textContent = msg;
+      errEl.classList.remove('hidden');
+    }
+    showToast(msg, 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fas fa-paper-plane"></i> <span data-i18n="btn_send_reset">${tFn('btn_send_reset', 'Send Reset Link 📨')}</span>`;
+    }
+  }
+}
+
 async function handleCustomerRegister(e) {
   e.preventDefault();
   const name = document.getElementById('cust-name').value.trim();
