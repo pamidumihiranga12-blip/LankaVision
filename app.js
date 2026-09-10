@@ -2045,60 +2045,72 @@ async function handleLogin(e) {
   }
 }
 
-// ── FORGOT PASSWORD ────────────────────────────────────────────
+// ── FORGOT PASSWORD (OTP DRIVEN) ──────────────────────────────
+let activePasswordResetEmail = '';
+let activePasswordResetOtp = '';
+let otpResendCooldownTimer = null;
+
 function openForgotPasswordModal() {
+  activePasswordResetEmail = '';
+  activePasswordResetOtp = '';
+  if (otpResendCooldownTimer) {
+    clearInterval(otpResendCooldownTimer);
+    otpResendCooldownTimer = null;
+  }
+
   const loginEmail = document.getElementById('login-email')?.value?.trim() || '';
   const forgotEmailInput = document.getElementById('forgot-email');
   if (forgotEmailInput) {
     forgotEmailInput.value = loginEmail;
   }
-  const errEl = document.getElementById('forgot-error');
-  if (errEl) {
-    errEl.textContent = '';
-    errEl.classList.add('hidden');
-  }
-  const successEl = document.getElementById('forgot-success');
-  if (successEl) {
-    successEl.classList.add('hidden');
-  }
-  const btn = document.getElementById('btn-send-forgot-reset');
-  if (btn) {
-    btn.disabled = false;
+
+  // Reset to Step 1
+  document.getElementById('forgot-step-1')?.classList.remove('hidden');
+  document.getElementById('forgot-step-2')?.classList.add('hidden');
+
+  const err1 = document.getElementById('forgot-step1-error');
+  if (err1) { err1.textContent = ''; err1.classList.add('hidden'); }
+  const err2 = document.getElementById('forgot-step2-error');
+  if (err2) { err2.textContent = ''; err2.classList.add('hidden'); }
+  const succ2 = document.getElementById('forgot-step2-success');
+  if (succ2) { succ2.classList.add('hidden'); }
+
+  const btnGet = document.getElementById('btn-get-otp');
+  if (btnGet) {
+    btnGet.disabled = false;
     const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
-    btn.innerHTML = `<i class="fas fa-paper-plane"></i> <span data-i18n="btn_send_reset">${tFn('btn_send_reset', 'Send Reset Link 📨')}</span>`;
+    btnGet.innerHTML = `<i class="fas fa-paper-plane"></i> <span data-i18n="btn_get_otp">${tFn('btn_get_otp', 'Get OTP Code 📨')}</span>`;
   }
+
   openModal('modal-forgot-password');
 }
 
 function closeForgotPasswordModal() {
   closeModal('modal-forgot-password');
-  const errEl = document.getElementById('forgot-error');
-  if (errEl) {
-    errEl.textContent = '';
-    errEl.classList.add('hidden');
-  }
-  const successEl = document.getElementById('forgot-success');
-  if (successEl) {
-    successEl.classList.add('hidden');
+  if (otpResendCooldownTimer) {
+    clearInterval(otpResendCooldownTimer);
+    otpResendCooldownTimer = null;
   }
 }
 
-async function handleForgotPasswordSubmit(e) {
+function backToStep1() {
+  document.getElementById('forgot-step-2')?.classList.add('hidden');
+  document.getElementById('forgot-step-1')?.classList.remove('hidden');
+}
+
+async function handleRequestPasswordOtp(e) {
   if (e) e.preventDefault();
   const emailInput = document.getElementById('forgot-email');
-  const email = emailInput?.value?.trim() || '';
-  const errEl = document.getElementById('forgot-error');
-  const successEl = document.getElementById('forgot-success');
-  const successText = document.getElementById('forgot-success-text');
-  const btn = document.getElementById('btn-send-forgot-reset');
+  const email = emailInput?.value?.trim().toLowerCase() || '';
+  const errEl = document.getElementById('forgot-step1-error');
+  const btn = document.getElementById('btn-get-otp');
   const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
 
   if (errEl) { errEl.textContent = ''; errEl.classList.add('hidden'); }
-  if (successEl) { successEl.classList.add('hidden'); }
 
-  if (!email) {
+  if (!email || !email.includes('@')) {
     if (errEl) {
-      errEl.textContent = 'කරුණාකර ඔබගේ Email ලිපිනය ඇතුළත් කරන්න.';
+      errEl.textContent = 'කරුණාකර නිවැරදි Email ලිපිනයක් ඇතුළත් කරන්න.';
       errEl.classList.remove('hidden');
     }
     return;
@@ -2115,34 +2127,284 @@ async function handleForgotPasswordSubmit(e) {
 
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> යවමින් පවතී...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> OTP කේතය යවමින් පවතී...';
   }
 
   try {
-    await auth.sendPasswordResetEmail(email);
-    const sentMsg = tFn('reset_email_sent', 'Password reset link එක සාර්ථකව ඔබගේ email ලිපිනයට යවන ලදී! කරුණාකර Inbox හෝ Spam පරීක්ෂා කරන්න.');
-    if (successText) successText.textContent = sentMsg;
-    if (successEl) successEl.classList.remove('hidden');
-    showToast(sentMsg, 'success');
+    // Generate secure 6-digit OTP
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    activePasswordResetEmail = email;
+    activePasswordResetOtp = otp;
+
+    // Save to Firestore password_resets collection
+    try {
+      await db.collection('password_resets').doc(email).set({
+        email: email,
+        otp: otp,
+        expiresAt: Date.now() + 15 * 60 * 1000, // 15 mins
+        used: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (fsErr) {
+      console.warn('Firestore password_resets save notice:', fsErr.message);
+    }
+
+    // Send email from LankaVision custom SMTP
+    await sendEmailNotification({
+      to: email,
+      subject: `🔒 LankaVision Pro - Password Reset OTP Code: ${otp}`,
+      html: emailWrapper('Password Reset OTP', `
+        <div style="text-align:center;padding:10px 0">
+          <div style="width:60px;height:60px;background:rgba(59,130,246,0.15);border:2px solid #3b82f6;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin:0 auto 14px auto">
+            <span style="font-size:26px">🔐</span>
+          </div>
+          <h2 style="color:#60a5fa;margin:0 0 6px 0;font-size:20px">මුරපදය අලුත් කිරීමේ OTP කේතය</h2>
+          <p style="color:#94a3b8;font-size:14px;margin:0 0 20px 0;line-height:1.5">
+            ඔබගේ LankaVision Pro ගිණුමේ මුරපදය අලුත් කිරීම සඳහා පහත රහස්‍ය OTP කේතය (Verification Code) ඇතුළත් කරන්න:
+          </p>
+          <div style="background:#0f172a;border:2px dashed #3b82f6;border-radius:12px;padding:16px 28px;display:inline-block;margin-bottom:20px">
+            <span style="font-family:monospace;font-size:34px;font-weight:900;letter-spacing:10px;color:#38bdf8">${otp}</span>
+          </div>
+          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:10px 14px;margin-bottom:18px;display:inline-block">
+            <span style="color:#fbbf24;font-size:13px;font-weight:700">⏰ මෙම කේතය මිනිත්තු 15ක් සඳහා වලංගු වේ.</span>
+          </div>
+          <p style="color:#64748b;font-size:12px;margin:0">
+            ඔබ විසින් මුරපදය වෙනස් කිරීමට ඉල්ලුම් නොකළේ නම් මෙම ඊමේල් පණිවිඩය නොසලකා හරින්න. කිසිවෙකුට මෙම කේතය ලබා නොදෙන්න.
+          </p>
+        </div>
+      `),
+      text: `LankaVision Pro Password Reset OTP Code: ${otp}. Valid for 15 minutes. Enter this code to set your new password.`
+    });
+
+    // Move to Step 2
+    document.getElementById('forgot-step-1')?.classList.add('hidden');
+    document.getElementById('forgot-step-2')?.classList.remove('hidden');
+
+    const sentTarget = document.getElementById('forgot-sent-target');
+    if (sentTarget) sentTarget.textContent = email;
+
+    const otpInput = document.getElementById('forgot-otp-input');
+    if (otpInput) {
+      otpInput.value = '';
+      setTimeout(() => otpInput.focus(), 150);
+    }
+
+    const newPwdInput = document.getElementById('forgot-new-pwd');
+    if (newPwdInput) newPwdInput.value = '';
+    const confirmPwdInput = document.getElementById('forgot-confirm-pwd');
+    if (confirmPwdInput) confirmPwdInput.value = '';
+
+    startOtpResendTimer();
+    showToast(tFn('reset_email_sent', 'OTP කේතය ඔබගේ email එකට යවන ලදී!'), 'info');
+
+  } catch (err) {
+    console.error('handleRequestPasswordOtp error:', err);
+    if (errEl) {
+      errEl.textContent = 'OTP කේතය යැවීම අසාර්ථක විය: ' + err.message;
+      errEl.classList.remove('hidden');
+    }
+    showToast('Failed to send OTP: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fas fa-paper-plane"></i> <span data-i18n="btn_get_otp">${tFn('btn_get_otp', 'Get OTP Code 📨')}</span>`;
+    }
+  }
+}
+
+function startOtpResendTimer() {
+  const btnResend = document.getElementById('btn-resend-otp');
+  if (!btnResend) return;
+  if (otpResendCooldownTimer) clearInterval(otpResendCooldownTimer);
+
+  let seconds = 60;
+  btnResend.style.pointerEvents = 'none';
+  btnResend.style.opacity = '0.5';
+  btnResend.textContent = `Resend in ${seconds}s`;
+
+  otpResendCooldownTimer = setInterval(() => {
+    seconds--;
+    if (seconds <= 0) {
+      clearInterval(otpResendCooldownTimer);
+      otpResendCooldownTimer = null;
+      btnResend.style.pointerEvents = 'auto';
+      btnResend.style.opacity = '1';
+      btnResend.textContent = 'Resend OTP 🔄';
+    } else {
+      btnResend.textContent = `Resend in ${seconds}s`;
+    }
+  }, 1000);
+}
+
+function resendPasswordOtp() {
+  if (activePasswordResetEmail) {
+    const emailInput = document.getElementById('forgot-email');
+    if (emailInput) emailInput.value = activePasswordResetEmail;
+    handleRequestPasswordOtp();
+  }
+}
+
+async function handleVerifyOtpAndResetPassword(e) {
+  if (e) e.preventDefault();
+  const enteredOtp = document.getElementById('forgot-otp-input')?.value?.trim() || '';
+  const newPassword = document.getElementById('forgot-new-pwd')?.value || '';
+  const confirmPassword = document.getElementById('forgot-confirm-pwd')?.value || '';
+  const errEl = document.getElementById('forgot-step2-error');
+  const succEl = document.getElementById('forgot-step2-success');
+  const succText = document.getElementById('forgot-step2-success-text');
+  const btn = document.getElementById('btn-submit-new-pwd');
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+
+  if (errEl) { errEl.textContent = ''; errEl.classList.add('hidden'); }
+  if (succEl) { succEl.classList.add('hidden'); }
+
+  if (!enteredOtp || enteredOtp.length !== 6) {
+    if (errEl) {
+      errEl.textContent = 'කරුණාකර නිවැරදි ඉලක්කම් 6ක OTP කේතය ඇතුළත් කරන්න.';
+      errEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (!newPassword || newPassword.length < 6) {
+    if (errEl) {
+      errEl.textContent = 'මුරපදය අවම වශයෙන් අකුරු 6ක් විය යුතුය (Min 6 characters).';
+      errEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    if (errEl) {
+      errEl.textContent = 'නව මුරපද එකිනෙකට නොගැලපේ (Passwords do not match).';
+      errEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (!isDeviceOnline()) {
+    if (errEl) {
+      errEl.textContent = '⚠️ ඔබ Offline සිටී. කරුණාකර Internet සම්බන්ධ කරන්න.';
+      errEl.classList.remove('hidden');
+    }
+    showToast('⚠️ Offline: Internet සම්බන්ධ කරන්න', 'warning');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> මුරපදය වෙනස් කරමින් පවතී...';
+  }
+
+  try {
+    const email = activePasswordResetEmail;
+
+    // 1. Verify OTP
+    let isOtpValid = false;
+    if (activePasswordResetOtp && enteredOtp === activePasswordResetOtp) {
+      isOtpValid = true;
+    } else {
+      try {
+        const snap = await db.collection('password_resets').doc(email).get();
+        if (snap.exists) {
+          const d = snap.data();
+          if (d.otp === enteredOtp && !d.used && Date.now() <= (d.expiresAt || 0)) {
+            isOtpValid = true;
+          }
+        }
+      } catch (eFs) {
+        console.warn('Firestore OTP verify fallback:', eFs.message);
+      }
+    }
+
+    if (!isOtpValid) {
+      throw new Error('ඇතුළත් කළ OTP කේතය වැරදියි හෝ කල් ඉකුත් වී ඇත (Invalid or expired OTP).');
+    }
+
+    // 2. Call backend reset-password endpoint
+    const isFileProto = (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:');
+    const primaryEndpoint = isFileProto ? 'https://lanka-vision.vercel.app/api/reset-password' : '/api/reset-password';
+
+    let resetSuccess = false;
+    let resetErrorMsg = '';
+
+    try {
+      const resp = await fetch(primaryEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newPassword })
+      });
+      const data = await resp.json();
+      if (data && data.success) {
+        resetSuccess = true;
+      } else if (data && data.error === 'server_key_missing') {
+        resetErrorMsg = 'Server Error: backend එකේ serviceAccountKey.json නොමැත. කරුණාකර Administrator අමතන්න.';
+      } else {
+        resetErrorMsg = data?.error || 'Failed to update password';
+      }
+    } catch (apiErr) {
+      console.warn('Primary reset-password API error, trying fallback:', apiErr.message);
+      if (primaryEndpoint !== 'https://lanka-vision.vercel.app/api/reset-password') {
+        try {
+          const respFb = await fetch('https://lanka-vision.vercel.app/api/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, newPassword })
+          });
+          const dataFb = await respFb.json();
+          if (dataFb && dataFb.success) {
+            resetSuccess = true;
+          } else {
+            resetErrorMsg = dataFb?.error || 'Failed to update password';
+          }
+        } catch (e2) {
+          resetErrorMsg = e2.message;
+        }
+      } else {
+        resetErrorMsg = apiErr.message;
+      }
+    }
+
+    if (!resetSuccess) {
+      throw new Error(resetErrorMsg || 'මුරපදය වෙනස් කිරීම අසාර්ථක විය.');
+    }
+
+    // Mark OTP as used in Firestore
+    try {
+      await db.collection('password_resets').doc(email).update({ used: true });
+    } catch (eU) {}
+
+    // Success UI
+    const successMsg = 'මුරපදය සාර්ථකව වෙනස් කරන ලදී! කරුණාකර නව මුරපදයෙන් Login වන්න. 🎉';
+    if (succText) succText.textContent = successMsg;
+    if (succEl) succEl.classList.remove('hidden');
+    showToast(successMsg, 'success');
+
+    // Pre-fill on login screen
+    const loginEmailInput = document.getElementById('login-email');
+    if (loginEmailInput) loginEmailInput.value = email;
+    const loginPwdInput = document.getElementById('login-password');
+    if (loginPwdInput) loginPwdInput.value = newPassword;
 
     if (btn) {
-      btn.innerHTML = '<i class="fas fa-check"></i> යවන ලදී (Sent)';
+      btn.innerHTML = '<i class="fas fa-check"></i> සාර්ථකයි (Success)';
     }
 
     setTimeout(() => {
       closeForgotPasswordModal();
-    }, 4000);
+      showToast('දැන් Login බටනය ක්ලික් කර ඇතුල් වන්න!', 'info');
+    }, 2800);
+
   } catch (err) {
-    console.error('Password reset error:', err.code, err.message);
-    const msg = authErr(err.code);
+    console.error('handleVerifyOtpAndResetPassword error:', err);
     if (errEl) {
-      errEl.textContent = msg;
+      errEl.textContent = err.message || 'දෝෂයක් ඇති විය.';
       errEl.classList.remove('hidden');
     }
-    showToast(msg, 'error');
+    showToast(err.message || 'Error changing password', 'error');
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = `<i class="fas fa-paper-plane"></i> <span data-i18n="btn_send_reset">${tFn('btn_send_reset', 'Send Reset Link 📨')}</span>`;
+      btn.innerHTML = `<i class="fas fa-save"></i> <span data-i18n="btn_save_new_pwd">${tFn('btn_save_new_pwd', 'Change Password 🔒')}</span>`;
     }
   }
 }

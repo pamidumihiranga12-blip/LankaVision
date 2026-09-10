@@ -197,6 +197,34 @@ class LankaVisionRequestHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 self._send_json_response(500, {"success": False, "error": str(e)})
 
+        elif self.path == "/api/reset-password":
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            try:
+                import subprocess
+                node_script = os.path.join(DIRECTORY, "api", "reset-password.js")
+                runner = f"""
+const handler = require({json.dumps(node_script)});
+const req = {{ method: 'POST', body: {body} }};
+const res = {{
+  statusCode: 200,
+  setHeader: () => {{}},
+  end: (d) => {{ process.stdout.write(d || ''); }}
+}};
+handler(req, res).catch(err => {{
+  process.stdout.write(JSON.stringify({{ success: false, error: err.message }}));
+}});
+"""
+                proc = subprocess.run(["node", "-e", runner], capture_output=True, text=True, cwd=DIRECTORY, timeout=20)
+                try:
+                    res_data = json.loads(proc.stdout)
+                    status_code = 200 if res_data.get("success") else 400
+                    self._send_json_response(status_code, res_data)
+                except Exception:
+                    self._send_json_response(500, {"success": False, "error": proc.stderr or proc.stdout or "Reset password error"})
+            except Exception as e:
+                self._send_json_response(500, {"success": False, "error": str(e)})
+
         else:
             self.send_error(404, "Endpoint not found")
 
