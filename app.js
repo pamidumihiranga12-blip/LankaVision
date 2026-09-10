@@ -8,6 +8,11 @@ const APP_BASE_URL = (typeof window !== 'undefined' && window.location && window
   ? window.location.origin
   : 'https://lanka-vision.vercel.app';
 
+// Global i18n translation fallback helper
+function tFn(k, fb) {
+  return (typeof t === 'function') ? t(k, fb) : fb;
+}
+
 // Leaflet default icon asset fallback to prevent broken images
 if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) {
   try {
@@ -635,6 +640,427 @@ function emailWrapper(title, contentHtml) {
   </html>`;
 }
 
+// =============================================================
+// LANKAVISION NOTIFICATION CENTER & REAL-TIME ALERTS
+// Multi-channel: Android System Tray, Web Push, In-App Floating Banner,
+// Synthesized Audio Chime, and Local Notification History Panel.
+// =============================================================
+
+const NOTIF_STORAGE_KEY = 'lankavision_app_notifications';
+let activeNotificationAction = null;
+let popupDismissTimer = null;
+let unsubJobsRealtime = null;
+let realtimeListenerInitializedAt = 0;
+
+function playNotificationChime() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    const now = ctx.currentTime;
+
+    // Tone 1: 587.33 Hz (D5)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now);
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(0.22, now + 0.04);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.3);
+
+    // Tone 2: 880 Hz (A5)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, now + 0.14);
+    gain2.gain.setValueAtTime(0, now + 0.14);
+    gain2.gain.linearRampToValueAtTime(0.28, now + 0.18);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.14);
+    osc2.stop(now + 0.58);
+  } catch (e) {
+    console.warn('Notification chime audio error:', e);
+  }
+}
+
+function getStoredNotifications() {
+  try {
+    const data = localStorage.getItem(NOTIF_STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveNotification(notif) {
+  try {
+    const list = getStoredNotifications();
+    list.unshift({
+      id: notif.id || ('notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)),
+      title: notif.title || 'LankaVision Notification',
+      message: notif.message || '',
+      type: notif.type || 'info',
+      targetTab: notif.targetTab || null,
+      timestamp: Date.now(),
+      read: false
+    });
+    if (list.length > 40) list.length = 40;
+    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(list));
+    updateNotificationBadge();
+    renderNotificationList();
+  } catch (e) {
+    console.warn('Save notification error:', e);
+  }
+}
+
+function updateNotificationBadge() {
+  const list = getStoredNotifications();
+  const unreadCount = list.filter(n => !n.read).length;
+  ['notif-badge-landing', 'notif-badge-dash', 'notif-badge-admin'].forEach(id => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    if (unreadCount > 0) {
+      badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  });
+}
+
+function showInAppNotificationBanner(title, message, type, onClickAction) {
+  const popup = document.getElementById('app-notif-popup');
+  const titleEl = document.getElementById('anp-title');
+  const msgEl = document.getElementById('anp-msg');
+  const iconEl = document.getElementById('anp-icon');
+  if (!popup || !titleEl || !msgEl) return;
+
+  activeNotificationAction = onClickAction || null;
+
+  titleEl.textContent = title;
+  msgEl.textContent = message;
+
+  if (iconEl) {
+    let iconHtml = '<i class="fas fa-bell"></i>';
+    if (type === 'job_new') iconHtml = '<i class="fas fa-bolt" style="color:#fbbf24"></i>';
+    else if (type === 'job_claimed') iconHtml = '<i class="fas fa-handshake" style="color:#38bdf8"></i>';
+    else if (type === 'job_scheduled') iconHtml = '<i class="fas fa-calendar-check" style="color:#a78bfa"></i>';
+    else if (type === 'job_completed') iconHtml = '<i class="fas fa-check-circle" style="color:#34d399"></i>';
+    else if (type === 'job_posted') iconHtml = '<i class="fas fa-paper-plane" style="color:#60a5fa"></i>';
+    iconEl.innerHTML = iconHtml;
+  }
+
+  popup.classList.remove('hidden');
+  void popup.offsetWidth;
+  popup.classList.add('show');
+
+  if (popupDismissTimer) clearTimeout(popupDismissTimer);
+  popupDismissTimer = setTimeout(() => {
+    closeNotificationPopup();
+  }, 6000);
+}
+
+function closeNotificationPopup() {
+  const popup = document.getElementById('app-notif-popup');
+  if (!popup) return;
+  popup.classList.remove('show');
+  setTimeout(() => {
+    popup.classList.add('hidden');
+    activeNotificationAction = null;
+  }, 300);
+}
+
+function handleNotificationPopupClick() {
+  if (typeof activeNotificationAction === 'function') {
+    activeNotificationAction();
+  } else if (typeof activeNotificationAction === 'string') {
+    switchDashTab(activeNotificationAction);
+  }
+  closeNotificationPopup();
+}
+
+function toggleNotificationPanel() {
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  const isHidden = panel.classList.contains('hidden');
+  if (isHidden) {
+    markAllNotificationsAsRead();
+    renderNotificationList();
+    panel.classList.remove('hidden');
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+
+function markAllNotificationsAsRead() {
+  try {
+    const list = getStoredNotifications();
+    let updated = false;
+    list.forEach(n => {
+      if (!n.read) {
+        n.read = true;
+        updated = true;
+      }
+    });
+    if (updated) {
+      localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(list));
+      updateNotificationBadge();
+    }
+  } catch (e) {}
+}
+
+function clearAllNotifications() {
+  try {
+    localStorage.removeItem(NOTIF_STORAGE_KEY);
+    renderNotificationList();
+    updateNotificationBadge();
+    showToast('සියලු Notifications ඉවත් කරන ලදී', 'info');
+  } catch (e) {}
+}
+
+function formatNotifTime(ts) {
+  if (!ts) return '';
+  const diffSec = Math.floor((Date.now() - ts) / 1000);
+  if (diffSec < 60) return 'දැන් (Just now)';
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m පෙර`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h පෙර`;
+  return new Date(ts).toLocaleDateString('en-GB');
+}
+
+function renderNotificationList() {
+  const listEl = document.getElementById('notif-list');
+  if (!listEl) return;
+  const list = getStoredNotifications();
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+  if (!list || list.length === 0) {
+    listEl.innerHTML = `<div class="notif-empty"><i class="fas fa-bell-slash"></i><p>${tFn('no_notifs', 'No notifications yet')}</p></div>`;
+    return;
+  }
+
+  let html = '';
+  list.forEach(item => {
+    let iconClass = 'fa-bell';
+    let iconColor = 'var(--accent)';
+    if (item.type === 'job_new') { iconClass = 'fa-bolt'; iconColor = '#fbbf24'; }
+    else if (item.type === 'job_claimed') { iconClass = 'fa-handshake'; iconColor = '#38bdf8'; }
+    else if (item.type === 'job_scheduled') { iconClass = 'fa-calendar-check'; iconColor = '#a78bfa'; }
+    else if (item.type === 'job_completed') { iconClass = 'fa-check-circle'; iconColor = '#34d399'; }
+    else if (item.type === 'job_posted') { iconClass = 'fa-paper-plane'; iconColor = '#60a5fa'; }
+
+    const timeAgo = formatNotifTime(item.timestamp);
+    const clickAttr = item.targetTab ? `onclick="switchDashTab('${item.targetTab}'); toggleNotificationPanel();"` : '';
+
+    html += `
+      <div class="notif-item ${item.read ? '' : 'unread'}" ${clickAttr} style="${item.targetTab ? 'cursor:pointer' : ''}">
+        <div class="notif-icon-col" style="color:${iconColor};font-size:1.15rem;display:flex;align-items:center;justify-content:center;width:28px">
+          <i class="fas ${iconClass}"></i>
+        </div>
+        <div class="notif-content-col" style="flex:1;min-width:0">
+          <div class="notif-item-title" style="font-weight:700;font-size:.85rem;color:#fff">${esc(item.title)}</div>
+          <div class="notif-item-msg" style="font-size:.76rem;color:var(--txt2);margin-top:2px;line-height:1.3">${esc(item.message)}</div>
+          <div class="notif-item-time" style="font-size:.68rem;color:var(--txt3);margin-top:4px">${timeAgo}</div>
+        </div>
+      </div>
+    `;
+  });
+  listEl.innerHTML = html;
+}
+
+function switchDashTab(tab) {
+  if (!currentUserData) return;
+  if (currentUserData.role === 'admin') {
+    showScreen('screen-admin');
+    if (tab && typeof switchAdminTab === 'function') switchAdminTab(tab);
+  } else if (currentUserData.role === 'technician') {
+    showScreen('screen-dashboard');
+    if (tab === 'jobs' || tab === 'avail') showTechTab('avail');
+    else if (tab === 'claims') showTechTab('claims');
+    else if (tab === 'profile') showTechTab('profile');
+    else if (tab === 'post') showScreen('screen-post-job');
+  } else {
+    showScreen('screen-dashboard');
+    if (tab === 'jobs' || tab === 'cust-jobs') showCustTab('jobs');
+    else if (tab === 'profile') showCustTab('profile');
+    else if (tab === 'post') showScreen('screen-post-job');
+  }
+}
+
+function triggerAppNotification(options) {
+  if (!options) return;
+  const title = options.title || 'LankaVision Pro';
+  const message = options.message || '';
+  const type = options.type || 'info';
+  const targetTab = options.targetTab || null;
+  const tag = options.tag || ('lv_' + Date.now());
+
+  // 1. Play synthesized audio chime
+  playNotificationChime();
+
+  // 2. Android Native Notification (System status bar + sound + vibration)
+  try {
+    if (window.AndroidApp && typeof window.AndroidApp.triggerNativeNotification === 'function') {
+      window.AndroidApp.triggerNativeNotification(title, message, tag);
+    }
+  } catch (e) {
+    console.warn('Android native notification error:', e);
+  }
+
+  // 3. Web Push / Browser Notification
+  try {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification(title, {
+        body: message,
+        icon: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        tag: tag
+      });
+    }
+  } catch (e) {}
+
+  // 4. In-App Floating Top Banner
+  showInAppNotificationBanner(title, message, type, targetTab ? () => switchDashTab(targetTab) : null);
+
+  // 5. Save to local Notification Center tray
+  saveNotification({
+    title,
+    message,
+    type,
+    targetTab
+  });
+}
+
+function setupRealtimeJobNotifications() {
+  cleanupRealtimeJobNotifications();
+  if (typeof db === 'undefined' || !db || !currentUser || !currentUserData) return;
+
+  realtimeListenerInitializedAt = Date.now();
+  const role = currentUserData.role;
+
+  try {
+    if (role === 'technician') {
+      const techDistrict = currentUserData.district;
+      unsubJobsRealtime = db.collection('jobs')
+        .where('status', '==', 'open')
+        .onSnapshot(snapshot => {
+          snapshot.docChanges().forEach(change => {
+            const job = { id: change.doc.id, ...change.doc.data() };
+            window._jobsMap = window._jobsMap || {};
+            window._jobsMap[job.id] = job;
+            if (change.type === 'added') {
+              const createdAtMs = job.createdAt && job.createdAt.toMillis ? job.createdAt.toMillis() : Date.now();
+              if (createdAtMs >= realtimeListenerInitializedAt - 15000) {
+                if (techProvidesService(currentUserData, job.type)) {
+                  const isHome = job.district === techDistrict;
+                  const nearby = (NEARBY_DISTRICTS[techDistrict] || []).includes(job.district);
+                  if (isHome || nearby) {
+                    const loc = job.city ? `${job.district}, ${job.city}` : job.district;
+                    triggerAppNotification({
+                      title: `⚡ අලුත් ${job.type} Job එකක්!`,
+                      message: `${loc} - ${job.title}`,
+                      type: 'job_new',
+                      targetTab: 'jobs'
+                    });
+                    if (document.getElementById('screen-dashboard')?.classList.contains('active')) {
+                      loadTechJobs();
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }, err => {
+          console.warn('Technician realtime jobs listener notice:', err.message);
+        });
+
+    } else if (role === 'customer') {
+      unsubJobsRealtime = db.collection('jobs')
+        .where('postedBy', '==', currentUser.uid)
+        .onSnapshot(snapshot => {
+          snapshot.docChanges().forEach(change => {
+            const job = { id: change.doc.id, ...change.doc.data() };
+            window._jobsMap = window._jobsMap || {};
+            window._jobsMap[job.id] = job;
+            if (change.type === 'modified') {
+              if (job.status === 'claimed' && job.claimedByName) {
+                triggerAppNotification({
+                  title: '🤝 Technician Accepted Your Job!',
+                  message: `${job.claimedByName} විසින් ඔබගේ "${job.title}" job එක භාරගන්නා ලදී.`,
+                  type: 'job_claimed',
+                  targetTab: 'jobs'
+                });
+              } else if (job.isScheduled && job.scheduledDate) {
+                triggerAppNotification({
+                  title: '📅 Service Visit Scheduled!',
+                  message: `"${job.title}" සඳහා Technician පැමිණෙන දිනය: ${job.scheduledDate} ${job.scheduledTime || ''}`,
+                  type: 'job_scheduled',
+                  targetTab: 'jobs'
+                });
+              } else if (job.status === 'completed') {
+                triggerAppNotification({
+                  title: '🎉 Job Completed Successfully!',
+                  message: `ඔබගේ "${job.title}" job එක සාර්ථකව අවසන් කර ඇත. කරුණාකර Review එකක් ලබා දෙන්න.`,
+                  type: 'job_completed',
+                  targetTab: 'jobs'
+                });
+              }
+              if (document.getElementById('screen-dashboard')?.classList.contains('active')) {
+                loadCustomerJobs();
+              }
+            }
+          });
+        }, err => {
+          console.warn('Customer realtime jobs listener notice:', err.message);
+        });
+
+    } else if (role === 'admin') {
+      unsubJobsRealtime = db.collection('jobs')
+        .where('status', '==', 'open')
+        .onSnapshot(snapshot => {
+          snapshot.docChanges().forEach(change => {
+            const job = { id: change.doc.id, ...change.doc.data() };
+            window._jobsMap = window._jobsMap || {};
+            window._jobsMap[job.id] = job;
+            if (change.type === 'added') {
+              const createdAtMs = job.createdAt && job.createdAt.toMillis ? job.createdAt.toMillis() : Date.now();
+              if (createdAtMs >= realtimeListenerInitializedAt - 15000) {
+                const loc = job.city ? `${job.district}, ${job.city}` : job.district;
+                triggerAppNotification({
+                  title: `🔔 New Job: ${job.title}`,
+                  message: `${loc} • ${job.type} • ${job.customerName || 'Customer'}`,
+                  type: 'job_new'
+                });
+                if (document.getElementById('screen-admin')?.classList.contains('active')) {
+                  loadAdminStats();
+                }
+              }
+            }
+          });
+        }, err => {
+          console.warn('Admin realtime jobs listener notice:', err.message);
+        });
+    }
+  } catch (e) {
+    console.warn('setupRealtimeJobNotifications error:', e);
+  }
+}
+
+function cleanupRealtimeJobNotifications() {
+  if (typeof unsubJobsRealtime === 'function') {
+    try {
+      unsubJobsRealtime();
+    } catch (e) {}
+    unsubJobsRealtime = null;
+  }
+}
+
 // Trigger 1: New Job Posted -> Notify Admin, District Technicians, and Customer
 async function notifyNewJobPosted(job) {
   const loc = job.city ? `${job.district}, ${job.city}` : job.district;
@@ -664,6 +1090,27 @@ async function notifyNewJobPosted(job) {
     html: adminHtml,
     text: `New Job: ${job.title} in ${loc}. Type: ${job.type}. Phone: ${job.customerPhone}`
   });
+
+  // Instant In-App & Native Notification for Customer or Admin
+  try {
+    const isPoster = currentUser && (currentUser.uid === job.customerId || currentUser.uid === job.postedBy);
+    if (isPoster) {
+      triggerAppNotification({
+        title: '✅ Job Posted Successfully!',
+        message: `ඔබගේ "${job.title}" (${loc}) job එක සාර්ථකව පද්ධතියට ලැබී ඇත.`,
+        type: 'job_posted',
+        targetTab: 'jobs'
+      });
+    } else if (currentUserData && currentUserData.role === 'admin') {
+      triggerAppNotification({
+        title: `🔔 New Job Posted: ${job.title}`,
+        message: `${loc} • ${job.type} • ${job.customerName || 'Customer'}`,
+        type: 'job_new'
+      });
+    }
+  } catch (e) {
+    console.warn('In-app job post alert error:', e);
+  }
 
   // 2. To Customer (if email provided)
   if (job.customerEmail) {
@@ -771,6 +1218,12 @@ async function notifyTechRegistered(tech) {
     const techLoc = tech.city ? `${tech.district}, ${tech.city}` : tech.district;
     console.log('[NOTIFY] Dispatching registration emails for:', tech.name, techLoc);
 
+    triggerAppNotification({
+      title: '👤 New Technician Registered',
+      message: `${tech.name} (${techLoc}) applied for approval`,
+      type: 'info'
+    });
+
     // 1. To Admin (Clean HTML without heavy base64 to ensure 100% email deliverability)
     const adminHtml = emailWrapper('New Technician Application', `
       <h2 style="color:#60a5fa;margin-top:0;font-size:18px">👤 New Technician Registration!</h2>
@@ -849,11 +1302,25 @@ async function notifyTechApproved(tech) {
     html,
     text: `Your technician account is approved. Login to view jobs.`
   });
+
+  triggerAppNotification({
+    title: '✅ Technician Account Approved!',
+    message: 'ඔබගේ Technician ගිණුම අනුමත කර ඇත. දැන් ඔබට Jobs භාරගත හැක.',
+    type: 'job_claimed',
+    targetTab: 'jobs'
+  });
 }
 
 // Trigger 4: Job Claimed / Accepted -> Notify Customer & Admin
 async function notifyJobClaimed(job, tech) {
   const loc = job.city ? `${job.district}, ${job.city}` : job.district;
+
+  triggerAppNotification({
+    title: '🤝 Technician Accepted Job!',
+    message: `${tech.name || 'Technician'} accepted ${job.title} (${loc})`,
+    type: 'job_claimed',
+    targetTab: currentUserData?.role === 'customer' ? 'jobs' : 'claims'
+  });
 
   // 1. To Customer
   let custEmail = job.customerEmail || '';
@@ -905,6 +1372,13 @@ async function notifyJobClaimed(job, tech) {
 
 // Trigger 4.5: Job Scheduled -> Notify Customer
 async function notifyJobScheduled(job, tech, date, time, notes) {
+  triggerAppNotification({
+    title: '📅 Service Visit Scheduled!',
+    message: `${job.title} scheduled on ${date} at ${time} by ${tech?.name || 'Technician'}`,
+    type: 'job_scheduled',
+    targetTab: 'jobs'
+  });
+
   let custEmail = job.customerEmail || '';
   if (!custEmail && job.postedBy && job.postedBy !== 'guest') {
     try {
@@ -938,6 +1412,13 @@ async function notifyJobScheduled(job, tech, date, time, notes) {
 
 // Trigger 5: Job Completed -> Notify Customer
 async function notifyJobCompleted(job) {
+  triggerAppNotification({
+    title: '🎉 Job Completed Successfully!',
+    message: `"${job.title}" job එක අවසන් කර ඇත. කරුණාකර Technician සඳහා Review එකක් ලබා දෙන්න.`,
+    type: 'job_completed',
+    targetTab: 'jobs'
+  });
+
   let custEmail = job.customerEmail || '';
   if (!custEmail && job.postedBy && job.postedBy !== 'guest') {
     try {
@@ -1000,6 +1481,12 @@ async function notifyJobCompleted(job) {
 async function notifyCustomerRegistered(cust) {
   if (!cust || !cust.email) return;
 
+  triggerAppNotification({
+    title: '🎉 Welcome to LankaVision Pro!',
+    message: `ආයුබෝවන් ${cust.name || 'Customer'}! ඔබගේ ගිණුම සාර්ථකව සාදන ලදී.`,
+    type: 'info'
+  });
+
   // 1. Welcome to Customer
   const custWelcomeHtml = emailWrapper('Welcome to LankaVision', `
     <h2 style="color:#38bdf8;margin-top:0;font-size:18px">🎉 Welcome to LankaVision Pro!</h2>
@@ -1047,6 +1534,52 @@ async function notifyCustomerRegistered(cust) {
   }, 2000);
 }
 
+// ── PERSISTENT SESSION RESTORATION (Instant Account Resume) ──
+const SESSION_STORAGE_KEY = 'lankavision_active_session';
+
+function saveCachedSession(uid, userData) {
+  try {
+    if (!uid || !userData) return;
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+      uid: uid,
+      role: userData.role,
+      data: userData,
+      savedAt: Date.now()
+    }));
+  } catch (e) {
+    console.warn('saveCachedSession error:', e);
+  }
+}
+
+function getCachedSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.data && parsed.uid) {
+      return parsed;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearCachedSession() {
+  try {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+  } catch (e) {}
+}
+
+function dismissLoadingScreen() {
+  const loadingEl = document.getElementById('screen-loading');
+  if (!loadingEl) return;
+  loadingEl.classList.add('fade-out');
+  setTimeout(() => {
+    loadingEl.style.display = 'none';
+  }, 400);
+}
+
 // ── INIT ───────────────────────────────────────────────────────
 function initApp() {
   if (appInitialized) return;
@@ -1054,17 +1587,42 @@ function initApp() {
 
   populateAllDistricts();
 
-  // Show skip button after 1.5s if auth not resolved
-  setTimeout(() => {
-    const skipBtn = document.getElementById('btn-skip-loading');
-    if (skipBtn && !authResolved) skipBtn.style.opacity = '1';
-  }, 1500);
+  // Instant zero-delay session restoration:
+  // If the user was previously logged in, immediately activate their account screen
+  // behind the launch overlay so that the website home (landing page) is NEVER flashed!
+  const cached = getCachedSession();
+  if (cached && cached.data) {
+    currentUserData = cached.data;
+    if (cached.data.role === 'admin') {
+      showScreen('screen-admin');
+      initAdminDashboard();
+    } else if (cached.data.role === 'technician') {
+      if (cached.data.status === 'pending') {
+        showScreen('screen-pending');
+      } else {
+        showScreen('screen-dashboard');
+        initTechDashboard();
+      }
+    } else {
+      showScreen('screen-dashboard');
+      initCustomerDashboard();
+    }
+    setupRealtimeJobNotifications();
+    // Smoothly dismiss the loading overlay within 300ms since dashboard is already pre-rendered
+    setTimeout(dismissLoadingScreen, 300);
+  } else {
+    // If no cached user, prepare landing screen
+    showScreen('screen-landing');
+  }
 
-  // Safety fallback
+  // Safety fallback if network or auth hangs
   setTimeout(() => {
     if (!authResolved) {
       authResolved = true;
-      showScreen('screen-landing');
+      if (!currentUserData) {
+        showScreen('screen-landing');
+      }
+      dismissLoadingScreen();
     }
   }, 2500);
 
@@ -1077,16 +1635,25 @@ function initApp() {
       } else {
         currentUser = null;
         currentUserData = null;
+        clearCachedSession();
+        cleanupRealtimeJobNotifications();
         showScreen('screen-landing');
       }
+      dismissLoadingScreen();
     }, (error) => {
       console.error('Auth error:', error);
       authResolved = true;
-      showScreen('screen-landing');
+      if (!currentUserData) {
+        showScreen('screen-landing');
+      }
+      dismissLoadingScreen();
     });
   } else {
     authResolved = true;
-    showScreen('screen-landing');
+    if (!currentUserData) {
+      showScreen('screen-landing');
+    }
+    dismissLoadingScreen();
   }
 
   document.addEventListener('click', e => {
@@ -1095,8 +1662,79 @@ function initApp() {
     if (dd && btn && !dd.contains(e.target) && !btn.contains(e.target)) {
       dd.classList.add('hidden');
     }
+    const np = document.getElementById('notif-panel');
+    const notifBtns = document.querySelectorAll('.notif-bell-btn');
+    let clickedBell = false;
+    notifBtns.forEach(b => { if (b.contains(e.target)) clickedBell = true; });
+    if (np && !np.classList.contains('hidden') && !np.contains(e.target) && !clickedBell) {
+      np.classList.add('hidden');
+    }
   });
+
+  updateOnlineStatusUI();
+  setInterval(updateOnlineStatusUI, 4000);
+  updateNotificationBadge();
+  renderNotificationList();
+
+  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    try {
+      Notification.requestPermission().catch(() => {});
+    } catch (e) {}
+  }
 }
+
+// ── NETWORK STATUS & SCROLL UTILITIES ──────────────────────────
+function isDeviceOnline() {
+  try {
+    if (window.AndroidApp && typeof window.AndroidApp.isOnline === 'function') {
+      return window.AndroidApp.isOnline();
+    }
+  } catch (e) {}
+  return navigator.onLine !== false;
+}
+
+function updateOnlineStatusUI() {
+  const banner = document.getElementById('offline-network-banner');
+  const bannerText = document.getElementById('offline-banner-text');
+  if (!banner) return;
+
+  const online = isDeviceOnline();
+  if (!online) {
+    banner.classList.remove('hidden', 'online-recovered');
+    if (bannerText) {
+      bannerText.textContent = typeof t === 'function' ? t('offline_banner_msg', 'ඔබ මේ වන විට Offline සිටී. කරුණාකර Mobile Data හෝ Wi-Fi සම්බන්ධ කරන්න.') : 'ඔබ මේ වන විට Offline සිටී. කරුණාකර Mobile Data හෝ Wi-Fi සම්බන්ධ කරන්න.';
+    }
+  } else {
+    if (!banner.classList.contains('hidden') && !banner.classList.contains('online-recovered')) {
+      banner.classList.add('online-recovered');
+      if (bannerText) {
+        bannerText.textContent = typeof t === 'function' ? t('offline_online_msg', '✅ Internet සම්බන්ධ විය! (Back Online)') : '✅ Internet සම්බන්ධ විය! (Back Online)';
+      }
+      setTimeout(() => {
+        banner.classList.add('hidden');
+        banner.classList.remove('online-recovered');
+      }, 2400);
+    }
+  }
+}
+
+window.addEventListener('online', updateOnlineStatusUI);
+window.addEventListener('offline', updateOnlineStatusUI);
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scroll-to-top-btn');
+  if (!btn) return;
+  const scrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+  if (scrollY > 260) {
+    btn.classList.add('visible');
+  } else {
+    btn.classList.remove('visible');
+  }
+}, { passive: true });
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
@@ -1291,11 +1929,16 @@ async function loadUserData(uid) {
     if (!doc.exists) {
       if (currentUser && currentUser.email && currentUser.email.toLowerCase() === MAIN_ADMIN_EMAIL.toLowerCase()) {
         currentUserData = { id: uid, name: 'Main Administrator', email: currentUser.email, role: 'admin', isMainAdmin: true };
+        saveCachedSession(uid, currentUserData);
         showScreen('screen-admin');
         initAdminDashboard();
+        setupRealtimeJobNotifications();
+        dismissLoadingScreen();
         return;
       }
+      clearCachedSession();
       showScreen('screen-landing');
+      dismissLoadingScreen();
       return;
     }
 
@@ -1306,6 +1949,8 @@ async function loadUserData(uid) {
       currentUserData.role = 'admin';
       currentUserData.isMainAdmin = true;
     }
+
+    saveCachedSession(uid, currentUserData);
 
     switch (currentUserData.role) {
       case 'admin':
@@ -1330,15 +1975,27 @@ async function loadUserData(uid) {
         showScreen('screen-dashboard');
         initCustomerDashboard();
     }
+    setupRealtimeJobNotifications();
+    dismissLoadingScreen();
   } catch (err) {
     console.error('loadUserData error:', err);
     if (currentUser && currentUser.email && currentUser.email.toLowerCase() === MAIN_ADMIN_EMAIL.toLowerCase()) {
       currentUserData = { id: uid, name: 'Main Administrator', email: currentUser.email, role: 'admin', isMainAdmin: true };
+      saveCachedSession(uid, currentUserData);
       showScreen('screen-admin');
       initAdminDashboard();
+      setupRealtimeJobNotifications();
+      dismissLoadingScreen();
+      return;
+    }
+    const cached = getCachedSession();
+    if (cached && cached.data) {
+      console.warn('Network issue loading fresh user data; retaining cached session');
+      dismissLoadingScreen();
       return;
     }
     showScreen('screen-landing');
+    dismissLoadingScreen();
   }
 }
 
@@ -1352,6 +2009,15 @@ async function handleLogin(e) {
   const btn = document.getElementById('login-btn');
 
   errEl.classList.add('hidden');
+
+  if (!isDeviceOnline()) {
+    errEl.textContent = '⚠️ ඔබ Offline සිටී. Login වීමට කරුණාකර Mobile Data හෝ Wi-Fi සම්බන්ධ කරන්න.';
+    errEl.classList.remove('hidden');
+    showToast('⚠️ Offline: Internet සම්බන්ධ කරන්න', 'warning');
+    updateOnlineStatusUI();
+    return;
+  }
+
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
 
@@ -1388,6 +2054,14 @@ async function handleCustomerRegister(e) {
   const errEl = document.getElementById('cust-error');
   errEl.classList.add('hidden');
 
+  if (!isDeviceOnline()) {
+    errEl.textContent = '⚠️ ඔබ Offline සිටී. Register වීමට කරුණාකර Mobile Data හෝ Wi-Fi සම්බන්ධ කරන්න.';
+    errEl.classList.remove('hidden');
+    showToast('⚠️ Offline: Internet සම්බන්ධ කරන්න', 'warning');
+    updateOnlineStatusUI();
+    return;
+  }
+
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     await db.collection('users').doc(cred.user.uid).set({
@@ -1410,6 +2084,10 @@ let capturedTechSelfieDataUrl = null;
 async function startTechCamera() {
   const errEl = document.getElementById('selfie-error');
   if (errEl) errEl.classList.add('hidden');
+
+  if (window.AndroidApp && typeof window.AndroidApp.requestCameraPermission === 'function') {
+    try { window.AndroidApp.requestCameraPermission(); } catch(e) {}
+  }
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     if (errEl) {
@@ -1554,7 +2232,7 @@ function previewPhoto(url, title) {
   if (capEl) {
     capEl.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> Verified Live Selfie · Camera එකෙන්ම ලබාගත් ඡායාරූපයකි';
   }
-  modal.classList.remove('hidden');
+  openModal('modal-photo-preview');
 }
 
 // ── MANDATORY LIVE SELFIE FOR EXISTING TECHNICIANS ────────────
@@ -1576,7 +2254,7 @@ function promptMandatoryTechSelfie() {
   document.getElementById('mandatory-camera-wrap')?.classList.add('hidden');
   document.getElementById('mandatory-idle')?.classList.remove('hidden');
 
-  modal.classList.remove('hidden');
+  openModal('modal-mandatory-selfie');
   startMandatoryCamera();
 }
 
@@ -1729,8 +2407,7 @@ async function saveMandatorySelfie() {
       currentUserData.photoUrl = capturedMandatorySelfieDataUrl;
     }
 
-    stopMandatoryCamera();
-    document.getElementById('modal-mandatory-selfie')?.classList.add('hidden');
+    closeModal('modal-mandatory-selfie');
 
     showToast('Live Selfie සාර්ථකව සුරක්ෂිත විය! ✅ දැන් ඔබට Jobs ලබාගත හැක.', 'success');
 
@@ -1770,20 +2447,23 @@ function openCompleteJobModal(jobId) {
   document.getElementById('work-camera-wrap')?.classList.add('hidden');
   document.getElementById('work-idle')?.classList.remove('hidden');
 
-  document.getElementById('modal-complete-job').classList.remove('hidden');
+  openModal('modal-complete-job');
   startWorkCamera();
 }
 
 function closeCompleteJobModal() {
-  stopWorkCamera();
   activeCompletingJobId = null;
   capturedWorkPhotoDataUrl = null;
-  document.getElementById('modal-complete-job')?.classList.add('hidden');
+  closeModal('modal-complete-job');
 }
 
 async function startWorkCamera() {
   const errEl = document.getElementById('work-proof-error');
   if (errEl) errEl.classList.add('hidden');
+
+  if (window.AndroidApp && typeof window.AndroidApp.requestCameraPermission === 'function') {
+    try { window.AndroidApp.requestCameraPermission(); } catch(e) {}
+  }
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     if (errEl) {
@@ -1983,7 +2663,7 @@ async function openFeedbackModal(jobId) {
     if (commentInput) commentInput.value = job.feedback || '';
     document.getElementById('feedback-error')?.classList.add('hidden');
 
-    document.getElementById('modal-feedback').classList.remove('hidden');
+    openModal('modal-feedback');
   } catch (err) {
     console.error('openFeedbackModal error:', err);
   }
@@ -2121,6 +2801,14 @@ async function handleTechRegister(e) {
   const errEl = document.getElementById('tech-error');
   errEl.classList.add('hidden');
 
+  if (!isDeviceOnline()) {
+    errEl.textContent = '⚠️ ඔබ Offline සිටී. Register වීමට කරුණාකර Mobile Data හෝ Wi-Fi සම්බන්ධ කරන්න.';
+    errEl.classList.remove('hidden');
+    showToast('⚠️ Offline: Internet සම්බන්ධ කරන්න', 'warning');
+    updateOnlineStatusUI();
+    return;
+  }
+
   if (!district) { errEl.textContent = 'District Select කරන්න.'; errEl.classList.remove('hidden'); return; }
   if (!services.length) { errEl.textContent = 'සේවා වර්ගයක් (CCTV, Satellite හෝ Router) Select කරන්න.'; errEl.classList.remove('hidden'); return; }
 
@@ -2159,6 +2847,8 @@ async function handleTechRegister(e) {
 }
 
 async function handleLogout() {
+  clearCachedSession();
+  cleanupRealtimeJobNotifications();
   stopTechCamera();
   const fab = document.getElementById('fab-post');
   if (fab) fab.classList.add('hidden');
@@ -2222,7 +2912,11 @@ async function loadCustomerJobs() {
       return;
     }
     el.innerHTML = docs.map(j => jobCard(j.id, j, 'customer')).join('');
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error('loadCustomerJobs error:', err);
+    const el = document.getElementById('cust-jobs');
+    if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Jobs load කිරීමේදී දෝෂයක් ඇති විය. <a href="#" onclick="loadCustomerJobs()" style="color:var(--primary-l)">Retry</a></p></div>`;
+  }
 }
 
 function goToMyJobs() {
@@ -2690,11 +3384,16 @@ async function loadTechClaims() {
       return;
     }
     el.innerHTML = docs.map(j => jobCard(j.id, j, 'tech-claimed')).join('');
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error('loadTechClaims error:', err);
+    const el = document.getElementById('tech-claims');
+    if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Jobs load කිරීමේදී දෝෂයක් ඇති විය. <a href="#" onclick="loadTechClaims()" style="color:var(--primary-l)">නැවත උත්සාහ කරන්න (Retry)</a></p></div>`;
+  }
 }
 
 // ── JOB CARD ──────────────────────────────────────────────────
 function jobCard(id, job, view) {
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
   const ago = timeAgo(job.createdAt?.toDate?.());
   const myJob = job.claimedBy === currentUser?.uid;
   const showPhone = view === 'customer' || view === 'tech-claimed' || myJob || view === 'admin';
@@ -2809,7 +3508,6 @@ function jobCard(id, job, view) {
       </div>`;
   }
 
-  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
   let actions = '';
   if (view === 'tech' && job.status === 'open') {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'Map')}</button>` : '';
@@ -2944,6 +3642,12 @@ async function claimJob(jobId, e) {
   if (e) e.stopPropagation();
   if (!currentUser || !currentUserData) { showToast('Login කරන්න', 'error'); return; }
 
+  if (!isDeviceOnline()) {
+    showToast('⚠️ ඔබ Offline සිටී. Job එකක් භාර ගැනීමට Internet සම්බන්ධ කරන්න.', 'warning');
+    updateOnlineStatusUI();
+    return;
+  }
+
   // Strict guard: Enforce live selfie for technicians who have not yet added one
   if (currentUserData.role === 'technician' && !currentUserData.photoUrl) {
     showToast('Jobs භාරගැනීමට පෙර කරුණාකර Live Selfie එක ලබා දෙන්න', 'warning');
@@ -3059,8 +3763,7 @@ async function openScheduleModal(jobId, preloadedData) {
     }
   }
 
-  const modal = document.getElementById('modal-schedule-visit');
-  if (modal) modal.classList.remove('hidden');
+  openModal('modal-schedule-visit');
 }
 
 async function saveScheduleVisit(e) {
@@ -3126,9 +3829,44 @@ async function saveScheduleVisit(e) {
 // ── JOB MODAL ─────────────────────────────────────────────────
 async function openJobModal(jobId) {
   try {
-    const doc = await db.collection('jobs').doc(jobId).get();
-    if (!doc.exists) return;
-    const job = doc.data();
+    const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+
+    // Check memory caches first for 0ms instantaneous display
+    let job = (window._jobsMap && window._jobsMap[jobId]) ||
+              (typeof allAdminJobs !== 'undefined' && allAdminJobs && allAdminJobs.find(x => x.id === jobId)) ||
+              (typeof allJobs !== 'undefined' && allJobs && allJobs.find(x => x.id === jobId)) || null;
+
+    if (!job) {
+      // Show loading modal immediately so the user gets instant visual confirmation
+      document.getElementById('modal-job-body').innerHTML = `
+        <div style="text-align:center;padding:48px 20px">
+          <i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary-l)"></i>
+          <p style="margin-top:12px;color:var(--txt2);font-weight:600">Job details loading...</p>
+        </div>`;
+      openModal('modal-job');
+
+      let doc = null;
+      try {
+        doc = await db.collection('jobs').doc(jobId).get();
+      } catch (netErr) {
+        try {
+          doc = await db.collection('jobs').doc(jobId).get({ source: 'cache' });
+        } catch (cErr) {}
+      }
+
+      if (!doc || !doc.exists) {
+        showToast('Job details not found', 'error');
+        closeModal('modal-job');
+        return;
+      }
+      job = { id: doc.id, ...doc.data() };
+      window._jobsMap = window._jobsMap || {};
+      window._jobsMap[jobId] = job;
+    } else {
+      window._jobsMap = window._jobsMap || {};
+      window._jobsMap[jobId] = job;
+      openModal('modal-job');
+    }
 
     const isAdmin = currentUserData?.role === 'admin';
     const isMine  = job.claimedBy === currentUser?.uid;
@@ -3145,9 +3883,15 @@ async function openJobModal(jobId) {
          <p style="font-size:.76rem;color:var(--txt3);margin-top:4px">🔒 Job accept කළ පසු reveal වේ</p>`;
 
     let mapHtml = '';
-    if (job.location?.lat) {
-      const gmapUrl = `https://www.google.com/maps?q=${job.location.lat},${job.location.lng}`;
-      const navUrl  = `https://www.google.com/maps/dir/?api=1&destination=${job.location.lat},${job.location.lng}`;
+    const rawLat = job.location?.lat;
+    const rawLng = job.location?.lng;
+    const parsedLat = (rawLat !== undefined && rawLat !== null) ? parseFloat(rawLat) : NaN;
+    const parsedLng = (rawLng !== undefined && rawLng !== null) ? parseFloat(rawLng) : NaN;
+    const hasValidCoords = !isNaN(parsedLat) && !isNaN(parsedLng);
+
+    if (hasValidCoords) {
+      const gmapUrl = `https://www.google.com/maps?q=${parsedLat},${parsedLng}`;
+      const navUrl  = `https://www.google.com/maps/dir/?api=1&destination=${parsedLat},${parsedLng}`;
       mapHtml = `
         <div class="modal-map-box" id="modal-map-el"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
@@ -3307,54 +4051,126 @@ async function openJobModal(jobId) {
         ${isAdmin ? `<button class="btn btn-warning btn-full" onclick="closeModal('modal-job');openEditJobModal('${jobId}')"><i class="fas fa-edit"></i> Edit This Job</button>` : ''}
         ${(isMine && job.status === 'claimed') ? `<button class="btn btn-primary btn-full" onclick="closeModal('modal-job');openScheduleModal('${jobId}')" style="margin-top:4px"><i class="fas fa-calendar-alt"></i> ${job.scheduledDate ? tFn('btn_reschedule', 'Reschedule Visit') : tFn('btn_schedule', 'Schedule Visit')} (දිනය/වේලාව)</button>` : ''}
         ${(isMine && job.status === 'claimed') ? `<button class="btn btn-success btn-full" onclick="closeModal('modal-job');openCompleteJobModal('${jobId}')" style="margin-top:4px"><i class="fas fa-camera"></i> Complete Job (වැඩ අවසන් කර Photo එක ගන්න)</button>` : ''}
+        <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-job')" style="margin-top:8px;border:1px solid rgba(255,255,255,0.12)">
+          <i class="fas fa-times"></i> <span data-i18n="btn_close">Close (වසන්න)</span>
+        </button>
+        <div style="height:36px"></div>
       </div>`;
 
-    document.getElementById('modal-job').classList.remove('hidden');
+    openModal('modal-job');
 
-    if (job.location?.lat) {
+    if (hasValidCoords) {
       setTimeout(() => {
-        if (modalMap) { modalMap.remove(); modalMap = null; }
-        modalMap = L.map('modal-map-el').setView([job.location.lat, job.location.lng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(modalMap);
+        try {
+          if (modalMap) {
+            try { modalMap.remove(); } catch (me) {}
+            modalMap = null;
+          }
+          const container = document.getElementById('modal-map-el');
+          if (!container) return;
+          container._leaflet_id = null;
 
-        let markerClass = 'marker-cctv';
-        let iconClass = 'fas fa-video';
-        if (job.type === 'Satellite') {
-          markerClass = 'marker-satellite';
-          iconClass = 'fas fa-satellite-dish';
-        } else if (job.type === 'Router') {
-          markerClass = 'marker-router';
-          iconClass = 'fas fa-wifi';
+          modalMap = L.map('modal-map-el', {
+            dragging: false,
+            touchZoom: false,
+            scrollWheelZoom: false,
+            doubleClickZoom: false,
+            boxZoom: false,
+            tap: false,
+            keyboard: false
+          }).setView([parsedLat, parsedLng], 15);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(modalMap);
+
+          container.style.cursor = 'pointer';
+          container.title = 'Click to open in Google Maps';
+          container.onclick = () => window.open(`https://www.google.com/maps?q=${parsedLat},${parsedLng}`, '_blank');
+
+          let markerClass = 'marker-cctv';
+          let iconClass = 'fas fa-video';
+          if (job.type === 'Satellite') {
+            markerClass = 'marker-satellite';
+            iconClass = 'fas fa-satellite-dish';
+          } else if (job.type === 'Router') {
+            markerClass = 'marker-router';
+            iconClass = 'fas fa-wifi';
+          }
+
+          const pinHtml = `
+            <div class="job-marker-pin ${markerClass}" title="${esc(job.title || '')} (${esc(job.type || '')})">
+              <i class="${iconClass}"></i>
+            </div>`;
+
+          L.marker([parsedLat, parsedLng], {
+            icon: L.divIcon({
+              className: 'custom-job-marker',
+              html: pinHtml,
+              iconSize: [36, 36],
+              iconAnchor: [18, 36],
+              popupAnchor: [0, -36]
+            })
+          }).addTo(modalMap);
+        } catch (mapErr) {
+          console.warn('Modal map rendering warning:', mapErr);
         }
-
-        const pinHtml = `
-          <div class="job-marker-pin ${markerClass}" title="${esc(job.title || '')} (${esc(job.type || '')})">
-            <i class="${iconClass}"></i>
-          </div>`;
-
-        L.marker([job.location.lat, job.location.lng], {
-          icon: L.divIcon({
-            className: 'custom-job-marker',
-            html: pinHtml,
-            iconSize: [36, 36],
-            iconAnchor: [18, 36],
-            popupAnchor: [0, -36]
-          })
-        }).addTo(modalMap);
       }, 120);
     }
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error('openJobModal error:', err);
+    showToast('Failed to open job details: ' + (err.message || 'Error'), 'error');
+  }
+}
+
+// ── MODAL MANAGEMENT (Universal Smooth Scrolling & Body Lock) ─
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  // Reset scroll to top
+  const box = modal.querySelector('.modal-box');
+  if (box) box.scrollTop = 0;
+  modal.scrollTop = 0;
 }
 
 function closeModal(id) {
-  document.getElementById(id)?.classList.add('hidden');
-  if (id === 'modal-job' || id === 'all') {
+  if (id === 'all') {
+    document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
+    if (modalMap) { modalMap.remove(); modalMap = null; }
+    stopWorkCamera();
+    stopMandatoryCamera();
+    document.body.classList.remove('modal-open');
+    return;
+  }
+  const el = document.getElementById(id);
+  if (el) el.classList.add('hidden');
+  if (id === 'modal-job') {
     if (modalMap) { modalMap.remove(); modalMap = null; }
   }
   if (id === 'modal-complete-job') {
     stopWorkCamera();
   }
+  if (id === 'modal-mandatory-selfie') {
+    stopMandatoryCamera();
+  }
+  // Check if any other modal is still visible
+  const anyOpen = Array.from(document.querySelectorAll('.modal')).some(m => !m.classList.contains('hidden'));
+  if (!anyOpen) {
+    document.body.classList.remove('modal-open');
+  }
 }
+
+// Close modal on Escape key press (except mandatory selfie)
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const openModals = Array.from(document.querySelectorAll('.modal:not(.hidden)'));
+    if (openModals.length > 0) {
+      const topModal = openModals[openModals.length - 1];
+      if (topModal.id !== 'modal-mandatory-selfie') {
+        closeModal(topModal.id);
+      }
+    }
+  }
+});
 
 // ── ADMIN EDIT JOB ────────────────────────────────────────────
 async function openEditJobModal(jobId) {
@@ -3376,7 +4192,7 @@ async function openEditJobModal(jobId) {
     if (typeRadio) typeRadio.checked = true;
 
     document.getElementById('edit-job-error').classList.add('hidden');
-    document.getElementById('modal-edit-job').classList.remove('hidden');
+    openModal('modal-edit-job');
   } catch (err) { console.error(err); showToast('Failed to load job', 'error'); }
 }
 
@@ -3445,7 +4261,7 @@ async function openEditTechModal(uid) {
     });
 
     document.getElementById('edit-tech-error').classList.add('hidden');
-    document.getElementById('modal-edit-tech').classList.remove('hidden');
+    openModal('modal-edit-tech');
   } catch (err) { console.error(err); showToast('Failed to load tech', 'error'); }
 }
 
@@ -3762,6 +4578,16 @@ async function handlePostJob(e) {
   const errEl = document.getElementById('post-job-error');
   errEl.classList.add('hidden');
 
+  // Strict offline check before proceeding
+  if (!isDeviceOnline()) {
+    const offlineMsg = typeof t === 'function' ? t('offline_job_post_error', '⚠️ ඔබ Offline සිටී. Job එකක් Post කිරීමට කරුණාකර Internet සම්බන්ධ කරන්න.') : '⚠️ ඔබ Offline සිටී. Job එකක් Post කිරීමට කරුණාකර Internet සම්බන්ධ කරන්න.';
+    errEl.textContent = offlineMsg;
+    errEl.classList.remove('hidden');
+    showToast('⚠️ Offline: කරුණාකර Data හෝ Wi-Fi සම්බන්ධ කරන්න!', 'warning');
+    updateOnlineStatusUI();
+    return;
+  }
+
   if (!jobType)    { errEl.textContent = 'Service Type (CCTV / Satellite / Router) select කරන්න.'; errEl.classList.remove('hidden'); return; }
   if (!district)   { errEl.textContent = 'District select කරන්න.'; errEl.classList.remove('hidden'); return; }
   if (!selectedLoc){ errEl.textContent = 'Map එකෙන් location pin කරන්න.'; errEl.classList.remove('hidden'); return; }
@@ -3806,7 +4632,16 @@ async function handlePostJob(e) {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    await db.collection('jobs').add(newJobData);
+    // Timeout protection: If network fails mid-request, reject within 10 seconds rather than hanging indefinitely
+    const addPromise = db.collection('jobs').add(newJobData);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Network timeout: කරුණාකර ඔබගේ Internet සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න.')), 10000)
+    );
+    const addedDocRef = await Promise.race([addPromise, timeoutPromise]);
+    window._jobsMap = window._jobsMap || {};
+    if (addedDocRef && addedDocRef.id) {
+      window._jobsMap[addedDocRef.id] = { id: addedDocRef.id, ...newJobData };
+    }
 
     showToast('Job post කළා! 🎉', 'success');
     notifyNewJobPosted(newJobData);
@@ -3871,22 +4706,25 @@ async function loadAdminStats() {
       .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
       .slice(0, 8);
 
+    window._jobsMap = window._jobsMap || {};
+    recent.forEach(j => { window._jobsMap[j.id] = j; });
+
     const el = document.getElementById('recent-jobs-list');
     if (!el) return;
     const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
     if (!recent.length) { el.innerHTML = `<div class="empty-state"><i class="fas fa-briefcase"></i><p>${tFn('empty_no_jobs', 'Jobs නැත')}</p></div>`; return; }
     el.innerHTML = recent.map(j => `
-      <div class="recent-row">
-        <div>
+      <div class="recent-row" onclick="openJobModal('${j.id}')" style="cursor:pointer" title="Click to view details">
+        <div style="flex:1">
           <div class="recent-row-title">${esc(j.title)}</div>
           <div class="recent-row-meta">
             <span class="type-badge ${esc(j.type)}" style="font-size:.7rem;padding:2px 8px">${esc(j.type)}</span>
-            ${esc(j.city ? `${j.district}, ${j.city}` : j.district)} · ${timeAgo(j.createdAt?.toDate?.())}
+            ${esc(j.city ? `${j.district}, ${j.city}` : j.district)} · ${timeAgo(j.createdAt?.toDate ? j.createdAt.toDate() : j.createdAt)}
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
           <span class="status-badge s-${esc(j.status)}">${statusLabel(j.status)}</span>
-          <button class="btn btn-ghost btn-sm" onclick="openJobModal('${j.id}')"><i class="fas fa-eye"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="openJobModal('${j.id}')" style="min-width:38px;min-height:38px;padding:6px 10px;border-radius:8px"><i class="fas fa-eye"></i></button>
         </div>
       </div>`).join('');
   } catch (err) { console.error(err); }
@@ -3906,8 +4744,12 @@ async function loadPendingTechs() {
 async function loadAllJobsAdmin() {
   try {
     const snap = await db.collection('jobs').get();
-    allAdminJobs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    window._jobsMap = window._jobsMap || {};
+    allAdminJobs = snap.docs.map(d => {
+      const item = { id: d.id, ...d.data() };
+      window._jobsMap[d.id] = item;
+      return item;
+    }).sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
     renderAdminJobs(allAdminJobs);
   } catch (err) { console.error(err); }
 }
@@ -4432,7 +5274,7 @@ async function loadAllAdmins() {
 function openCreateAdminModal() {
   document.getElementById('create-admin-form')?.reset();
   document.getElementById('create-admin-error')?.classList.add('hidden');
-  document.getElementById('modal-create-admin')?.classList.remove('hidden');
+  openModal('modal-create-admin');
 }
 
 async function handleCreateAdminSubmit(e) {

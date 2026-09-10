@@ -239,7 +239,14 @@ const I18N = {
     btn_not_now: 'දැන්ම එපා',
     router_prompt_title: '🚀 නව සේවා අවස්ථාව: Router Installation!',
     router_prompt_desc: 'ඔබ Wi-Fi Routers සහ Network උපකරණ සවිකිරීම සිදුකරනවාද? ඔබගේ ප්‍රදේශයේ Router jobs ලබා ගැනීමට ඔබගේ Profile එකට Router Installation එකතු කරගන්න!',
-    router_added_success: 'Router Installation සේවාව ඔබගේ profile එකට සාර්ථකව එකතු විය! 🎉'
+    router_added_success: 'Router Installation සේවාව ඔබගේ profile එකට සාර්ථකව එකතු විය! 🎉',
+    offline_banner_msg: 'ඔබ මේ වන විට Offline සිටී. කරුණාකර Mobile Data හෝ Wi-Fi සම්බන්ධ කරන්න.',
+    offline_online_msg: '✅ Internet සම්බන්ධ විය! (Back Online)',
+    offline_job_post_error: '⚠️ ඔබ Offline සිටී. Job එකක් Post කිරීමට කරුණාකර Internet සම්බන්ධ කරන්න.',
+    offline_action_error: '⚠️ ඔබ Offline සිටී. මෙම ක්‍රියාව සඳහා Internet සම්බන්ධතාවයක් අවශ්‍ය වේ.',
+    notif_center_title: 'දැනුම්දීම් (Notifications)',
+    clear_all: 'මකන්න',
+    no_notifs: 'දැනුම්දීම් නොමැත'
   },
 
   // ── ENGLISH 🇬🇧 ───────────────────────────────────────────────
@@ -477,7 +484,14 @@ const I18N = {
     btn_not_now: 'Not Now',
     router_prompt_title: '🚀 New Service Opportunity: Router Installation!',
     router_prompt_desc: 'Do you install Wi-Fi routers and network equipment? Add Router Installation to your profile to receive router jobs in your area!',
-    router_added_success: 'Router Installation service added to your profile! 🎉'
+    router_added_success: 'Router Installation service added to your profile! 🎉',
+    offline_banner_msg: 'You are currently offline. Please connect to Mobile Data or Wi-Fi.',
+    offline_online_msg: '✅ Connected to Internet! (Back Online)',
+    offline_job_post_error: '⚠️ You are offline. Please connect to the internet to post a job.',
+    offline_action_error: '⚠️ You are offline. Internet connection is required for this action.',
+    notif_center_title: 'Notifications',
+    clear_all: 'Clear All',
+    no_notifs: 'No notifications yet'
   },
 
   // ── TAMIL 🇱🇰 ─────────────────────────────────────────────────
@@ -715,7 +729,14 @@ const I18N = {
     btn_not_now: 'இப்போது வேண்டாம்',
     router_prompt_title: '🚀 புதிய சேவை வாய்ப்பு: Router Installation!',
     router_prompt_desc: 'நீங்கள் Wi-Fi Routers மற்றும் நெட்வொர்க் உபகரணங்களை பொருத்துகிறீர்களா? உங்கள் பகுதியில் Router வேலைகளைப் பெற உங்கள் சுயவிவரத்தில் சேர்க்கவும்!',
-    router_added_success: 'Router Installation வெற்றிகரமாக சேர்க்கப்பட்டது! 🎉'
+    router_added_success: 'Router Installation வெற்றிகரமாக சேர்க்கப்பட்டது! 🎉',
+    offline_banner_msg: 'நீங்கள் ஆஃப்லைனில் உள்ளீர்கள். மொபைல் டேட்டா அல்லது வைஃபை இணைக்கவும்.',
+    offline_online_msg: '✅ இணைய இணைப்பு மீட்டெடுக்கப்பட்டது! (Back Online)',
+    offline_job_post_error: '⚠️ நீங்கள் ஆஃப்லைனில் உள்ளீர்கள். பணியை இடுகையிட இணையத்தை இணைக்கவும்.',
+    offline_action_error: '⚠️ நீங்கள் ஆஃப்லைனில் உள்ளீர்கள். இந்தச் செயலுக்கு இணையம் தேவை.',
+    notif_center_title: 'அறிவிப்புகள்',
+    clear_all: 'அனைத்தையும் அழிக்கவும்',
+    no_notifs: 'அறிவிப்புகள் எதுவும் இல்லை'
   }
 };
 

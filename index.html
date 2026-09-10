@@ -10,19 +10,44 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=18" />
+  <link rel="stylesheet" href="style.css?v=21" />
   <script src="i18n.js?v=7"></script>
 </head>
 <body>
 <div id="app">
 
-  <!-- ====== LOADING OVERLAY (CSS-only dismiss, always on top) ====== -->
-  <div id="screen-loading" style="
-    position:fixed;inset:0;z-index:9999;
-    background:radial-gradient(ellipse at 50% 40%,#0d1b2a 0%,#080c14 100%);
-    display:flex;align-items:center;justify-content:center;
-    animation:splashOut 0.5s ease 1.5s forwards;
-    pointer-events:auto;">
+  <!-- ====== IN-APP NOTIFICATION POPUP BANNER (Real-time Alert) ====== -->
+  <div id="app-notif-popup" class="app-notif-popup hidden" onclick="handleNotificationPopupClick()">
+    <div class="anp-icon" id="anp-icon"><i class="fas fa-bell"></i></div>
+    <div class="anp-body">
+      <div class="anp-title" id="anp-title">Notification</div>
+      <div class="anp-msg" id="anp-msg">Message</div>
+    </div>
+    <button type="button" class="anp-close" onclick="event.stopPropagation(); closeNotificationPopup();">&times;</button>
+  </div>
+
+  <!-- ====== NOTIFICATION CENTER PANEL (Dropdown Alert Tray) ====== -->
+  <div id="notif-panel" class="notif-panel hidden">
+    <div class="notif-panel-header">
+      <div class="notif-panel-title"><i class="fas fa-bell" style="color:var(--accent)"></i> <span data-i18n="notif_center_title">Notifications</span></div>
+      <div class="notif-panel-actions">
+        <button type="button" class="btn-clear-notifs" onclick="clearAllNotifications()" data-i18n="clear_all">Clear</button>
+        <button type="button" class="btn-close-notifs" onclick="toggleNotificationPanel()">&times;</button>
+      </div>
+    </div>
+    <div class="notif-list" id="notif-list">
+      <div class="notif-empty"><i class="fas fa-bell-slash"></i><p data-i18n="no_notifs">No notifications yet</p></div>
+    </div>
+  </div>
+
+  <!-- ====== OFFLINE NETWORK BANNER (Live Connection Monitor) ====== -->
+  <div id="offline-network-banner" class="offline-network-banner hidden">
+    <i class="fas fa-wifi"></i>
+    <span id="offline-banner-text" data-i18n="offline_banner_msg">ඔබ මේ වන විට Offline සිටී. කරුණාකර Mobile Data හෝ Wi-Fi සම්බන්ධ කරන්න.</span>
+  </div>
+
+  <!-- ====== LOADING OVERLAY (App Launch Screen) ====== -->
+  <div id="screen-loading" class="screen-loading-overlay">
     <div class="loading-wrapper">
       <div class="logo-anim"><i class="fas fa-satellite-dish"></i></div>
       <h2 class="brand-name">LankaVision Pro</h2>
@@ -32,7 +57,7 @@
   </div>
 
   <!-- ====== LANDING ====== -->
-  <div id="screen-landing" class="screen active">
+  <div id="screen-landing" class="screen">
     <nav class="landing-nav">
       <div class="nav-top-row">
         <div class="nav-brand" onclick="handleBrandNav()" style="cursor:pointer">
@@ -45,6 +70,7 @@
             <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
             <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
           </div>
+          <button type="button" class="icon-btn notif-bell-btn" onclick="toggleNotificationPanel()" title="Notifications" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-badge hidden" id="notif-badge-landing">0</span></button>
           <button class="btn btn-ghost btn-sm nav-login-btn" onclick="showScreen('screen-login')"><i class="fas fa-sign-in-alt"></i> <span data-i18n="nav_login">Login</span></button>
           <button class="btn btn-primary btn-sm nav-reg-btn" onclick="showRegisterOptions()"><i class="fas fa-user-plus"></i> <span data-i18n="nav_register">Register</span></button>
         </div>
@@ -378,6 +404,7 @@
           <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
         </div>
         <span id="nav-user-name" class="nav-name"></span>
+        <button type="button" class="icon-btn notif-bell-btn" onclick="toggleNotificationPanel()" title="Notifications" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-badge hidden" id="notif-badge-dash">0</span></button>
         <div class="menu-wrap">
           <button class="icon-btn" id="menu-btn" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
           <div id="nav-dropdown" class="nav-dropdown hidden">
@@ -403,7 +430,7 @@
           <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
           <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="sendAdminTestEmail()" title="Test Email to Admin"><i class="fas fa-paper-plane"></i> <span data-i18n="adm_btn_test_email">Test Email</span></button>
+        <button type="button" class="icon-btn notif-bell-btn" onclick="toggleNotificationPanel()" title="Notifications" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-badge hidden" id="notif-badge-admin">0</span></button>
         <span class="admin-pill"><i class="fas fa-shield-alt"></i> <span data-i18n="adm_pill_sub">Admin</span></span>
         <button class="btn btn-ghost btn-sm" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> <span data-i18n="nav_logout">Logout</span></button>
       </div>
@@ -947,6 +974,9 @@
         <img id="modal-photo-img" src="" alt="Technician Photo" />
       </div>
       <div id="modal-photo-caption" class="photo-modal-caption"></div>
+      <button type="button" class="btn btn-ghost btn-sm btn-full" onclick="closeModal('modal-photo-preview')" style="margin-top:14px;border:1px solid rgba(255,255,255,0.12)">
+        <i class="fas fa-times"></i> Close (වසන්න)
+      </button>
     </div>
   </div>
 
@@ -976,6 +1006,11 @@
     <span class="floating-wa-tooltip">Support: +94 78 680 0086<br><small>Developed by SMARTZONE LK</small></span>
   </a>
 
+  <!-- ====== SCROLL TO TOP BUTTON (Smooth Quick Return) ====== -->
+  <button type="button" id="scroll-to-top-btn" class="scroll-to-top-btn" onclick="scrollToTop()" title="Scroll to top" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+
   <!-- ====== TOAST ====== -->
   <div id="toast-wrap"></div>
 
@@ -989,7 +1024,7 @@
 
 <!-- App Logic -->
 <script src="firebase-config.js?v=12"></script>
-<script src="app.js?v=20"></script>
+<script src="app.js?v=21"></script>
 
 <!-- Guaranteed loading overlay removal after 2s -->
 <script>
