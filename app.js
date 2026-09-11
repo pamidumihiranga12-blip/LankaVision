@@ -3658,6 +3658,7 @@ function useTechLiveGps() {
 // ── TECHNICIAN ROUTER UPGRADE & MAP LOGIC ─────────────────────
 let techAvailableJobsMap = null;
 let techMapMarkersLayer = null;
+let techJobMarkersMap = {};
 let techHasActiveUnscheduledJob = false;
 
 async function addRouterServiceToCurrentTech() {
@@ -3690,29 +3691,102 @@ function dismissRouterUpgradePrompt() {
   document.getElementById('banner-router-upgrade')?.remove();
 }
 
+function getJobCoordinates(j) {
+  if (!j) return null;
+  if (j.location && typeof j.location.lat === 'number' && typeof j.location.lng === 'number') {
+    return [j.location.lat, j.location.lng];
+  }
+  if (j.location && j.location.lat && j.location.lng) {
+    const pLat = parseFloat(j.location.lat);
+    const pLng = parseFloat(j.location.lng);
+    if (!isNaN(pLat) && !isNaN(pLng)) return [pLat, pLng];
+  }
+  if (j.city && CITY_COORDS[j.city]) {
+    return [CITY_COORDS[j.city][0], CITY_COORDS[j.city][1]];
+  }
+  if (j.district && DISTRICT_COORDS[j.district]) {
+    return [DISTRICT_COORDS[j.district][0], DISTRICT_COORDS[j.district][1]];
+  }
+  return null;
+}
+
+function toggleTechJobsMap() {
+  const mapPanel = document.getElementById('tech-map-panel');
+  if (!mapPanel) return;
+
+  mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => {
+    try {
+      techAvailableJobsMap?.invalidateSize();
+    } catch(e) {}
+  }, 250);
+}
+
+function focusJobOnTechMap(jobId) {
+  const mapPanel = document.getElementById('tech-map-panel');
+  if (mapPanel) {
+    mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      try {
+        techAvailableJobsMap?.invalidateSize();
+        const j = window._jobsMap?.[jobId];
+        const coords = getJobCoordinates(j);
+        if (coords && techAvailableJobsMap) {
+          techAvailableJobsMap.setView(coords, 14);
+        }
+        if (techJobMarkersMap && techJobMarkersMap[jobId]) {
+          techJobMarkersMap[jobId].openPopup();
+        }
+      } catch(e) {}
+    }, 300);
+  }
+}
+
 function renderTechJobsMap(jobs, techCoords) {
   const mapEl = document.getElementById('tech-available-jobs-map');
   if (!mapEl || typeof L === 'undefined') return;
 
-  if (!techAvailableJobsMap) {
-    const defaultCenter = techCoords || [7.8731, 80.7718];
-    techAvailableJobsMap = L.map('tech-available-jobs-map').setView(defaultCenter, 10);
+  // Always cleanly reset previous instance to prevent detached DOM memory leaks and black tiles
+  if (techAvailableJobsMap) {
+    try {
+      techAvailableJobsMap.off();
+      techAvailableJobsMap.remove();
+    } catch(e) {}
+    techAvailableJobsMap = null;
+    techMapMarkersLayer = null;
+  }
+  techJobMarkersMap = {};
+
+  const defaultCenter = techCoords || (jobs[0] ? getJobCoordinates(jobs[0]) : null) || [7.8731, 80.7718];
+
+  try {
+    techAvailableJobsMap = L.map('tech-available-jobs-map', {
+      zoomControl: true,
+      scrollWheelZoom: true
+    }).setView(defaultCenter, 10);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '© OpenStreetMap'
+      maxZoom: 19,
+      subdomains: ['a', 'b', 'c'],
+      attribution: '© OpenStreetMap contributors'
     }).addTo(techAvailableJobsMap);
+
     techMapMarkersLayer = L.layerGroup().addTo(techAvailableJobsMap);
-  } else {
-    techMapMarkersLayer.clearLayers();
-    setTimeout(() => { techAvailableJobsMap?.invalidateSize(); }, 200);
+
+    setTimeout(() => { try { techAvailableJobsMap?.invalidateSize(); } catch(e) {} }, 150);
+    setTimeout(() => { try { techAvailableJobsMap?.invalidateSize(); } catch(e) {} }, 450);
+  } catch (err) {
+    console.warn('Leaflet map initialization warning:', err);
+    return;
   }
 
+  const coordsMap = {};
   const boundsPoints = [];
 
-  // 1. Technician's Location Marker (Glowing/pulsing beacon)
-  if (techCoords) {
+  // 1. Technician's Location Marker (Beacon pin + 36km radius boundary)
+  if (techCoords && Array.isArray(techCoords) && techCoords.length === 2) {
     const techPinHtml = `
-      <div class="job-marker-pin marker-tech" title="Your Location">
+      <div class="job-marker-pin marker-tech" title="ඔබ සිටින ස්ථානය (Your Location)">
         <i class="fas fa-user-shield"></i>
       </div>`;
     const techMarker = L.marker(techCoords, {
@@ -3722,62 +3796,107 @@ function renderTechJobsMap(jobs, techCoords) {
         iconSize: [36, 36],
         iconAnchor: [18, 36],
         popupAnchor: [0, -36]
-      })
+      }),
+      zIndexOffset: 1000
     }).bindPopup(`
-      <div style="font-weight:800;font-size:.9rem;color:var(--primary-l);margin-bottom:2px">
-        <i class="fas fa-map-marker-alt"></i> ඔබ සිටින ස්ථානය (Your Location)
+      <div style="font-weight:800;font-size:.9rem;color:#1d4ed8;margin-bottom:2px">
+        <i class="fas fa-user-shield"></i> ඔබ සිටින ස්ථානය (Your Location)
       </div>
-      <div style="font-size:.8rem;color:#333">Base: ${esc(currentUserData.city ? `${currentUserData.district}, ${currentUserData.city}` : currentUserData.district)}</div>
-      <div style="font-size:.75rem;color:#059669;font-weight:700;margin-top:4px">🎯 36 km Radius Monitoring Active</div>
+      <div style="font-size:.8rem;color:#334155">Base: ${esc(currentUserData?.city ? `${currentUserData.district}, ${currentUserData.city}` : currentUserData?.district || '')}</div>
+      <div style="font-size:.75rem;color:#059669;font-weight:700;margin-top:4px">🎯 36 km Radius Active</div>
     `);
     techMapMarkersLayer.addLayer(techMarker);
     boundsPoints.push(techCoords);
+
+    try {
+      L.circle(techCoords, {
+        radius: 36000,
+        color: '#3b82f6',
+        weight: 1.5,
+        opacity: 0.6,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.05,
+        dashArray: '5, 8'
+      }).addTo(techMapMarkersLayer);
+    } catch(e) {}
   }
 
-  // Update map counter badge
+  // Update map counter badges
   const countBadge = document.getElementById('tech-map-count');
   if (countBadge) countBadge.textContent = `${jobs.length} open jobs`;
+  const quickBadge = document.getElementById('tech-map-quick-badge');
+  if (quickBadge) quickBadge.textContent = jobs.length;
 
-  // 2. Open Job Pins with Distinct Icons (Satellite, CCTV, Router)
-  jobs.forEach(j => {
-    const jLat = j.location?.lat || (j.city && CITY_COORDS[j.city]?.[0]) || (j.district && DISTRICT_COORDS[j.district]?.[0]);
-    const jLng = j.location?.lng || (j.city && CITY_COORDS[j.city]?.[1]) || (j.district && DISTRICT_COORDS[j.district]?.[1]);
-    if (!jLat || !jLng) return;
+  // 2. Open Job Pins with Distinct Icons (Satellite, CCTV, Router, Urgent)
+  jobs.forEach((j, idx) => {
+    let coords = getJobCoordinates(j);
+    if (!coords) return;
+
+    let [lat, lng] = coords;
+
+    // Sprintf jitter if multiple jobs have identical coordinates (e.g. same city/district center)
+    const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    if (coordsMap[key]) {
+      const count = coordsMap[key];
+      coordsMap[key]++;
+      const angle = count * (Math.PI / 3);
+      const offset = 0.003 * Math.sqrt(count);
+      lat += Math.cos(angle) * offset;
+      lng += Math.sin(angle) * offset;
+    } else {
+      coordsMap[key] = 1;
+    }
 
     let markerClass = 'marker-cctv';
     let iconClass = 'fas fa-video';
+    let typeName = 'CCTV';
     if (j.type === 'Satellite') {
       markerClass = 'marker-satellite';
       iconClass = 'fas fa-satellite-dish';
+      typeName = 'Satellite';
     } else if (j.type === 'Router') {
       markerClass = 'marker-router';
       iconClass = 'fas fa-wifi';
+      typeName = 'Router';
+    }
+
+    const isUrgent = !!(j.isUrgent || j.urgent);
+    if (isUrgent) {
+      markerClass += ' marker-urgent';
     }
 
     const pinHtml = `
-      <div class="job-marker-pin ${markerClass}" title="${esc(j.title)} (${esc(j.type)})">
+      <div class="job-marker-pin ${markerClass}" title="${esc(j.title)} (${esc(typeName)})">
         <i class="${iconClass}"></i>
       </div>`;
 
     const distHtml = j._distanceKm != null ? `<span style="color:#059669;font-weight:700;font-size:.78rem">🎯 ${j._distanceKm} km දුරින්</span>` : '';
     const acceptBtnHtml = techHasActiveUnscheduledJob
       ? `<button class="btn btn-primary btn-sm btn-full" disabled style="opacity:.6;cursor:not-allowed;margin-top:8px;font-size:.76rem" title="කලින් භාරගත් Job එක අවසන් කරන්න හෝ Schedule කරන්න"><i class="fas fa-lock"></i> Active Job In Progress</button>`
-      : `<button class="btn btn-primary btn-sm btn-full" onclick="claimJob('${j.id}')" style="margin-top:8px;font-size:.78rem"><i class="fas fa-handshake"></i> Accept Job</button>`;
+      : `<button class="btn btn-primary btn-sm btn-full" onclick="claimJob('${j.id}')" style="margin-top:8px;font-size:.78rem;font-weight:800"><i class="fas fa-handshake"></i> භාරගන්න (Accept)</button>`;
 
     const popupHtml = `
-      <div style="min-width:180px;font-family:var(--font);color:#111">
-        <div style="font-weight:800;font-size:.9rem;margin-bottom:3px">${esc(j.title)}</div>
-        <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
-          <span class="type-badge ${esc(j.type)}" style="font-size:.68rem;padding:2px 6px">${esc(j.type)}</span>
+      <div style="min-width:200px;max-width:260px;font-family:var(--font);color:#0f172a;padding:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px">
+          <span class="type-badge ${esc(j.type)}" style="font-size:.68rem;padding:2px 8px">${esc(typeName)}</span>
+          ${isUrgent ? `<span class="badge" style="background:#ef4444;color:#fff;font-size:.68rem;padding:2px 6px">⚡ URGENT</span>` : ''}
           ${distHtml}
         </div>
-        <div style="font-size:.76rem;color:#555">📍 ${esc(j.city ? `${j.district}, ${j.city}` : j.district)}</div>
-        ${j.customerName ? `<div style="font-size:.74rem;color:#666">👤 ${esc(j.customerName)}</div>` : ''}
-        ${acceptBtnHtml}
+        <div style="font-weight:800;font-size:.9rem;margin-bottom:4px;color:#1e293b;line-height:1.3">${esc(j.title)}</div>
+        <div style="font-size:.76rem;color:#64748b;margin-bottom:4px">
+          <i class="fas fa-map-marker-alt" style="color:#ef4444"></i> ${esc(j.city ? `${j.district}, ${j.city}` : j.district)}
+        </div>
+        ${j.customerName ? `<div style="font-size:.74rem;color:#475569;margin-bottom:6px"><i class="fas fa-user"></i> ${esc(j.customerName)}</div>` : ''}
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="openJobModal('${j.id}')" style="flex:1;padding:6px;font-size:.75rem;border:1px solid #cbd5e1;color:#1e293b">
+            <i class="fas fa-eye"></i> විස්තර
+          </button>
+          <div style="flex:1">${acceptBtnHtml}</div>
+        </div>
       </div>
     `;
 
-    const jobMarker = L.marker([jLat, jLng], {
+    const jobMarker = L.marker([lat, lng], {
       icon: L.divIcon({
         className: 'custom-job-marker',
         html: pinHtml,
@@ -3788,13 +3907,18 @@ function renderTechJobsMap(jobs, techCoords) {
     }).bindPopup(popupHtml);
 
     techMapMarkersLayer.addLayer(jobMarker);
-    boundsPoints.push([jLat, jLng]);
+    techJobMarkersMap[j.id] = jobMarker;
+    boundsPoints.push([lat, lng]);
   });
 
   if (boundsPoints.length > 1) {
-    techAvailableJobsMap.fitBounds(boundsPoints, { padding: [35, 35], maxZoom: 13 });
+    try {
+      techAvailableJobsMap.fitBounds(boundsPoints, { padding: [40, 40], maxZoom: 13 });
+    } catch(e){}
   } else if (boundsPoints.length === 1) {
-    techAvailableJobsMap.setView(boundsPoints[0], 11);
+    try {
+      techAvailableJobsMap.setView(boundsPoints[0], 12);
+    } catch(e){}
   }
 }
 
@@ -3844,7 +3968,7 @@ function showTechTab(tab) {
       ${routerPromptHtml}
       <div class="filter-bar" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
         <div>
-          <h2 style="font-size:1rem;font-weight:800;margin:0"><i class="fas fa-map-marker-alt" style="color:var(--primary-l)"></i> Available Jobs</h2>
+          <h2 style="font-size:1rem;font-weight:800;margin:0"><i class="fas fa-briefcase" style="color:var(--primary-l)"></i> Available Jobs</h2>
           <p style="font-size:.78rem;color:var(--txt3);margin-top:2px">
             <span class="type-badge ${esc(currentUserData.serviceType)}">${esc(currentUserData.serviceType)}</span>
             · Base: <strong>${esc(currentUserData.city ? `${currentUserData.district}, ${currentUserData.city}` : currentUserData.district)}</strong>
@@ -3861,28 +3985,43 @@ function showTechTab(tab) {
           <button type="button" class="btn btn-outline btn-sm" id="btn-tech-gps" onclick="useTechLiveGps()" title="Use live phone GPS" style="padding:7px 12px;font-size:.78rem">
             <i class="fas fa-crosshairs"></i> <span>Live GPS</span>
           </button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-toggle-tech-map" onclick="toggleTechJobsMap()" style="padding:7px 14px;font-size:.8rem;font-weight:700;display:inline-flex;align-items:center;gap:6px">
+            <i class="fas fa-map-marked-alt"></i>
+            <span id="tech-map-toggle-text">🗺️ Map එක බලන්න</span>
+            <span class="badge" id="tech-map-quick-badge" style="background:#ffffff;color:#1d4ed8;font-size:.72rem;padding:2px 7px;border-radius:10px;font-weight:800">0</span>
+          </button>
         </div>
       </div>
 
-      <!-- Jobs Map Section -->
-      <div class="panel" style="margin-bottom:16px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-l)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <div style="font-weight:700;font-size:.86rem;display:flex;align-items:center;gap:7px">
-            <i class="fas fa-map-marked-alt" style="color:var(--primary-l)"></i>
-            <span>Jobs Map (36 km Radius)</span>
-            <span class="badge" id="tech-map-count" style="font-size:.72rem">0 open jobs</span>
+      <!-- 1. AVAILABLE JOBS LIST (FIRST & PROMINENT AT TOP!) -->
+      <div id="tech-avail" class="jobs-grid">
+        <div class="empty-state" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Loading jobs...</p></div>
+      </div>
+
+      <!-- 2. JOBS MAP SECTION (POSITIONED BELOW JOBS GRID & DIRECTLY ACCESSIBLE) -->
+      <div class="panel" id="tech-map-panel" style="margin-top:24px;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-l)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="font-weight:800;font-size:.92rem;display:flex;align-items:center;gap:8px">
+            <i class="fas fa-map-marked-alt" style="color:var(--primary-l);font-size:1.1rem"></i>
+            <span>Jobs Map (ලැබී ඇති සියලුම Jobs සිතියම)</span>
+            <span class="badge" id="tech-map-count" style="font-size:.74rem;background:#0284c7">0 open jobs</span>
           </div>
-          <div style="display:flex;gap:12px;font-size:.74rem;font-weight:600;color:var(--txt2);flex-wrap:wrap">
-            <span><i class="fas fa-satellite-dish" style="color:#f59e0b"></i> Satellite</span>
+          <div style="display:flex;gap:12px;font-size:.74rem;font-weight:700;color:var(--txt2);flex-wrap:wrap;align-items:center">
             <span><i class="fas fa-video" style="color:#06b6d4"></i> CCTV</span>
+            <span><i class="fas fa-satellite-dish" style="color:#f59e0b"></i> Satellite</span>
             <span><i class="fas fa-wifi" style="color:#a855f7"></i> Router</span>
+            <span><i class="fas fa-fire-alt" style="color:#ef4444"></i> Urgent</span>
             <span><i class="fas fa-user-shield" style="color:#3b82f6"></i> ඔබ සිටින ස්ථානය</span>
           </div>
         </div>
-        <div id="tech-available-jobs-map" style="width:100%;height:300px;border-radius:var(--r-m);border:1px solid var(--border);background:var(--bg2)"></div>
-      </div>
-
-      <div id="tech-avail" class="jobs-grid"><div class="empty-state" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>`;
+        <div id="tech-available-jobs-map" style="width:100%;height:360px;border-radius:var(--r-m);border:1px solid var(--border);background:#0b101b;overflow:hidden"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:.76rem;color:var(--txt3);flex-wrap:wrap;gap:8px">
+          <span><i class="fas fa-info-circle" style="color:var(--primary-l)"></i> ඕනෑම Job Icon එකක් මත Click කර Job එක භාරගන්න (Accept) හෝ විස්තර බලන්න.</span>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="padding:4px 10px;font-size:.75rem">
+            <i class="fas fa-arrow-up"></i> මුලට යන්න (Top)
+          </button>
+        </div>
+      </div>`;
     loadTechJobs();
   } else if (tab === 'claims') {
     c.innerHTML = `<div class="filter-bar"><h2 style="font-size:1rem;font-weight:800;margin:0"><i class="fas fa-handshake" style="color:var(--success)"></i> My Claimed Jobs</h2></div><div id="tech-claims" class="jobs-grid"><div class="empty-state" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>`;
@@ -3993,6 +4132,8 @@ async function loadTechJobs() {
     });
 
     // Render Leaflet Map with Custom Pins
+    window._jobsMap = window._jobsMap || {};
+    docs.forEach(j => { window._jobsMap[j.id] = j; });
     renderTechJobsMap(docs, techCoords);
 
     const el = document.getElementById('tech-avail');
@@ -4165,14 +4306,18 @@ function jobCard(id, job, view) {
 
   let actions = '';
   if (view === 'tech' && job.status === 'open') {
-    const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'Map')}</button>` : '';
+    const hasJobCoords = !!getJobCoordinates(job);
+    const mapBtn = hasJobCoords
+      ? `<button class="btn btn-maps btn-sm" onclick="event.stopPropagation();focusJobOnTechMap('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'සිතියම')}</button>`
+      : '';
     if (techHasActiveUnscheduledJob) {
       actions = `<button class="btn btn-primary btn-sm" disabled style="opacity:.6;cursor:not-allowed" title="කලින් භාරගත් Job එක සම්පූර්ණ කරන්න හෝ Schedule කරන්න"><i class="fas fa-lock"></i> ${tFn('btn_accept_job', 'Accept Job')}</button>${mapBtn}`;
     } else {
       actions = `<button class="btn btn-primary btn-sm" onclick="claimJob('${id}',event)"><i class="fas fa-handshake"></i> ${tFn('btn_accept_job', 'Accept Job')}</button>${mapBtn}`;
     }
   } else if (view === 'tech-claimed' || (myJob && view !== 'customer')) {
-    const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'Map')}</button>` : '';
+    const hasJobCoords = !!getJobCoordinates(job);
+    const mapBtn = hasJobCoords ? `<button class="btn btn-maps btn-sm" onclick="event.stopPropagation();openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'Map')}</button>` : '';
     if (job.status === 'completed') {
       const invBtn = job.invoice
         ? `<button class="btn btn-invoice btn-sm" onclick="event.stopPropagation();viewDigitalInvoice('${id}')"><i class="fas fa-file-invoice"></i> ${tFn('btn_view_invoice', 'Bill')}</button>`
@@ -7211,6 +7356,9 @@ window.notifyAdminSelfieChangeRequest = notifyAdminSelfieChangeRequest;
 window.loadPendingSelfiesAdmin = loadPendingSelfiesAdmin;
 window.acceptTechSelfie = acceptTechSelfie;
 window.declineTechSelfie = declineTechSelfie;
+window.toggleTechJobsMap = toggleTechJobsMap;
+window.focusJobOnTechMap = focusJobOnTechMap;
+window.renderTechJobsMap = renderTechJobsMap;
 
 if (typeof globalThis !== 'undefined') {
   globalThis.openTechChangeSelfieModal = openTechChangeSelfieModal;
@@ -7225,6 +7373,9 @@ if (typeof globalThis !== 'undefined') {
   globalThis.loadPendingSelfiesAdmin = loadPendingSelfiesAdmin;
   globalThis.acceptTechSelfie = acceptTechSelfie;
   globalThis.declineTechSelfie = declineTechSelfie;
+  globalThis.toggleTechJobsMap = toggleTechJobsMap;
+  globalThis.focusJobOnTechMap = focusJobOnTechMap;
+  globalThis.renderTechJobsMap = renderTechJobsMap;
 }
 
 

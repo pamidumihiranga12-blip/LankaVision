@@ -1892,11 +1892,31 @@ body.modal-open {
 .job-marker-pin.marker-pick {
   background: linear-gradient(135deg, #ef4444, #dc2626);
 }
+.job-marker-pin.marker-urgent {
+  background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
+  border: 2.5px solid #fef08a !important;
+  animation: urgentBeaconPulse 1.6s infinite !important;
+}
 @keyframes techBeaconPulse {
   0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.7); }
   70%  { box-shadow: 0 0 0 14px rgba(59,130,246,0); }
   100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
 }
+@keyframes urgentBeaconPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.85); transform: rotate(-45deg) scale(1); }
+  50%  { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); transform: rotate(-45deg) scale(1.12); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: rotate(-45deg) scale(1); }
+}
+
+.leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45) !important;
+}
+.leaflet-popup-tip {
+  background: #ffffff !important;
+}
+
 
 /* ── CUSTOMER MANAGEMENT STYLES ── */
 .customer-card {
@@ -3207,6 +3227,100 @@ body.modal-open {
   font-weight: 600;
   animation: fadeIn 0.3s ease;
 }
+
+/* ── TECHNICIAN AVAILABLE JOBS MAP MARKERS & POPUPS ─────────── */
+.custom-job-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.job-marker-pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.job-marker-pin:hover {
+  transform: rotate(-45deg) scale(1.18);
+  z-index: 1000;
+}
+
+.job-marker-pin i {
+  transform: rotate(45deg);
+  font-size: 14px;
+  color: #ffffff;
+}
+
+/* Service Type Distinct Marker Themes */
+.job-marker-pin.marker-cctv {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.6);
+}
+
+.job-marker-pin.marker-satellite {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.6);
+}
+
+.job-marker-pin.marker-router {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.6);
+}
+
+.job-marker-pin.marker-tech {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.35), 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Urgent Beacon Pulse on Pin */
+.job-marker-pin.marker-urgent {
+  animation: urgentMarkerPulse 1.4s infinite ease-in-out;
+  border-color: #fecaca !important;
+}
+
+@keyframes urgentMarkerPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8), 0 4px 14px rgba(0,0,0,0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(239, 68, 68, 0), 0 4px 14px rgba(0,0,0,0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 4px 14px rgba(0,0,0,0.5);
+  }
+}
+
+/* Leaflet Map Popup Card */
+#tech-available-jobs-map .leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-radius: 12px !important;
+  padding: 6px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+#tech-available-jobs-map .leaflet-popup-content {
+  margin: 6px 8px !important;
+  line-height: 1.4 !important;
+}
+
+#tech-available-jobs-map .leaflet-popup-tip {
+  background: #ffffff !important;
+}
+
 
 
 
