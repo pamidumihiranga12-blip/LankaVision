@@ -4369,6 +4369,7 @@ function jobCard(id, job, view) {
   const ago = timeAgo(job.createdAt?.toDate?.());
   const myJob = job.claimedBy === currentUser?.uid;
   const showPhone = view === 'customer' || view === 'tech-claimed' || myJob || view === 'admin';
+  const jobCode = getJobCode(job);
 
   let locationBadge = '';
   if (view === 'tech' && currentUserData?.role === 'technician') {
@@ -4533,6 +4534,7 @@ function jobCard(id, job, view) {
     <div class="jc-header">
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <span class="type-badge ${esc(job.type)}"><i class="fas fa-${jobTypeIcon}"></i> ${esc(job.type)}</span>
+        <span class="badge-job-id" onclick="event.stopPropagation();copyTrackingCode('${jobCode}')" title="Click to copy Tracking ID"><i class="fas fa-barcode"></i> ${jobCode} <i class="fas fa-copy" style="font-size:0.65rem;opacity:0.75"></i></span>
         ${job.isUrgent ? `<span class="badge-urgent"><i class="fas fa-bolt"></i> ${tFn('badge_urgent', 'URGENT')}</span>` : ''}
         ${locationBadge}
       </div>
@@ -5049,7 +5051,18 @@ async function openJobModal(jobId) {
       }
     }
 
+    const jobCode = getJobCode(job);
+
     document.getElementById('modal-job-body').innerHTML = `
+      <div class="job-tracking-hero-banner">
+        <div class="jtb-left">
+          <span class="jtb-sub"><i class="fas fa-shield-alt"></i> OFFICIAL JOB TRACKING ID</span>
+          <span class="jtb-id">${jobCode}</span>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm btn-copy-code" onclick="copyTrackingCode('${jobCode}')" title="Copy tracking ID">
+          <i class="fas fa-copy"></i> Copy ID
+        </button>
+      </div>
       <h2 style="margin-bottom:8px;padding-right:28px">${esc(job.title)}</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
         <span class="type-badge ${esc(job.type)}"><i class="fas fa-${job.type === 'CCTV' ? 'video' : (job.type === 'Router' ? 'wifi' : 'satellite-dish')}"></i> ${esc(job.type)}</span>
@@ -5652,7 +5665,9 @@ async function handlePostJob(e) {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
 
   try {
+    const jobTrackingId = generateJobTrackingId();
     const newJobData = {
+      jobCode: jobTrackingId,
       title, description: desc, type: jobType, district,
       city: city || '',
       location: { lat: selectedLoc.lat, lng: selectedLoc.lng },
@@ -5685,7 +5700,7 @@ async function handlePostJob(e) {
       window._jobsMap[addedDocRef.id] = { id: addedDocRef.id, ...newJobData };
     }
 
-    showToast('Job post කළා! 🎉', 'success');
+    showToast(`Job post කළා! 🎉 Tracking ID: ${jobTrackingId}`, 'success');
     notifyNewJobPosted(newJobData);
     e.target.reset();
     selectedLoc = null;
@@ -5839,6 +5854,167 @@ function switchHelpTab(role) {
   }
 }
 
+// ── 🔍 AUTO JOB TRACKING ID & UNIVERSAL SEARCH ───────────────
+function generateJobTrackingId() {
+  const rand = Math.floor(10000 + Math.random() * 90000);
+  return 'LV-JOB-' + rand;
+}
+
+function getJobCode(job) {
+  if (!job) return 'LV-JOB-00000';
+  if (job.jobCode) return job.jobCode;
+  // Seamless fallback for older jobs
+  const rawId = (job.id || '').replace(/[^a-zA-Z0-9]/g, '');
+  const idPart = (rawId.slice(0, 5) || '00000').toUpperCase();
+  return 'LV-JOB-' + idPart;
+}
+
+function copyTrackingCode(code) {
+  if (!code) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(() => {
+      const msg = typeof t === 'function' ? t('job_id_copied', 'Job Tracking ID Copy කරගත්තා! 📋') : 'Job Tracking ID Copy කරගත්තා! 📋';
+      showToast(`${msg} (${code})`, 'success');
+    }).catch(() => {
+      showToast(`Job Tracking ID: ${code}`, 'info');
+    });
+  } else {
+    showToast(`Job Tracking ID: ${code}`, 'info');
+  }
+}
+
+function openTrackJobModal() {
+  const input = document.getElementById('modal-job-track-input');
+  if (input) input.value = '';
+  const err = document.getElementById('track-job-modal-error');
+  if (err) err.classList.add('hidden');
+  openModal('modal-track-job');
+  setTimeout(() => input?.focus(), 250);
+}
+
+async function trackJobSearch(inputIdOrValue) {
+  let query = '';
+  let errEl = null;
+  if (document.getElementById(inputIdOrValue)) {
+    query = (document.getElementById(inputIdOrValue).value || '').trim();
+    if (inputIdOrValue === 'modal-job-track-input') {
+      errEl = document.getElementById('track-job-modal-error');
+    }
+  } else {
+    query = (inputIdOrValue || '').trim();
+  }
+
+  if (!query) {
+    showToast('කරුණාකර Job Tracking ID එකක් හෝ Phone Number එකක් ඇතුළත් කරන්න', 'warning');
+    return;
+  }
+
+  if (errEl) errEl.classList.add('hidden');
+
+  const cleanQuery = query.toUpperCase().replace(/^#/, '').trim();
+  const cleanDigits = cleanPhone(query);
+
+  showToast('Job එක සොයමින් පවතී... 🔍', 'info');
+
+  let foundJob = null;
+
+  // 1. Search in local memory cache (_jobsMap, allAdminJobs, allJobs)
+  const allCached = [
+    ...Object.values(window._jobsMap || {}),
+    ...(typeof allAdminJobs !== 'undefined' && Array.isArray(allAdminJobs) ? allAdminJobs : []),
+    ...(typeof allJobs !== 'undefined' && Array.isArray(allJobs) ? allJobs : [])
+  ];
+
+  for (const j of allCached) {
+    if (!j) continue;
+    const jCode = getJobCode(j).toUpperCase();
+    if (jCode === cleanQuery || (j.id && j.id.toUpperCase() === cleanQuery)) {
+      foundJob = j;
+      break;
+    }
+    if (cleanDigits && j.customerPhone && cleanPhone(j.customerPhone) === cleanDigits) {
+      foundJob = j;
+      break;
+    }
+  }
+
+  // 2. Query Firestore if not found in local cache
+  if (!foundJob && typeof db !== 'undefined' && db) {
+    try {
+      // Query by jobCode
+      let snap = await db.collection('jobs').where('jobCode', '==', cleanQuery).limit(1).get();
+      if (snap && !snap.empty) {
+        foundJob = { id: snap.docs[0].id, ...snap.docs[0].data() };
+      } else if (cleanDigits && cleanDigits.length >= 9) {
+        // Query by customerPhone
+        let snapPhone = await db.collection('jobs').where('customerPhone', '==', query).limit(1).get();
+        if (!snapPhone || snapPhone.empty) {
+          snapPhone = await db.collection('jobs').where('customerPhone', '==', '0' + cleanDigits.slice(-9)).limit(1).get();
+        }
+        if (snapPhone && !snapPhone.empty) {
+          foundJob = { id: snapPhone.docs[0].id, ...snapPhone.docs[0].data() };
+        }
+      }
+
+      // Query by direct doc ID
+      if (!foundJob) {
+        try {
+          const docSnap = await db.collection('jobs').doc(query).get();
+          if (docSnap.exists) {
+            foundJob = { id: docSnap.id, ...docSnap.data() };
+          }
+        } catch (eDoc) {}
+      }
+    } catch (err) {
+      console.warn('Track job query error:', err);
+    }
+  }
+
+  if (foundJob) {
+    closeModal('modal-track-job');
+    window._jobsMap = window._jobsMap || {};
+    window._jobsMap[foundJob.id] = foundJob;
+    const jCode = getJobCode(foundJob);
+    showToast(`Job සොයාගත්තා! ✅ (${jCode})`, 'success');
+    openJobModal(foundJob.id);
+  } else {
+    const notFoundMsg = typeof t === 'function' ? t('track_job_not_found', 'මෙම Tracking ID එකට හෝ දුරකථන අංකයට අදාළ Job එකක් සොයාගත නොහැකි විය.') : 'මෙම Tracking ID එකට හෝ දුරකථන අංකයට අදාළ Job එකක් සොයාගත නොහැකි විය.';
+    if (errEl) {
+      errEl.textContent = notFoundMsg;
+      errEl.classList.remove('hidden');
+    }
+    showToast(notFoundMsg, 'error');
+  }
+}
+
+// 🪪 Share Technician Digital ID
+function shareTechIdCard() {
+  const name = document.getElementById('dip-tech-name')?.textContent || 'Technician';
+  const id = document.getElementById('dip-tech-id')?.textContent || 'LV-PRO-0000';
+  const district = document.getElementById('dip-tech-district')?.textContent || 'Sri Lanka';
+  const services = document.getElementById('dip-tech-services')?.textContent || 'CCTV & Satellite';
+  const completed = document.getElementById('dip-tech-completed-count')?.textContent || '0';
+
+  const shareText = `🪪 *LankaVision Pro - Verified Field Technician*\n` +
+    `👤 *Name:* ${name}\n` +
+    `🔖 *Official ID:* ${id}\n` +
+    `📍 *District:* ${district}\n` +
+    `🛠️ *Services:* ${services}\n` +
+    `🏆 *Completed Jobs:* ${completed}\n` +
+    `✅ *Verification:* 100% Certified Island-wide Professional\n\n` +
+    `LankaVision Pro - Sri Lanka's #1 CCTV & Satellite Network`;
+
+  if (navigator.share) {
+    navigator.share({
+      title: `${name} - Verified Technician Digital ID`,
+      text: shareText
+    }).catch(() => {});
+  } else {
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    window.open(waUrl, '_blank');
+  }
+}
+
 // Technician Digital ID Pass
 async function openTechDigitalId(techId) {
   if (!techId) {
@@ -5870,9 +6046,12 @@ async function openTechDigitalId(techId) {
   const ratingEl = document.getElementById('dip-tech-rating');
   const avatarImg = document.getElementById('dip-avatar-img');
   const completedCountEl = document.getElementById('dip-tech-completed-count');
+  const barcodeTextEl = document.getElementById('dip-barcode-text');
 
+  const proId = 'LV-PRO-' + techId.slice(0, 5).toUpperCase();
   if (nameEl) nameEl.textContent = techData.name || 'Technician';
-  if (idEl) idEl.textContent = 'LV-PRO-' + techId.slice(0, 5).toUpperCase();
+  if (idEl) idEl.textContent = proId;
+  if (barcodeTextEl) barcodeTextEl.textContent = proId + '-ACTIVE';
   if (distEl) distEl.textContent = techData.district ? (techData.city ? `${techData.district}, ${techData.city}` : techData.district) : 'Sri Lanka';
   if (servEl) {
     const s = Array.isArray(techData.services) ? techData.services.join(' · ') : (techData.serviceType || 'CCTV & Satellite');
@@ -6319,6 +6498,12 @@ window.shareExistingInvoiceWhatsApp = shareExistingInvoiceWhatsApp;
 window.showTechTab = showTechTab;
 window.loadTechClaims = loadTechClaims;
 window.loadTechCompleted = loadTechCompleted;
+window.generateJobTrackingId = generateJobTrackingId;
+window.getJobCode = getJobCode;
+window.copyTrackingCode = copyTrackingCode;
+window.openTrackJobModal = openTrackJobModal;
+window.trackJobSearch = trackJobSearch;
+window.shareTechIdCard = shareTechIdCard;
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────
 function initAdminDashboard() {

@@ -309,6 +309,17 @@ const I18N = {
     tech_id_issued_by: 'LankaVision Pro Network Verification',
     tech_id_show_hint: '💡 පාරිභෝගික නිවසට පැමිණි පසු මෙම ඩිජිටල් හැඳුනුම්පත පෙන්වා අනන්‍යතාවය තහවුරු කරන්න.',
     tech_id_jobs_completed: 'Jobs Completed (සාර්ථකව නිමකළ)',
+    tech_id_lanyard_hint: 'Official Smart PVC Credential · Island-wide Verified',
+    tech_id_share: 'හැඳුනුම්පත Share කරන්න 📲',
+    tech_id_security_id: 'SECURITY BADGE ID',
+
+    // Job Tracking
+    track_job_heading: 'Track Your Job (Job එක Track කරන්න)',
+    track_job_sub: 'ඔබේ Job Tracking ID එක (උදා: LV-JOB-49821) හෝ දුරකථන අංකය ඇතුළත් කර තත්ත්වය පරීක්ෂා කරන්න.',
+    track_job_placeholder: 'Job Tracking ID (LV-JOB-XXXXX) හෝ Phone...',
+    btn_track_job: 'Track Job',
+    track_job_not_found: 'මෙම Tracking ID එකට හෝ දුරකථන අංකයට අදාළ Job එකක් සොයාගත නොහැකි විය.',
+    job_id_copied: 'Job Tracking ID Copy කරගත්තා! 📋',
 
     // Quick Problem Selector
     quick_issues_title: '⚡ නිතර ඇතිවන ගැටලු (එක Click එකකින් තෝරන්න):',
@@ -669,6 +680,17 @@ const I18N = {
     tech_id_issued_by: 'LankaVision Pro Network Verification',
     tech_id_show_hint: '💡 Show this verified digital credential to the customer upon arrival.',
     tech_id_jobs_completed: 'Jobs Completed',
+    tech_id_lanyard_hint: 'Official Smart PVC Credential · Island-wide Verified',
+    tech_id_share: 'Share ID Pass 📲',
+    tech_id_security_id: 'SECURITY BADGE ID',
+
+    // Job Tracking
+    track_job_heading: 'Track Your Job Status',
+    track_job_sub: 'Enter your Job Tracking ID (e.g. LV-JOB-49821) or phone number to check live progress.',
+    track_job_placeholder: 'Job Tracking ID (LV-JOB-XXXXX) or Phone...',
+    btn_track_job: 'Track Job',
+    track_job_not_found: 'No job found with this Tracking ID or Phone number.',
+    job_id_copied: 'Job Tracking ID copied to clipboard! 📋',
 
     // Quick Problem Selector
     quick_issues_title: '⚡ Common Issues (Tap to select):',
@@ -1029,6 +1051,17 @@ const I18N = {
     tech_id_issued_by: 'LankaVision Pro Network Verification',
     tech_id_show_hint: '💡 வாடிக்கையாளரிடம் உங்கள் அடையாளத்தை உறுதிப்படுத்த இந்த அட்டையைக் காட்டுங்கள்.',
     tech_id_jobs_completed: 'முடிக்கப்பட்ட வேலைகள் (Jobs Completed)',
+    tech_id_lanyard_hint: 'Official Smart PVC Credential · Island-wide Verified',
+    tech_id_share: 'அடையாள அட்டையைப் பகிரவும் 📲',
+    tech_id_security_id: 'SECURITY BADGE ID',
+
+    // Job Tracking
+    track_job_heading: 'வேலையை கண்காணிக்கவும் (Track Job)',
+    track_job_sub: 'உங்கள் Job Tracking ID (எ.கா. LV-JOB-49821) அல்லது தொலைபேசி எண்ணை உள்ளிடவும்.',
+    track_job_placeholder: 'Job Tracking ID (LV-JOB-XXXXX) அல்லது Phone...',
+    btn_track_job: 'Track Job',
+    track_job_not_found: 'இந்த Tracking ID அல்லது தொலைபேசி எண்ணிற்கு வேலை எதுவும் கிடைக்கவில்லை.',
+    job_id_copied: 'Job Tracking ID நகலெடுக்கப்பட்டது! 📋',
 
     // Quick Problem Selector
     quick_issues_title: '⚡ பொதுவான சிக்கல்கள்:',

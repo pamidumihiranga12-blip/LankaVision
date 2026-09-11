@@ -71,6 +71,7 @@
             <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
           </div>
           <button type="button" class="btn btn-outline btn-sm btn-help-nav" onclick="openHelpGuide()" title="How to use"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> <span data-i18n="btn_help_guide">💡 භාවිතා කරන හැටි</span></button>
+          <button type="button" class="btn btn-outline btn-sm btn-track-nav" onclick="openTrackJobModal()" title="Track your job"><i class="fas fa-search-location" style="color:var(--primary-l)"></i> <span data-i18n="btn_track_job">Track Job</span></button>
           <button type="button" class="icon-btn notif-bell-btn" onclick="toggleNotificationPanel()" title="Notifications" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-badge hidden" id="notif-badge-landing">0</span></button>
           <button class="btn btn-ghost btn-sm nav-login-btn" onclick="showScreen('screen-login')"><i class="fas fa-sign-in-alt"></i> <span data-i18n="nav_login">Login</span></button>
           <button class="btn btn-primary btn-sm nav-reg-btn" onclick="showRegisterOptions()"><i class="fas fa-user-plus"></i> <span data-i18n="nav_register">Register</span></button>
@@ -109,6 +110,30 @@
         </div>
       </div>
     </section>
+
+    <!-- ====== 🔍 LIVE JOB TRACKING SECTION (LANDING) ====== -->
+    <div class="landing-track-job-box">
+      <div class="ltj-header">
+        <div class="ltj-icon-pulse"><i class="fas fa-satellite-dish"></i></div>
+        <div class="ltj-text">
+          <h3 data-i18n="track_job_heading">Track Your Job (Job එක Track කරන්න)</h3>
+          <p data-i18n="track_job_sub">ඔබේ Job Tracking ID එක (උදා: LV-JOB-49821) හෝ දුරකථන අංකය ඇතුළත් කර තත්ත්වය පරීක්ෂා කරන්න.</p>
+        </div>
+      </div>
+      <div class="ltj-form-row">
+        <div class="ltj-input-wrap">
+          <i class="fas fa-barcode"></i>
+          <input type="text" id="landing-job-track-input" placeholder="Job Tracking ID (LV-JOB-XXXXX) හෝ Phone..." data-i18n-placeholder="track_job_placeholder" onkeydown="if(event.key==='Enter')trackJobSearch('landing-job-track-input')" />
+        </div>
+        <button type="button" class="btn btn-primary btn-track" onclick="trackJobSearch('landing-job-track-input')">
+          <i class="fas fa-search-location"></i> <span data-i18n="btn_track_job">Track Job</span>
+        </button>
+      </div>
+      <div class="ltj-quick-tip">
+        <i class="fas fa-check-circle" style="color:var(--success)"></i>
+        <span>දිවයින පුරා LankaVision Pro මගින් භාරගත් සියලුම Jobs වල Live Progress එක පරීක්ෂා කළ හැක.</span>
+      </div>
+    </div>
 
     <!-- ====== DIRECT HOTLINE BANNER (NON-TECH USERS) ====== -->
     <div class="landing-hotline-bar">
@@ -471,6 +496,7 @@
           <button class="icon-btn" id="menu-btn" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
           <div id="nav-dropdown" class="nav-dropdown hidden">
             <a id="dd-my-jobs" onclick="goToMyJobs()"><i class="fas fa-briefcase"></i> <span data-i18n="nav_my_jobs">My Jobs</span></a>
+            <a onclick="openTrackJobModal()"><i class="fas fa-search-location" style="color:var(--primary-l)"></i> <span data-i18n="btn_track_job">Track Job</span></a>
             <a onclick="goToProfile()"><i class="fas fa-user"></i> <span data-i18n="nav_profile">Profile</span></a>
             <a onclick="openHelpGuide()"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> <span data-i18n="btn_help_guide">💡 භාවිතා කරන හැටි</span></a>
             <a onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> <span data-i18n="nav_logout">Logout</span></a>
@@ -1345,57 +1371,116 @@
     </div>
   </div>
 
-  <!-- ====== 🪪 TECHNICIAN DIGITAL ID PASS MODAL ====== -->
+  <!-- ====== 🪪 TECHNICIAN DIGITAL ID PASS MODAL (ULTRA-REALISTIC SMART PVC ID CARD) ====== -->
   <div id="modal-tech-id-card" class="modal hidden">
     <div class="modal-backdrop" onclick="closeModal('modal-tech-id-card')"></div>
     <div class="modal-box tech-id-modal-box">
       <button class="modal-close" onclick="closeModal('modal-tech-id-card')"><i class="fas fa-times"></i></button>
-      
-      <!-- Official Digital ID Card Container -->
+
+      <!-- Realistic Lanyard Strap & Clip Visual -->
+      <div class="dip-lanyard-hanger">
+        <div class="dip-lanyard-strap"></div>
+        <div class="dip-lanyard-clasp"></div>
+        <div class="dip-lanyard-slot" title="Lanyard Attachment Slot"></div>
+      </div>
+
+      <!-- Official PVC Smart Card Container -->
       <div class="digital-id-pass" id="digital-id-pass">
-        <!-- Top Hologram Banner -->
+        <!-- PVC Diagonal Gloss Sheen Overlay -->
+        <div class="dip-pvc-sheen"></div>
+
+        <!-- Official Header & Hologram Crest -->
         <div class="dip-top-banner">
-          <div class="dip-brand">
-            <i class="fas fa-satellite-dish"></i> <span>LANKAVISION PRO</span>
+          <div class="dip-national-header">
+            <span>SRI LANKA FIELD SERVICE NETWORK</span>
+            <span class="dip-sec-code">CERTIFIED SECURE BADGE</span>
           </div>
-          <div class="dip-certified-chip">
-            <i class="fas fa-shield-alt"></i> VERIFIED
+          <div class="dip-brand-row">
+            <div class="dip-brand">
+              <i class="fas fa-satellite-dish"></i>
+              <div class="dip-brand-text">
+                <strong>LANKAVISION PRO</strong>
+                <small>ISLAND-WIDE TECHNICIAN NETWORK</small>
+              </div>
+            </div>
+            <div class="dip-hologram-crest" title="Official Security Hologram Crest">
+              <div class="dip-crest-inner">
+                <i class="fas fa-shield-alt"></i>
+                <span>VERIFIED</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- ID Card Body -->
+        <!-- EMV Smart Chip Row -->
+        <div class="dip-chip-row">
+          <div class="dip-emv-chip" title="EMV Smart Security Chip">
+            <div class="chip-circuit-line line-h"></div>
+            <div class="chip-circuit-line line-v"></div>
+            <div class="chip-inner-core"></div>
+          </div>
+          <div class="dip-chip-meta">
+            <span class="dip-chip-label">SMART PASS // PRO</span>
+            <span class="dip-chip-validity">VALID ISLAND-WIDE</span>
+          </div>
+        </div>
+
+        <!-- Cardholder Portrait & Identification Body -->
         <div class="dip-body">
-          <div class="dip-avatar-wrap">
-            <img id="dip-avatar-img" src="" alt="Technician" />
-            <div class="dip-badge-icon"><i class="fas fa-check"></i></div>
-          </div>
-          <div class="dip-info">
-            <div class="dip-name" id="dip-tech-name">Technician Name</div>
-            <div class="dip-role" data-i18n="tech_id_badge_verified">CERTIFIED &amp; VERIFIED TECHNICIAN</div>
-            <div class="dip-meta-row">
-              <span class="dip-id-num" id="dip-tech-id">LV-PRO-0000</span>
-              <span class="dip-district" id="dip-tech-district">Colombo</span>
+          <div class="dip-avatar-column">
+            <div class="dip-photo-frame">
+              <img id="dip-avatar-img" src="" alt="Technician" />
+              <div class="dip-photo-corner-tl"></div>
+              <div class="dip-photo-corner-br"></div>
+              <div class="dip-verified-ribbon"><i class="fas fa-check-circle"></i> VERIFIED</div>
             </div>
-            <div class="dip-services" id="dip-tech-services">CCTV, Satellite</div>
-            <div class="dip-rating" id="dip-tech-rating">⭐⭐⭐⭐⭐ 5.0 / 5</div>
-            <div class="dip-completed-row" id="dip-tech-completed-row" style="margin-top:7px">
-              <span class="dip-completed-chip" id="dip-tech-completed-chip" style="background:rgba(16,185,129,0.16);border:1.5px solid #10b981;color:#34d399;font-weight:800;font-size:.82rem;padding:4px 12px;border-radius:18px;display:inline-flex;align-items:center;gap:6px">
-                <i class="fas fa-check-circle" style="color:#10b981"></i>
-                <span id="dip-tech-completed-count">0</span> <span data-i18n="tech_id_jobs_completed">Jobs Completed (සාර්ථකව නිමකළ)</span>
-              </span>
+            <div class="dip-id-badge">
+              <span class="dip-id-label">BADGE ID</span>
+              <strong class="dip-id-num" id="dip-tech-id">LV-PRO-0000</strong>
+            </div>
+          </div>
+
+          <div class="dip-info-column">
+            <div class="dip-name" id="dip-tech-name">Technician Name</div>
+            <div class="dip-role" data-i18n="tech_id_badge_verified">CERTIFIED FIELD TECHNICIAN</div>
+
+            <div class="dip-meta-pill">
+              <i class="fas fa-map-marker-alt"></i>
+              <span id="dip-tech-district">Colombo</span>
+            </div>
+
+            <div class="dip-services-box">
+              <div class="dip-sec-small-label">APPROVED SERVICES</div>
+              <div class="dip-services" id="dip-tech-services">CCTV · Satellite</div>
+            </div>
+
+            <div class="dip-rating" id="dip-tech-rating">⭐⭐⭐⭐⭐ 5.0 / 5.0</div>
+
+            <div class="dip-completed-chip" id="dip-tech-completed-chip">
+              <i class="fas fa-award"></i>
+              <span id="dip-tech-completed-count">0</span>
+              <span data-i18n="tech_id_jobs_completed">Jobs Completed</span>
             </div>
           </div>
         </div>
 
-        <!-- QR & Security Strip -->
-        <div class="dip-security-strip">
-          <div class="dip-sec-left">
-            <div style="font-size:0.72rem;font-weight:700;color:#38bdf8"><i class="fas fa-fingerprint"></i> SECURE DIGITAL CREDENTIAL</div>
-            <div style="font-size:0.65rem;color:var(--txt3)" data-i18n="tech_id_issued_by">LankaVision Pro Island-wide Network</div>
+        <!-- Security Linear Barcode & QR Code Section -->
+        <div class="dip-security-section">
+          <div class="dip-barcode-area">
+            <div class="dip-barcode-lines" aria-hidden="true">
+              <span class="b-w1"></span><span class="b-w2"></span><span class="b-w1"></span><span class="b-w3"></span><span class="b-w2"></span><span class="b-w1"></span><span class="b-w4"></span><span class="b-w1"></span><span class="b-w2"></span><span class="b-w3"></span><span class="b-w1"></span><span class="b-w2"></span><span class="b-w4"></span><span class="b-w2"></span><span class="b-w1"></span><span class="b-w3"></span><span class="b-w2"></span><span class="b-w1"></span><span class="b-w4"></span><span class="b-w1"></span><span class="b-w2"></span><span class="b-w3"></span><span class="b-w1"></span><span class="b-w2"></span>
+            </div>
+            <div class="dip-barcode-text" id="dip-barcode-text">LV-PRO-0000-ACTIVE</div>
           </div>
-          <div class="dip-qr-fake">
+          <div class="dip-qr-box" title="Scan to verify credentials">
             <i class="fas fa-qrcode"></i>
+            <span class="dip-qr-label">SCAN TO VERIFY</span>
           </div>
+        </div>
+
+        <!-- Security Microtext Ribbon -->
+        <div class="dip-microtext-ribbon">
+          ★ OFFICIAL CREDENTIAL ★ LANKAVISION PRO NETWORK SRI LANKA ★ DO NOT DUPLICATE ★
         </div>
       </div>
 
@@ -1403,9 +1488,40 @@
         💡 පාරිභෝගික නිවසට පැමිණි පසු මෙම ඩිජිටල් හැඳුනුම්පත පෙන්වා අනන්‍යතාවය තහවුරු කරන්න.
       </p>
 
-      <button type="button" class="btn btn-outline btn-full" onclick="closeModal('modal-tech-id-card')" style="margin-top:12px">
-        <i class="fas fa-times"></i> Close (වසන්න)
-      </button>
+      <div class="dip-action-buttons">
+        <button type="button" class="btn btn-primary btn-full" onclick="shareTechIdCard()">
+          <i class="fas fa-share-alt"></i> <span data-i18n="tech_id_share">හැඳුනුම්පත Share කරන්න 📲</span>
+        </button>
+        <button type="button" class="btn btn-outline btn-full" onclick="closeModal('modal-tech-id-card')" style="margin-top:8px">
+          <i class="fas fa-times"></i> Close (වසන්න)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 🔍 UNIVERSAL TRACK JOB MODAL ====== -->
+  <div id="modal-track-job" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('modal-track-job')"></div>
+    <div class="modal-box track-job-modal-box">
+      <button class="modal-close" onclick="closeModal('modal-track-job')"><i class="fas fa-times"></i></button>
+      <div class="track-modal-header">
+        <div class="track-modal-icon"><i class="fas fa-satellite-dish"></i></div>
+        <h3 style="margin:0;font-size:1.25rem;font-weight:800" data-i18n="track_job_heading">Track Your Job Status</h3>
+        <p style="font-size:0.85rem;color:var(--txt2);margin-top:4px" data-i18n="track_job_sub">ඔබේ Job Tracking ID එක (උදා: LV-JOB-49821) හෝ දුරකථන අංකය ඇතුළත් කර තත්ත්වය පරීක්ෂා කරන්න.</p>
+      </div>
+      <div class="track-modal-form">
+        <div class="track-modal-input-wrap">
+          <i class="fas fa-barcode"></i>
+          <input type="text" id="modal-job-track-input" placeholder="Job Tracking ID (LV-JOB-XXXXX) හෝ Phone..." data-i18n-placeholder="track_job_placeholder" onkeydown="if(event.key==='Enter')trackJobSearch('modal-job-track-input')" />
+        </div>
+        <div id="track-job-modal-error" class="error-msg hidden" style="margin-top:10px"></div>
+        <button type="button" class="btn btn-primary btn-full" id="btn-modal-track-submit" onclick="trackJobSearch('modal-job-track-input')" style="margin-top:12px">
+          <i class="fas fa-search-location"></i> <span data-i18n="btn_track_job">Track Job</span>
+        </button>
+      </div>
+      <div class="track-modal-footer">
+        <i class="fas fa-shield-alt" style="color:var(--success)"></i> LankaVision Official Job Progress &amp; Verified Technician Tracking
+      </div>
     </div>
   </div>
 
