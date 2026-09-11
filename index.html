@@ -460,11 +460,11 @@
       <div class="nav-brand" onclick="handleBrandNav()" style="cursor:pointer"><i class="fas fa-satellite-dish"></i><span data-i18n="brand_name">LankaVision</span></div>
       <div class="nav-user">
         <div class="lang-switcher lang-switcher-compact">
-          <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English">English</button>
-          <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
-          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
+          <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English"><span class="lang-full">English</span><span class="lang-short">EN</span></button>
+          <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala"><span class="lang-full">සිංහල</span><span class="lang-short">සිං</span></button>
+          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil"><span class="lang-full">தமிழ்</span><span class="lang-short">தம</span></button>
         </div>
-        <button type="button" class="btn btn-outline btn-sm btn-help-nav" onclick="openHelpGuide()" title="How to use"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> <span data-i18n="btn_help_guide">💡 භාවිතා කරන හැටි</span></button>
+        <button type="button" class="btn btn-outline btn-sm btn-help-nav" onclick="openHelpGuide()" title="How to use"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> <span class="help-nav-text" data-i18n="btn_help_guide">💡 භාවිතා කරන හැටි</span></button>
         <span id="nav-user-name" class="nav-name"></span>
         <button type="button" class="icon-btn notif-bell-btn" onclick="toggleNotificationPanel()" title="Notifications" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-badge hidden" id="notif-badge-dash">0</span></button>
         <div class="menu-wrap">
@@ -489,13 +489,13 @@
       <div class="nav-brand"><i class="fas fa-satellite-dish"></i><span data-i18n="admin_panel_title">Admin Panel</span></div>
       <div class="nav-user">
         <div class="lang-switcher lang-switcher-compact">
-          <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English">English</button>
-          <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
-          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
+          <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English"><span class="lang-full">English</span><span class="lang-short">EN</span></button>
+          <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala"><span class="lang-full">සිංහල</span><span class="lang-short">සිං</span></button>
+          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil"><span class="lang-full">தமிழ்</span><span class="lang-short">தம</span></button>
         </div>
         <button type="button" class="icon-btn notif-bell-btn" onclick="toggleNotificationPanel()" title="Notifications" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-badge hidden" id="notif-badge-admin">0</span></button>
-        <span class="admin-pill"><i class="fas fa-shield-alt"></i> <span data-i18n="adm_pill_sub">Admin</span></span>
-        <button class="btn btn-ghost btn-sm" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> <span data-i18n="nav_logout">Logout</span></button>
+        <span class="admin-pill" id="adm-nav-pill"><i class="fas fa-shield-alt"></i> <span data-i18n="adm_pill_sub" class="adm-pill-txt">Admin</span></span>
+        <button class="btn btn-ghost btn-sm btn-logout" onclick="handleLogout()" title="Logout"><i class="fas fa-sign-out-alt"></i> <span data-i18n="nav_logout" class="logout-txt">Logout</span></button>
       </div>
     </nav>
     <div class="admin-tabs">

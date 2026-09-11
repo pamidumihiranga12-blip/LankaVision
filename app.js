@@ -3978,9 +3978,13 @@ function onLanguageChanged(lang) {
     const isMain = (currentUser?.email === MAIN_ADMIN_EMAIL) || !!currentUserData?.isMainAdmin;
     const pill = document.querySelector('.admin-pill');
     if (pill) {
-      pill.innerHTML = isMain 
-        ? '<i class="fas fa-crown" style="color:#fbbf24"></i> ' + (typeof t === 'function' ? t('adm_pill_main', 'Main Admin') : 'Main Admin')
-        : '<i class="fas fa-shield-alt"></i> ' + (typeof t === 'function' ? t('adm_pill_sub', 'Admin') : 'Admin');
+      const lbl = isMain 
+        ? (typeof t === 'function' ? t('adm_pill_main', 'Main Admin') : 'Main Admin')
+        : (typeof t === 'function' ? t('adm_pill_sub', 'Admin') : 'Admin');
+      const ico = isMain 
+        ? '<i class="fas fa-crown" style="color:#fbbf24"></i>'
+        : '<i class="fas fa-shield-alt"></i>';
+      pill.innerHTML = `${ico} <span class="adm-pill-txt">${lbl}</span>`;
     }
     const activeBtn = document.querySelector('.admin-tabs .tab-btn.active');
     const curTab = activeBtn ? activeBtn.dataset.tab : 'overview';
@@ -5540,9 +5544,13 @@ function initAdminDashboard() {
   const isMain = (currentUser?.email === MAIN_ADMIN_EMAIL) || !!currentUserData?.isMainAdmin;
   const pill = document.querySelector('.admin-pill');
   if (pill) {
-    pill.innerHTML = isMain 
-      ? '<i class="fas fa-crown" style="color:#fbbf24"></i> ' + (typeof t === 'function' ? t('adm_pill_main', 'Main Admin') : 'Main Admin')
-      : '<i class="fas fa-shield-alt"></i> ' + (typeof t === 'function' ? t('adm_pill_sub', 'Admin') : 'Admin');
+    const lbl = isMain 
+      ? (typeof t === 'function' ? t('adm_pill_main', 'Main Admin') : 'Main Admin')
+      : (typeof t === 'function' ? t('adm_pill_sub', 'Admin') : 'Admin');
+    const ico = isMain 
+      ? '<i class="fas fa-crown" style="color:#fbbf24"></i>'
+      : '<i class="fas fa-shield-alt"></i>';
+    pill.innerHTML = `${ico} <span class="adm-pill-txt">${lbl}</span>`;
   }
   loadAdminStats();
   loadPendingTechs();

@@ -161,11 +161,12 @@ html,body{min-height:100%;height:auto;font-family:var(--font);background:var(--b
 .info-pill{display:inline-flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:8px 18px;font-size:.84rem;color:var(--txt2)}
 
 /* ── APP NAV ── */
-.app-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--glass);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
-.app-nav .nav-brand{font-size:1.1rem}
-.nav-user{display:flex;align-items:center;gap:12px}
+.app-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--glass);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;width:100%;box-sizing:border-box}
+.app-nav .nav-brand{font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0}
+.nav-user{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .nav-name{font-size:.9rem;font-weight:600;color:var(--txt2)}
-.admin-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:var(--accent);padding:5px 12px;border-radius:999px;font-size:.8rem;font-weight:700}
+.lang-short{display:none}
+.admin-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);color:var(--accent);padding:5px 12px;border-radius:999px;font-size:.8rem;font-weight:700;white-space:nowrap}
 .menu-wrap{position:relative}
 .nav-dropdown{position:absolute;right:0;top:calc(100% + 10px);background:var(--card2);border:1px solid var(--border);border-radius:var(--r-l);padding:6px;min-width:170px;box-shadow:var(--shadow);z-index:200;animation:fadeUp .2s ease}
 .nav-dropdown a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-m);color:var(--txt2);cursor:pointer;font-size:.88rem;transition:var(--ease)}
@@ -607,13 +608,17 @@ body.modal-open {
   .app-nav {
     padding: 10px 14px;
     gap: 8px;
+    box-sizing: border-box;
   }
   .app-nav .nav-brand {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
     gap: 6px;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
   .app-nav .nav-user {
     gap: 6px;
+    flex-shrink: 0;
   }
   .nav-name {
     display: none;
@@ -1467,6 +1472,143 @@ body.modal-open {
   /* Ensure screen content is never covered by the native mobile bottom app bar */
   .screen {
     padding-bottom: 74px;
+  }
+
+  /* ── App Navigation Header Mobile Optimization ── */
+  .app-nav {
+    padding: 8px 12px !important;
+    gap: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    min-height: 52px;
+  }
+  .app-nav .nav-brand {
+    font-size: 0.95rem !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+  .app-nav .nav-brand i {
+    font-size: 1.1rem !important;
+  }
+  .app-nav .nav-user {
+    gap: 5px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Compact language switcher: show short codes (EN | සිං | தம) */
+  .app-nav .lang-switcher-compact {
+    padding: 1.5px !important;
+    gap: 1.5px !important;
+    border-radius: 999px !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  }
+  .app-nav .lang-switcher-compact .lang-full {
+    display: none !important;
+  }
+  .app-nav .lang-switcher-compact .lang-short {
+    display: inline-block !important;
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+  }
+  .app-nav .lang-switcher-compact .lang-btn {
+    padding: 3px 6px !important;
+    font-size: 0.68rem !important;
+    min-width: 22px !important;
+    border-radius: 999px !important;
+  }
+
+  /* Notification Bell Button */
+  .app-nav .notif-bell-btn {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.85rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Admin Pill: Compact badge on mobile */
+  .app-nav .admin-pill {
+    padding: 3px 8px !important;
+    font-size: 0.72rem !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  /* Admin Logout Button: on mobile, show icon only with red tint */
+  .app-nav .btn-logout {
+    padding: 0 !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.85rem !important;
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.12) !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+    border-radius: var(--r-s) !important;
+    flex-shrink: 0 !important;
+  }
+  .app-nav .btn-logout .logout-txt {
+    display: none !important;
+  }
+
+  /* Help Guide Button on Mobile Dashboard Header: icon-only */
+  .app-nav .btn-help-nav {
+    padding: 0 !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.85rem !important;
+    flex-shrink: 0 !important;
+  }
+  .app-nav .btn-help-nav .help-nav-text {
+    display: none !important;
+  }
+
+  /* User Menu / Avatar Button */
+  .app-nav .icon-btn#menu-btn,
+  .app-nav .avatar-btn {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.85rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Ultra-compact screen widths (<= 400px) */
+  @media (max-width: 400px) {
+    .app-nav {
+      padding: 6px 8px !important;
+      gap: 4px !important;
+    }
+    .app-nav .nav-brand {
+      font-size: 0.88rem !important;
+    }
+    .app-nav .admin-pill .adm-pill-txt {
+      display: none !important;
+    }
+    .app-nav .admin-pill {
+      padding: 0 !important;
+      width: 30px !important;
+      height: 30px !important;
+      border-radius: 50% !important;
+      justify-content: center !important;
+    }
   }
 }
 
