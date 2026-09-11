@@ -21,6 +21,15 @@ function tFn(k, fb) {
   return (typeof t === 'function') ? t(k, fb) : fb;
 }
 
+// Promise timeout wrapper to prevent infinite loading/spinning across all screens
+function withTimeout(promise, ms = 8000, fallbackMsg = 'Network request timed out') {
+  let timer;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(fallbackMsg)), ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer));
+}
+
 // Leaflet default icon asset fallback to prevent broken images
 if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) {
   try {
@@ -3257,6 +3266,21 @@ async function confirmJobCompletion() {
       completedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
+    // Update technician's completed jobs count in user profile
+    if (currentUser) {
+      try {
+        await db.collection('users').doc(currentUser.uid).update({
+          completedJobsCount: firebase.firestore.FieldValue.increment(1),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        if (currentUserData) {
+          currentUserData.completedJobsCount = (currentUserData.completedJobsCount || 0) + 1;
+        }
+      } catch (errUserUp) {
+        console.warn('Failed to increment completedJobsCount on technician doc:', errUserUp);
+      }
+    }
+
     showToast('Job Complete කළා! ✅ Work proof photo සුරක්ෂිත විය.', 'success');
     closeCompleteJobModal();
 
@@ -3555,12 +3579,19 @@ function showCustTab(tab) {
 }
 
 async function loadCustomerJobs() {
+  const el = document.getElementById('cust-jobs');
+  if (!el) return;
   try {
-    const snap = await db.collection('jobs').where('postedBy', '==', currentUser.uid).get();
+    if (!currentUser) {
+      await new Promise(r => setTimeout(r, 400));
+      if (!currentUser) {
+        el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-lock"></i><p>කරුණාකර පළමුව Log in වන්න.</p></div>`;
+        return;
+      }
+    }
+    const snap = await withTimeout(db.collection('jobs').where('postedBy', '==', currentUser.uid).get(), 8000);
     const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-    const el = document.getElementById('cust-jobs');
-    if (!el) return;
     if (!docs.length) {
       el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-briefcase"></i><p>Job post කර නැත.</p><button class="btn btn-primary" style="margin-top:14px" onclick="showScreen('screen-post-job')"><i class="fas fa-plus"></i> First Job Post කරන්න</button></div>`;
       return;
@@ -3568,8 +3599,7 @@ async function loadCustomerJobs() {
     el.innerHTML = docs.map(j => jobCard(j.id, j, 'customer')).join('');
   } catch (err) {
     console.error('loadCustomerJobs error:', err);
-    const el = document.getElementById('cust-jobs');
-    if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Jobs load කිරීමේදී දෝෂයක් ඇති විය. <a href="#" onclick="loadCustomerJobs()" style="color:var(--primary-l)">Retry</a></p></div>`;
+    if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Jobs load කිරීමට නොහැකි විය. <a href="#" onclick="loadCustomerJobs()" style="color:var(--primary-l)">නැවත උත්සාහ කරන්න (Retry)</a></p></div>`;
   }
 }
 
@@ -4035,11 +4065,19 @@ function showTechTab(tab) {
 }
 
 async function loadTechJobs() {
+  const el = document.getElementById('tech-avail');
   try {
+    if (!currentUser || !currentUserData) {
+      await new Promise(r => setTimeout(r, 400));
+      if (!currentUser || !currentUserData) {
+        if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-lock"></i><p>කරුණාකර පළමුව Log in වන්න.</p></div>`;
+        return;
+      }
+    }
     const scope = document.getElementById('tech-scope-filter')?.value || 'radius_36km';
-    const techDistrict = currentUserData.district;
-    const techCity = currentUserData.city;
-    const techCoords = techLiveLocation || ((currentUserData.location?.lat && currentUserData.location?.lng)
+    const techDistrict = currentUserData?.district || '';
+    const techCity = currentUserData?.city || '';
+    const techCoords = techLiveLocation || ((currentUserData?.location?.lat && currentUserData?.location?.lng)
       ? [currentUserData.location.lat, currentUserData.location.lng]
       : ((techCity && CITY_COORDS[techCity]) || (techDistrict && DISTRICT_COORDS[techDistrict])));
 
@@ -4049,10 +4087,10 @@ async function loadTechJobs() {
 
     if (currentUser) {
       try {
-        const activeClaimsSnap = await db.collection('jobs')
+        const activeClaimsSnap = await withTimeout(db.collection('jobs')
           .where('claimedBy', '==', currentUser.uid)
           .where('status', '==', 'claimed')
-          .get();
+          .get(), 6000);
 
         const unscheduledJobDoc = activeClaimsSnap.docs.find(d => {
           const data = d.data();
@@ -4084,10 +4122,10 @@ async function loadTechJobs() {
       }
     }
 
-    // Fetch open jobs
-    const snap = await db.collection('jobs')
+    // Fetch open jobs with timeout
+    const snap = await withTimeout(db.collection('jobs')
       .where('status', '==', 'open')
-      .get();
+      .get(), 8000);
 
     let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
@@ -4168,12 +4206,19 @@ async function loadTechJobs() {
 }
 
 async function loadTechClaims() {
+  const el = document.getElementById('tech-claims');
+  if (!el) return;
   try {
-    const snap = await db.collection('jobs').where('claimedBy', '==', currentUser.uid).get();
+    if (!currentUser) {
+      await new Promise(r => setTimeout(r, 400));
+      if (!currentUser) {
+        el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-lock"></i><p>කරුණාකර පළමුව Log in වන්න.</p></div>`;
+        return;
+      }
+    }
+    const snap = await withTimeout(db.collection('jobs').where('claimedBy', '==', currentUser.uid).get(), 8000);
     const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-    const el = document.getElementById('tech-claims');
-    if (!el) return;
     if (!docs.length) {
       el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-handshake"></i><p>Claimed jobs නැත.</p></div>`;
       return;
@@ -4181,7 +4226,6 @@ async function loadTechClaims() {
     el.innerHTML = docs.map(j => jobCard(j.id, j, 'tech-claimed')).join('');
   } catch (err) {
     console.error('loadTechClaims error:', err);
-    const el = document.getElementById('tech-claims');
     if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Jobs load කිරීමේදී දෝෂයක් ඇති විය. <a href="#" onclick="loadTechClaims()" style="color:var(--primary-l)">නැවත උත්සාහ කරන්න (Retry)</a></p></div>`;
   }
 }
@@ -5690,6 +5734,7 @@ async function openTechDigitalId(techId) {
   const servEl = document.getElementById('dip-tech-services');
   const ratingEl = document.getElementById('dip-tech-rating');
   const avatarImg = document.getElementById('dip-avatar-img');
+  const completedCountEl = document.getElementById('dip-tech-completed-count');
 
   if (nameEl) nameEl.textContent = techData.name || 'Technician';
   if (idEl) idEl.textContent = 'LV-PRO-' + techId.slice(0, 5).toUpperCase();
@@ -5701,8 +5746,43 @@ async function openTechDigitalId(techId) {
   if (ratingEl) {
     const r = (techData.avgRating || techData.rating || 5.0).toFixed(1);
     const c = techData.ratingCount || techData.reviewsCount || 0;
-    ratingEl.innerHTML = `⭐⭐⭐⭐⭐ <strong>${r}</strong> / 5.0 (${c} jobs)`;
+    ratingEl.innerHTML = `⭐⭐⭐⭐⭐ <strong>${r}</strong> / 5.0 (${c} reviews)`;
   }
+
+  // Display initial completed jobs count from profile
+  let completedCount = techData.completedJobsCount || 0;
+  if (completedCountEl) {
+    completedCountEl.textContent = completedCount;
+  }
+
+  // Fetch real-time completed jobs count to guarantee 100% accuracy
+  try {
+    const completedSnap = await withTimeout(
+      db.collection('jobs')
+        .where('claimedBy', '==', techId)
+        .where('status', '==', 'completed')
+        .get(),
+      6000
+    );
+    if (completedSnap && typeof completedSnap.size === 'number') {
+      completedCount = completedSnap.size;
+      if (completedCountEl) {
+        completedCountEl.textContent = completedCount;
+      }
+      if (techData.completedJobsCount !== completedCount) {
+        techData.completedJobsCount = completedCount;
+        db.collection('users').doc(techId).update({
+          completedJobsCount: completedCount
+        }).catch(e => console.warn('Sync completedJobsCount error:', e));
+        if (currentUser && currentUser.uid === techId && currentUserData) {
+          currentUserData.completedJobsCount = completedCount;
+        }
+      }
+    }
+  } catch (eLiveCount) {
+    console.warn('Live completed jobs count fetch warning:', eLiveCount);
+  }
+
   if (avatarImg) {
     if (techData.photoUrl) {
       avatarImg.src = techData.photoUrl;
@@ -6053,18 +6133,21 @@ async function loadAdminStats() {
 }
 
 async function loadPendingTechs() {
+  const el = document.getElementById('pending-list');
   try {
     loadPendingSelfiesAdmin();
-    const snap = await db.collection('users').where('role', '==', 'technician').where('status', '==', 'pending').get();
+    const snap = await withTimeout(db.collection('users').where('role', '==', 'technician').where('status', '==', 'pending').get(), 8000);
     const subCountEl = document.getElementById('pending-techs-sub-count');
     if (subCountEl) subCountEl.textContent = snap.size;
 
-    const el = document.getElementById('pending-list');
     if (!el) return;
     const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
     if (snap.empty) { el.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="color:var(--success)"></i><p>${tFn('empty_no_pending', 'Pending applications නැත')}</p></div>`; return; }
     el.innerHTML = snap.docs.map(d => techCardHtml(d.id, d.data(), 'pending')).join('');
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error('Error loading pending techs:', err);
+    if (el) el.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Pending applications load කිරීමට නොහැකි විය. <a href="#" onclick="loadPendingTechs()">Retry</a></p></div>`;
+  }
 }
 
 async function loadPendingSelfiesAdmin() {
@@ -6075,10 +6158,10 @@ async function loadPendingSelfiesAdmin() {
   const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
 
   try {
-    const snap = await db.collection('users')
+    const snap = await withTimeout(db.collection('users')
       .where('role', '==', 'technician')
       .where('pendingPhotoStatus', '==', 'pending')
-      .get();
+      .get(), 8000);
 
     const count = snap.size;
     if (countEl) countEl.textContent = count;
@@ -6266,8 +6349,9 @@ async function declineTechSelfie(uid) {
 }
 
 async function loadAllJobsAdmin() {
+  const el = document.getElementById('admin-jobs-list');
   try {
-    const snap = await db.collection('jobs').get();
+    const snap = await withTimeout(db.collection('jobs').get(), 8000);
     window._jobsMap = window._jobsMap || {};
     allAdminJobs = snap.docs.map(d => {
       const item = { id: d.id, ...d.data() };
@@ -6275,7 +6359,10 @@ async function loadAllJobsAdmin() {
       return item;
     }).sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
     renderAdminJobs(allAdminJobs);
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error('loadAllJobsAdmin error:', err);
+    if (el) el.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Jobs load කිරීමට නොහැකි විය. <a href="#" onclick="loadAllJobsAdmin()">Retry</a></p></div>`;
+  }
 }
 
 function filterAdminJobs() {
@@ -6333,12 +6420,16 @@ async function deleteJob(jobId) {
 }
 
 async function loadAllTechs() {
+  const el = document.getElementById('admin-techs-list');
   try {
-    const snap = await db.collection('users').where('role', '==', 'technician').get();
+    const snap = await withTimeout(db.collection('users').where('role', '==', 'technician').get(), 8000);
     allTechs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
     filterTechnicians();
-  } catch (err) { console.error('Error loading techs:', err); }
+  } catch (err) {
+    console.error('Error loading techs:', err);
+    if (el) el.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Technicians load කිරීමට නොහැකි විය. <a href="#" onclick="loadAllTechs()">Retry</a></p></div>`;
+  }
 }
 
 function populateAdminCityDatalist() {
@@ -6585,15 +6676,20 @@ function showAdminTab(tab) {
   });
   document.querySelectorAll('.atab').forEach(c => c.classList.remove('active'));
   document.getElementById(`atab-${tab}`)?.classList.add('active');
-  if (tab === 'pending') {
+  if (tab === 'overview') {
+    loadAdminStats();
+  } else if (tab === 'jobs') {
+    loadAllJobsAdmin();
+  } else if (tab === 'pending') {
     loadPendingTechs();
+    loadPendingSelfiesAdmin();
   } else if (tab === 'admins') {
     loadAllAdmins();
   } else if (tab === 'customers') {
     loadAllCustomersAdmin();
   } else if (tab === 'technicians') {
     populateAdminCityDatalist();
-    if (!allTechs.length) loadAllTechs();
+    loadAllTechs();
   } else if (tab === 'app-updates') {
     loadAppUpdateConfigAdmin();
   }
@@ -6938,6 +7034,7 @@ function renderProfileCard() {
       ${u.district ? `<div class="profile-row"><label><i class="fas fa-map-marker-alt"></i> District / City</label><span>${esc(u.city ? `${u.district}, ${u.city}` : u.district)}</span></div>` : ''}
       ${u.serviceType ? `<div class="profile-row"><label><i class="fas fa-tools"></i> Service</label><span class="type-badge ${esc(u.serviceType)}" style="font-size:.85rem">${esc(u.serviceType)}</span></div>` : ''}
       ${u.status ? `<div class="profile-row"><label><i class="fas fa-circle"></i> Status</label><span style="color:${statusColor};font-weight:700">${u.status}</span></div>` : ''}
+      ${u.role === 'technician' ? `<div class="profile-row"><label><i class="fas fa-check-circle" style="color:var(--success)"></i> සම්පූර්ණ කළ Jobs</label><span style="color:#34d399;font-weight:800">${u.completedJobsCount || 0} Jobs Completed</span></div>` : ''}
       ${u.photoUrl ? `<div class="profile-row"><label><i class="fas fa-camera"></i> Live Selfie</label><span style="color:var(--success);font-weight:700;cursor:pointer" onclick="previewPhoto('${u.photoUrl}','${esc(u.name)}')"><i class="fas fa-check-circle"></i> Verified (View)</span></div>` : ''}
       ${u.role === 'technician' && u.pendingPhotoUrl ? `
       <div class="pending-selfie-alert-banner">

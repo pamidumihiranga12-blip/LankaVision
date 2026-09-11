@@ -307,6 +307,7 @@ const I18N = {
     tech_id_tagline: 'දිවයින පුරා පාරිභෝගික ආරක්ෂාව තහවුරු කළ කාර්මික ශිල්පී',
     tech_id_issued_by: 'LankaVision Pro Network Verification',
     tech_id_show_hint: '💡 පාරිභෝගික නිවසට පැමිණි පසු මෙම ඩිජිටල් හැඳුනුම්පත පෙන්වා අනන්‍යතාවය තහවුරු කරන්න.',
+    tech_id_jobs_completed: 'Jobs Completed (සාර්ථකව නිමකළ)',
 
     // Quick Problem Selector
     quick_issues_title: '⚡ නිතර ඇතිවන ගැටලු (එක Click එකකින් තෝරන්න):',
@@ -665,6 +666,7 @@ const I18N = {
     tech_id_tagline: 'Island-wide Certified CCTV & Satellite Professional',
     tech_id_issued_by: 'LankaVision Pro Network Verification',
     tech_id_show_hint: '💡 Show this verified digital credential to the customer upon arrival.',
+    tech_id_jobs_completed: 'Jobs Completed',
 
     // Quick Problem Selector
     quick_issues_title: '⚡ Common Issues (Tap to select):',
@@ -1023,6 +1025,7 @@ const I18N = {
     tech_id_tagline: 'தீவு முழுவதும் சரிபார்க்கப்பட்ட தொழில்நுட்ப வல்லுநர்',
     tech_id_issued_by: 'LankaVision Pro Network Verification',
     tech_id_show_hint: '💡 வாடிக்கையாளரிடம் உங்கள் அடையாளத்தை உறுதிப்படுத்த இந்த அட்டையைக் காட்டுங்கள்.',
+    tech_id_jobs_completed: 'முடிக்கப்பட்ட வேலைகள் (Jobs Completed)',
 
     // Quick Problem Selector
     quick_issues_title: '⚡ பொதுவான சிக்கல்கள்:',
