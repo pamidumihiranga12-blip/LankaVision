@@ -1793,7 +1793,7 @@ function showScreen(id) {
   if (id === 'screen-post-job') {
     setTimeout(initPostJobMap, 200);
     updatePostJobScreen();
-    const checkedType = document.querySelector('input[name="job-type"]:checked')?.value || 'CCTV';
+    const checkedType = document.querySelector('input[name="job-type"]:checked')?.value || null;
     if (typeof renderQuickIssuesForType === 'function') renderQuickIssuesForType(checkedType);
   }
   updateMobileNavState(id);
@@ -2802,6 +2802,283 @@ async function saveMandatorySelfie() {
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-check-double"></i> Selfie එක Save කර ඉදිරියට යන්න';
     }
+  }
+}
+
+// ── 📸 TECHNICIAN LIVE SELFIE CHANGE & ADMIN APPROVAL ────────
+let changeSelfieStream = null;
+let changeSelfieFacingMode = 'user';
+let capturedChangeSelfieDataUrl = null;
+
+function openTechChangeSelfieModal() {
+  capturedChangeSelfieDataUrl = null;
+  const modal = document.getElementById('modal-change-selfie');
+  if (!modal) return;
+
+  const errEl = document.getElementById('change-selfie-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  const previewImg = document.getElementById('change-selfie-preview-img');
+  if (previewImg) previewImg.src = '';
+  document.getElementById('change-selfie-preview-wrap')?.classList.add('hidden');
+  document.getElementById('change-selfie-camera-wrap')?.classList.add('hidden');
+  document.getElementById('change-selfie-idle')?.classList.remove('hidden');
+
+  openModal('modal-change-selfie');
+}
+
+function closeChangeSelfieModal() {
+  stopChangeSelfieCamera();
+  capturedChangeSelfieDataUrl = null;
+  closeModal('modal-change-selfie');
+}
+
+async function startChangeSelfieCamera() {
+  const errEl = document.getElementById('change-selfie-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (errEl) {
+      errEl.textContent = 'ඔබගේ Browser එක කැමරා භාවිතයට සහය නොදක්වයි.';
+      errEl.classList.remove('hidden');
+    }
+    showToast('Camera not supported', 'error');
+    return;
+  }
+
+  stopChangeSelfieCamera();
+
+  const constraints = {
+    video: {
+      facingMode: changeSelfieFacingMode,
+      width: { ideal: 640 },
+      height: { ideal: 640 }
+    },
+    audio: false
+  };
+
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch(e1) {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
+
+    changeSelfieStream = stream;
+    const video = document.getElementById('change-selfie-video');
+    if (video) {
+      video.srcObject = stream;
+      await video.play().catch(() => {});
+    }
+
+    document.getElementById('change-selfie-idle')?.classList.add('hidden');
+    document.getElementById('change-selfie-camera-wrap')?.classList.remove('hidden');
+    document.getElementById('change-selfie-preview-wrap')?.classList.add('hidden');
+  } catch (err) {
+    console.error('Change selfie camera error:', err);
+    if (errEl) {
+      errEl.textContent = 'කැමරාව On කිරීමට අවසර නොලැබුණි (Permission Denied). කරුණාකර Camera access ලබා දෙන්න.';
+      errEl.classList.remove('hidden');
+    }
+  }
+}
+
+function stopChangeSelfieCamera() {
+  if (changeSelfieStream) {
+    changeSelfieStream.getTracks().forEach(track => {
+      try { track.stop(); } catch(e) {}
+    });
+    changeSelfieStream = null;
+  }
+  const video = document.getElementById('change-selfie-video');
+  if (video) video.srcObject = null;
+}
+
+async function switchChangeSelfieCamera() {
+  changeSelfieFacingMode = (changeSelfieFacingMode === 'user') ? 'environment' : 'user';
+  await startChangeSelfieCamera();
+}
+
+function captureChangeSelfie() {
+  const video = document.getElementById('change-selfie-video');
+  const canvas = document.getElementById('change-selfie-canvas');
+  const errEl = document.getElementById('change-selfie-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!video || !canvas || !video.videoWidth) {
+    showToast('Camera not ready', 'error');
+    return;
+  }
+
+  const vW = video.videoWidth;
+  const vH = video.videoHeight;
+  const size = Math.min(vW, vH);
+  const startX = (vW - size) / 2;
+  const startY = (vH - size) / 2;
+  const targetSize = 400;
+
+  canvas.width = targetSize;
+  canvas.height = targetSize;
+  const ctx = canvas.getContext('2d');
+
+  if (changeSelfieFacingMode === 'user') {
+    ctx.translate(targetSize, 0);
+    ctx.scale(-1, 1);
+  }
+
+  ctx.drawImage(video, startX, startY, size, size, 0, 0, targetSize, targetSize);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+  capturedChangeSelfieDataUrl = dataUrl;
+
+  const previewImg = document.getElementById('change-selfie-preview-img');
+  if (previewImg) previewImg.src = dataUrl;
+
+  stopChangeSelfieCamera();
+
+  document.getElementById('change-selfie-camera-wrap')?.classList.add('hidden');
+  document.getElementById('change-selfie-idle')?.classList.add('hidden');
+  document.getElementById('change-selfie-preview-wrap')?.classList.remove('hidden');
+
+  showToast('Selfie Capture සාර්ථකයි! 📸 කරුණාකර Admin අනුමැතියට යවන්න.', 'success');
+}
+
+function retakeChangeSelfie() {
+  capturedChangeSelfieDataUrl = null;
+  const previewImg = document.getElementById('change-selfie-preview-img');
+  if (previewImg) previewImg.src = '';
+  document.getElementById('change-selfie-preview-wrap')?.classList.add('hidden');
+  startChangeSelfieCamera();
+}
+
+async function submitTechChangeSelfie() {
+  if (!capturedChangeSelfieDataUrl) {
+    showToast('කරුණාකර පළමුව සජීවී Selfie ඡායාරූපයක් ගන්න.', 'warning');
+    return;
+  }
+  if (!currentUser || !currentUserData) {
+    showToast('Please login first', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit-change-selfie');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>යවමින් පවතී...</span>';
+  }
+
+  try {
+    const techUid = currentUser.uid;
+    const now = firebase.firestore.FieldValue.serverTimestamp();
+
+    await db.collection('users').doc(techUid).update({
+      pendingPhotoUrl: capturedChangeSelfieDataUrl,
+      pendingPhotoStatus: 'pending',
+      pendingPhotoSubmittedAt: now
+    });
+
+    currentUserData.pendingPhotoUrl = capturedChangeSelfieDataUrl;
+    currentUserData.pendingPhotoStatus = 'pending';
+    currentUserData.pendingPhotoSubmittedAt = new Date();
+
+    closeChangeSelfieModal();
+
+    const profileView = document.getElementById('screen-profile');
+    if (profileView && !profileView.classList.contains('hidden')) {
+      const el = document.getElementById('profile-content');
+      if (el) el.innerHTML = renderProfileCard();
+    }
+
+    showToast('නව Selfie ඡායාරූපය සාර්ථකව Admin වෙත යවන ලදී! Admin අනුමත කළ පසු මාරු වේ.', 'success');
+
+    notifyAdminSelfieChangeRequest({
+      uid: techUid,
+      name: currentUserData.name || 'Technician',
+      email: currentUserData.email || '',
+      phone: currentUserData.phone || '',
+      district: currentUserData.district || '',
+      city: currentUserData.city || '',
+      services: getTechServices(currentUserData)
+    }).catch(e => console.warn('Admin notification warning:', e));
+
+  } catch (err) {
+    console.error('Error submitting selfie change:', err);
+    showToast('ඡායාරූපය යැවීම අසාර්ථක විය: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Admin අනුමැතියට යවන්න 🚀</span>';
+    }
+  }
+}
+
+async function notifyAdminSelfieChangeRequest(tech) {
+  try {
+    const adminRecipients = await getAllAdminEmails();
+    const subject = `📸 Technician Selfie Change Request: ${tech.name} (${tech.district || 'All Island'})`;
+    const servicesList = (tech.services && tech.services.length) ? tech.services.join(', ') : 'All Services';
+
+    const html = emailWrapper('Technician Selfie Change Request', `
+      <div style="text-align:center;margin-bottom:18px">
+        <span style="background:rgba(56,189,248,0.2);color:#38bdf8;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700">
+          📸 LIVE SELFIE CHANGE REQUEST
+        </span>
+      </div>
+      <h2 style="color:#60a5fa;margin-top:4px;text-align:center">Technician Selfie Change Request</h2>
+      <p style="text-align:center;color:#cbd5e1;font-size:14px">
+        Technician <strong>${esc(tech.name)}</strong> විසින් සිය Profile Selfie ඡායාරූපය සජීවීව Phone Camera එකෙන් යාවත්කාලීන කර Admin අනුමැතිය සඳහා යොමු කර ඇත.
+      </p>
+
+      <div class="detail-card">
+        <div class="row">
+          <span class="lbl">Technician Name</span>
+          <span class="val">${esc(tech.name)}</span>
+        </div>
+        <div class="row">
+          <span class="lbl">Phone Number</span>
+          <span class="val"><a href="tel:${esc(tech.phone)}" style="color:#34d399;text-decoration:none">${esc(tech.phone)}</a></span>
+        </div>
+        <div class="row">
+          <span class="lbl">District / City</span>
+          <span class="val">${esc(tech.district || 'N/A')}${tech.city ? ' / ' + esc(tech.city) : ''}</span>
+        </div>
+        <div class="row">
+          <span class="lbl">Services</span>
+          <span class="val">${esc(servicesList)}</span>
+        </div>
+        <div class="row">
+          <span class="lbl">Verification Type</span>
+          <span class="val" style="color:#38bdf8">🔒 Verified Live Camera Capture</span>
+        </div>
+      </div>
+
+      <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px;margin:16px 0;font-size:13px;color:#fbbf24">
+        ⚠️ <strong>Admin Review:</strong> පැරණි ඡායාරූපය සහ නව සජීවී ඡායාරූපය සංසන්දනය කර අනුමත (Accept) හෝ ප්‍රතික්ෂේප (Decline) කිරීමට Admin Panel වෙත පිවිසෙන්න.
+      </div>
+
+      <div style="text-align:center;margin-top:24px">
+        <a href="https://lanka-vision.vercel.app/" class="btn-link" target="_blank" rel="noopener noreferrer">
+          Admin Panel එකෙන් Review කරන්න 🚀
+        </a>
+      </div>
+    `);
+
+    await sendEmailNotification({
+      to: adminRecipients,
+      subject,
+      html,
+      text: `Technician Selfie Change Request from ${tech.name} (${tech.phone}, ${tech.district}). Review at Admin Panel.`
+    });
+
+    if (typeof triggerAppNotification === 'function') {
+      triggerAppNotification({
+        title: '📸 New Selfie Request',
+        message: `${tech.name} technician selfie change request එකක් දමා ඇත.`,
+        type: 'info'
+      });
+    }
+  } catch (err) {
+    console.error('Error in notifyAdminSelfieChangeRequest:', err);
   }
 }
 
@@ -5089,6 +5366,7 @@ async function handlePostJob(e) {
     e.target.reset();
     selectedLoc = null;
     if (document.getElementById('job-is-urgent')) document.getElementById('job-is-urgent').checked = false;
+    renderQuickIssuesForType(null);
     document.querySelectorAll('#quick-problem-chips .q-chip').forEach(c => c.classList.remove('active'));
     document.getElementById('job-city-group')?.classList.add('hidden');
     document.getElementById('job-city-custom')?.classList.add('hidden');
@@ -5131,12 +5409,21 @@ const QUICK_ISSUES_MAP = {
 };
 
 function renderQuickIssuesForType(serviceType) {
-  const container = document.getElementById('quick-problem-chips');
-  if (!container) return;
-  const list = QUICK_ISSUES_MAP[serviceType] || QUICK_ISSUES_MAP.CCTV;
+  const containerWrap = document.getElementById('quick-problem-container');
+  const chipsEl = document.getElementById('quick-problem-chips');
+  if (!chipsEl) return;
+
+  if (!serviceType || !QUICK_ISSUES_MAP[serviceType]) {
+    if (containerWrap) containerWrap.classList.add('hidden');
+    chipsEl.innerHTML = '';
+    return;
+  }
+
+  if (containerWrap) containerWrap.classList.remove('hidden');
+  const list = QUICK_ISSUES_MAP[serviceType];
   const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
 
-  container.innerHTML = list.map(item => {
+  chipsEl.innerHTML = list.map(item => {
     const text = tFn(item.key, item.default);
     return `<button type="button" class="q-chip" onclick="selectQuickIssue(this, '${esc(text)}')">${esc(text)}</button>`;
   }).join('');
@@ -5569,15 +5856,27 @@ async function loadAdminStats() {
       db.collection('jobs').where('status', '==', 'completed').get(),
       db.collection('users').where('role', '==', 'customer').get()
     ]);
-    document.getElementById('st-pending').textContent = pendSnap.size;
+
+    let pendingSelfiesCount = 0;
+    try {
+      const pSelfieSnap = await db.collection('users').where('role', '==', 'technician').where('pendingPhotoStatus', '==', 'pending').get();
+      pendingSelfiesCount = pSelfieSnap.size;
+      const pSelfieBadge = document.getElementById('pending-selfies-count');
+      if (pSelfieBadge) pSelfieBadge.textContent = pendingSelfiesCount;
+    } catch(e) {}
+
+    const totalPending = pendSnap.size + pendingSelfiesCount;
+    document.getElementById('st-pending').textContent = totalPending;
     document.getElementById('st-open').textContent    = openSnap.size;
     document.getElementById('st-techs').textContent   = techSnap.size;
     document.getElementById('st-done').textContent    = doneSnap.size;
-    document.getElementById('pending-count').textContent = pendSnap.size;
+    document.getElementById('pending-count').textContent = totalPending;
     const custBadgeEl = document.getElementById('cust-count');
     if (custBadgeEl) custBadgeEl.textContent = custSnap.size;
     const totalCustEl = document.getElementById('total-cust-count');
     if (totalCustEl) totalCustEl.textContent = custSnap.size;
+    const pendingTechSubBadge = document.getElementById('pending-techs-sub-count');
+    if (pendingTechSubBadge) pendingTechSubBadge.textContent = pendSnap.size;
 
     const recentSnap = await db.collection('jobs').get();
     const recent = recentSnap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -5610,13 +5909,215 @@ async function loadAdminStats() {
 
 async function loadPendingTechs() {
   try {
+    loadPendingSelfiesAdmin();
     const snap = await db.collection('users').where('role', '==', 'technician').where('status', '==', 'pending').get();
+    const subCountEl = document.getElementById('pending-techs-sub-count');
+    if (subCountEl) subCountEl.textContent = snap.size;
+
     const el = document.getElementById('pending-list');
     if (!el) return;
     const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
     if (snap.empty) { el.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="color:var(--success)"></i><p>${tFn('empty_no_pending', 'Pending applications නැත')}</p></div>`; return; }
     el.innerHTML = snap.docs.map(d => techCardHtml(d.id, d.data(), 'pending')).join('');
   } catch (err) { console.error(err); }
+}
+
+async function loadPendingSelfiesAdmin() {
+  const el = document.getElementById('pending-selfies-list');
+  const countEl = document.getElementById('pending-selfies-count');
+  if (!el) return;
+
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+
+  try {
+    const snap = await db.collection('users')
+      .where('role', '==', 'technician')
+      .where('pendingPhotoStatus', '==', 'pending')
+      .get();
+
+    const count = snap.size;
+    if (countEl) countEl.textContent = count;
+
+    if (snap.empty) {
+      el.innerHTML = `
+        <div class="empty-state" style="padding:24px 12px">
+          <i class="fas fa-check-circle" style="color:var(--success)"></i>
+          <p>අනුමැතිය සඳහා නව Selfie ඡායාරූප නොමැත (No pending selfie requests)</p>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = snap.docs.map(doc => {
+      const u = doc.data();
+      const uid = doc.id;
+      const currentPhoto = u.photoUrl || '';
+      const newPhoto = u.pendingPhotoUrl || '';
+      const timeStr = timeAgo(u.pendingPhotoSubmittedAt?.toDate ? u.pendingPhotoSubmittedAt.toDate() : u.pendingPhotoSubmittedAt);
+      const services = getTechServices(u).join(', ') || u.serviceType || 'All';
+
+      return `
+        <div class="selfie-comparison-card" id="selfie-card-${uid}">
+          <div class="sc-header">
+            <div class="sc-tech-info">
+              <div class="sc-tech-name">${esc(u.name || 'Technician')}</div>
+              <div class="sc-tech-sub">
+                <span><i class="fas fa-phone"></i> ${esc(u.phone || 'N/A')}</span>
+                <span><i class="fas fa-map-marker-alt"></i> ${esc(u.district || '')}${u.city ? ', ' + esc(u.city) : ''}</span>
+                <span><i class="fas fa-tools"></i> ${esc(services)}</span>
+                <span><i class="fas fa-clock"></i> ${timeStr}</span>
+              </div>
+            </div>
+            <span class="sc-status-badge">⏳ Pending Review</span>
+          </div>
+
+          <div class="selfie-compare-grid">
+            <!-- Current Photo -->
+            <div class="sc-photo-box sc-box-current">
+              <div class="sc-box-label">
+                <i class="fas fa-history"></i>
+                <span>${tFn('adm_current_selfie', 'පවතින ඡායාරූපය (Current)')}</span>
+              </div>
+              <div class="sc-img-wrap">
+                ${currentPhoto 
+                  ? `<img src="${currentPhoto}" alt="Current Selfie" onclick="previewPhoto('${currentPhoto}', '${esc(u.name)} - Current Selfie')" />` 
+                  : `<div class="sc-img-placeholder"><i class="fas fa-user"></i><span>No Photo</span></div>`
+                }
+              </div>
+              <div class="sc-photo-note">Active on profile & jobs</div>
+            </div>
+
+            <!-- VS Divider -->
+            <div class="sc-vs-divider">
+              <div class="sc-vs-circle">VS</div>
+              <i class="fas fa-arrow-right sc-vs-arrow"></i>
+            </div>
+
+            <!-- New Live Selfie Request -->
+            <div class="sc-photo-box sc-box-new">
+              <div class="sc-box-label highlight">
+                <i class="fas fa-camera"></i>
+                <span>${tFn('adm_new_selfie', 'ඉල්ලුම් කළ නව ඡායාරූපය (New Request)')}</span>
+              </div>
+              <div class="sc-img-wrap">
+                ${newPhoto 
+                  ? `<img src="${newPhoto}" alt="New Requested Selfie" onclick="previewPhoto('${newPhoto}', '${esc(u.name)} - New Selfie Request')" />` 
+                  : `<div class="sc-img-placeholder"><i class="fas fa-image"></i><span>No New Photo</span></div>`
+                }
+                <div class="sc-live-badge"><span class="rec-dot"></span> LIVE CAPTURE</div>
+              </div>
+              <div class="sc-photo-note sc-note-success">🔒 Live Camera Verified</div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="sc-actions">
+            <button type="button" class="btn btn-success" onclick="acceptTechSelfie('${uid}')" id="btn-acc-selfie-${uid}">
+              <i class="fas fa-check-circle"></i>
+              <span>${tFn('adm_btn_accept_selfie', 'අනුමත කර මාරු කරන්න ✅')}</span>
+            </button>
+            <button type="button" class="btn btn-danger" onclick="declineTechSelfie('${uid}')" id="btn-dec-selfie-${uid}">
+              <i class="fas fa-times-circle"></i>
+              <span>${tFn('adm_btn_decline_selfie', 'ප්‍රතික්ෂේප කරන්න ❌')}</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error('Error loading pending selfies:', err);
+    el.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Selfie requests load කිරීම අසාර්ථකයි</p></div>`;
+  }
+}
+
+async function acceptTechSelfie(uid) {
+  if (!confirm('ඔබට මෙම Technician ගේ නව Selfie ඡායාරූපය අනුමත කිරීමට සහ පැරණි ඡායාරූපය වෙනුවට මාරු කිරීමට අවශ්‍යද?')) {
+    return;
+  }
+
+  const btn = document.getElementById(`btn-acc-selfie-${uid}`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+  }
+
+  try {
+    const userDocRef = db.collection('users').doc(uid);
+    const userDoc = await userDocRef.get();
+    if (!userDoc.exists) {
+      showToast('Technician හමු නොවීය', 'error');
+      return;
+    }
+
+    const data = userDoc.data();
+    const newPhotoUrl = data.pendingPhotoUrl;
+    if (!newPhotoUrl) {
+      showToast('නව Selfie ඡායාරූපයක් හමු නොවීය', 'error');
+      return;
+    }
+
+    await userDocRef.update({
+      photoUrl: newPhotoUrl,
+      pendingPhotoUrl: null,
+      pendingPhotoStatus: 'approved',
+      selfieApprovedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    if (currentUser && currentUser.uid === uid && currentUserData) {
+      currentUserData.photoUrl = newPhotoUrl;
+      currentUserData.pendingPhotoUrl = null;
+      currentUserData.pendingPhotoStatus = 'approved';
+    }
+
+    showToast(`✅ ${data.name || 'Technician'} ගේ නව Selfie ඡායාරූපය සාර්ථකව අනුමත කර මාරු කරන ලදී!`, 'success');
+
+    loadPendingSelfiesAdmin();
+    loadPendingTechs();
+    loadAdminStats();
+
+  } catch (err) {
+    console.error('Error accepting tech selfie:', err);
+    showToast('Selfie අනුමත කිරීම අසාර්ථකයි: ' + err.message, 'error');
+  }
+}
+
+async function declineTechSelfie(uid) {
+  if (!confirm('ඔබට මෙම Technician ගේ නව Selfie ඉල්ලීම ප්‍රතික්ෂේප කිරීමට අවශ්‍යද? (පැරණි ඡායාරූපය එලෙසම පවතී)')) {
+    return;
+  }
+
+  const btn = document.getElementById(`btn-dec-selfie-${uid}`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+  }
+
+  try {
+    const userDocRef = db.collection('users').doc(uid);
+    const userDoc = await userDocRef.get();
+    const data = userDoc.exists ? userDoc.data() : {};
+
+    await userDocRef.update({
+      pendingPhotoUrl: null,
+      pendingPhotoStatus: 'declined',
+      selfieDeclinedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    if (currentUser && currentUser.uid === uid && currentUserData) {
+      currentUserData.pendingPhotoUrl = null;
+      currentUserData.pendingPhotoStatus = 'declined';
+    }
+
+    showToast(`❌ ${data.name || 'Technician'} ගේ නව Selfie ඉල්ලීම ප්‍රතික්ෂේප කරන ලදී. (පැරණි ඡායාරූපය ආරක්ෂිතව පවතී)`, 'info');
+
+    loadPendingSelfiesAdmin();
+    loadPendingTechs();
+    loadAdminStats();
+
+  } catch (err) {
+    console.error('Error declining tech selfie:', err);
+    showToast('Selfie ප්‍රතික්ෂේප කිරීම අසාර්ථකයි: ' + err.message, 'error');
+  }
 }
 
 async function loadAllJobsAdmin() {
@@ -5876,6 +6377,7 @@ function techCardHtml(id, t, context) {
           ${t._distanceKm != null ? `<span style="color:#059669;font-weight:700;background:rgba(16,185,129,0.12);padding:2px 8px;border-radius:12px;border:1px solid rgba(16,185,129,0.3)"><i class="fas fa-location-arrow"></i> 🎯 ${t._distanceKm} km දුරින්</span>` : ''}
           ${svcBadgesHtml}
           ${t.photoUrl ? `<span style="color:#34d399;font-weight:700;cursor:pointer" onclick="previewPhoto('${t.photoUrl}','${esc(t.name)} - Selfie')"><i class="fas fa-camera"></i> ${tFn('selfie_verified_badge', 'Selfie Verified 🔒')}</span>` : ''}
+          ${t.pendingPhotoStatus === 'pending' ? `<span class="badge" style="background:#0284c7;font-size:.72rem;padding:2px 8px;border-radius:10px;cursor:pointer" onclick="showAdminTab('pending')" title="Selfie change request pending approval"><i class="fas fa-camera"></i> 📸 New Selfie Pending</span>` : ''}
         </div>
         <div style="font-size:.7rem;color:var(--txt3);margin-top:3px">${tFn('applied_lbl', 'Applied')}: ${timeAgo(t.createdAt?.toDate?.())}</div>
       </div>
@@ -5929,10 +6431,18 @@ async function deleteTech(uid) {
 }
 
 function showAdminTab(tab) {
-  document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.admin-tabs .tab-btn').forEach(b => {
+    const isAct = b.dataset.tab === tab;
+    b.classList.toggle('active', isAct);
+    if (isAct) {
+      try { b.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch(e){}
+    }
+  });
   document.querySelectorAll('.atab').forEach(c => c.classList.remove('active'));
   document.getElementById(`atab-${tab}`)?.classList.add('active');
-  if (tab === 'admins') {
+  if (tab === 'pending') {
+    loadPendingTechs();
+  } else if (tab === 'admins') {
     loadAllAdmins();
   } else if (tab === 'customers') {
     loadAllCustomersAdmin();
@@ -5941,6 +6451,9 @@ function showAdminTab(tab) {
     if (!allTechs.length) loadAllTechs();
   } else if (tab === 'app-updates') {
     loadAppUpdateConfigAdmin();
+  }
+  if (typeof updateTabsScrollIndicators === 'function') {
+    setTimeout(() => updateTabsScrollIndicators('admin-tabs'), 120);
   }
   updateMobileNavState('screen-admin');
 }
@@ -6281,8 +6794,18 @@ function renderProfileCard() {
       ${u.serviceType ? `<div class="profile-row"><label><i class="fas fa-tools"></i> Service</label><span class="type-badge ${esc(u.serviceType)}" style="font-size:.85rem">${esc(u.serviceType)}</span></div>` : ''}
       ${u.status ? `<div class="profile-row"><label><i class="fas fa-circle"></i> Status</label><span style="color:${statusColor};font-weight:700">${u.status}</span></div>` : ''}
       ${u.photoUrl ? `<div class="profile-row"><label><i class="fas fa-camera"></i> Live Selfie</label><span style="color:var(--success);font-weight:700;cursor:pointer" onclick="previewPhoto('${u.photoUrl}','${esc(u.name)}')"><i class="fas fa-check-circle"></i> Verified (View)</span></div>` : ''}
+      ${u.role === 'technician' && u.pendingPhotoUrl ? `
+      <div class="pending-selfie-alert-banner">
+        <i class="fas fa-hourglass-half" style="font-size:1.2rem"></i>
+        <div>${typeof t === 'function' ? t('selfie_pending_review_banner', '⏳ නව Selfie ඡායාරූපය Admin අනුමැතිය අපේක්ෂාවෙන් (Under Review)') : '⏳ නව Selfie ඡායාරූපය Admin අනුමැතිය අපේක්ෂාවෙන් (Under Review)'}</div>
+      </div>` : ''}
       <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-        ${u.role === 'technician' ? `<button type="button" class="btn btn-primary btn-full" onclick="openTechDigitalId('${currentUser?.uid}')"><i class="fas fa-id-card"></i> ${typeof t === 'function' ? t('btn_view_id', 'මගේ Official Digital ID Pass එක') : 'මගේ Official Digital ID Pass එක'}</button>` : ''}
+        ${u.role === 'technician' ? `
+          <button type="button" class="btn btn-warning btn-full" onclick="openTechChangeSelfieModal()">
+            <i class="fas fa-camera"></i> ${typeof t === 'function' ? t('btn_change_selfie', '📸 Selfie ඡායාරූපය වෙනස් කරන්න') : '📸 Selfie ඡායාරූපය වෙනස් කරන්න'}
+          </button>
+          <button type="button" class="btn btn-primary btn-full" onclick="openTechDigitalId('${currentUser?.uid}')"><i class="fas fa-id-card"></i> ${typeof t === 'function' ? t('btn_view_id', 'මගේ Official Digital ID Pass එක') : 'මගේ Official Digital ID Pass එක'}</button>
+        ` : ''}
         <button type="button" class="btn btn-ghost btn-full" onclick="openHelpGuide('${u.role === 'technician' ? 'technician' : 'customer'}')" style="border:1px solid rgba(255,255,255,0.15)"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> ${typeof t === 'function' ? t('btn_help_guide', '💡 භාවිතා කරන හැටි (Help Guide)') : '💡 භාවිතා කරන හැටි (Help Guide)'}</button>
       </div>
       <div style="margin-top:10px"><button class="btn btn-outline btn-full" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
@@ -6295,9 +6818,16 @@ function renderProfileCard() {
 
 // ── HELPERS ───────────────────────────────────────────────────
 function setActiveTab(containerId, tab) {
-  document.querySelectorAll(`#${containerId} .tab-btn`).forEach(b =>
-    b.classList.toggle('active', b.dataset.tab === tab)
-  );
+  document.querySelectorAll(`#${containerId} .tab-btn`).forEach(b => {
+    const isAct = b.dataset.tab === tab;
+    b.classList.toggle('active', isAct);
+    if (isAct) {
+      try { b.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch(e){}
+    }
+  });
+  if (typeof updateTabsScrollIndicators === 'function') {
+    setTimeout(() => updateTabsScrollIndicators(containerId), 120);
+  }
 }
 
 function toggleMenu() {
@@ -6608,4 +7138,94 @@ window.previewAppUpdateModal = previewAppUpdateModal;
 window.openDownloadAppUpdate = openDownloadAppUpdate;
 window.loadAppUpdateConfigAdmin = loadAppUpdateConfigAdmin;
 window.saveAppUpdateConfigAdmin = saveAppUpdateConfigAdmin;
+
+// =============================================================
+// 📱 HORIZONTAL TABS SCROLL INDICATORS & ARROWS
+// =============================================================
+
+function scrollTabsRight(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.scrollBy({ left: 180, behavior: 'smooth' });
+  setTimeout(() => updateTabsScrollIndicators(containerId), 250);
+}
+
+function scrollTabsLeft(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.scrollBy({ left: -180, behavior: 'smooth' });
+  setTimeout(() => updateTabsScrollIndicators(containerId), 250);
+}
+
+function updateTabsScrollIndicators(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const wrap = el.closest('.tabs-scroll-wrap');
+  if (!wrap) return;
+  const leftBtn = wrap.querySelector('.tab-scroll-left');
+  const rightBtn = wrap.querySelector('.tab-scroll-right');
+
+  const maxScroll = el.scrollWidth - el.clientWidth;
+  if (leftBtn) {
+    if (el.scrollLeft <= 10) {
+      leftBtn.classList.add('hidden');
+    } else {
+      leftBtn.classList.remove('hidden');
+    }
+  }
+  if (rightBtn) {
+    if (maxScroll <= 5 || el.scrollLeft >= maxScroll - 10) {
+      rightBtn.classList.add('hidden');
+    } else {
+      rightBtn.classList.remove('hidden');
+    }
+  }
+}
+
+window.addEventListener('resize', () => {
+  updateTabsScrollIndicators('admin-tabs');
+  updateTabsScrollIndicators('dash-tabs');
+});
+
+if (typeof document !== 'undefined') {
+  setTimeout(() => {
+    updateTabsScrollIndicators('admin-tabs');
+    updateTabsScrollIndicators('dash-tabs');
+  }, 500);
+}
+
+window.scrollTabsLeft = scrollTabsLeft;
+window.scrollTabsRight = scrollTabsRight;
+window.updateTabsScrollIndicators = updateTabsScrollIndicators;
+
+// 📸 Technician Selfie Change & Review System Exports
+window.openTechChangeSelfieModal = openTechChangeSelfieModal;
+window.closeChangeSelfieModal = closeChangeSelfieModal;
+window.startChangeSelfieCamera = startChangeSelfieCamera;
+window.stopChangeSelfieCamera = stopChangeSelfieCamera;
+window.switchChangeSelfieCamera = switchChangeSelfieCamera;
+window.captureChangeSelfie = captureChangeSelfie;
+window.retakeChangeSelfie = retakeChangeSelfie;
+window.submitTechChangeSelfie = submitTechChangeSelfie;
+window.notifyAdminSelfieChangeRequest = notifyAdminSelfieChangeRequest;
+window.loadPendingSelfiesAdmin = loadPendingSelfiesAdmin;
+window.acceptTechSelfie = acceptTechSelfie;
+window.declineTechSelfie = declineTechSelfie;
+
+if (typeof globalThis !== 'undefined') {
+  globalThis.openTechChangeSelfieModal = openTechChangeSelfieModal;
+  globalThis.closeChangeSelfieModal = closeChangeSelfieModal;
+  globalThis.startChangeSelfieCamera = startChangeSelfieCamera;
+  globalThis.stopChangeSelfieCamera = stopChangeSelfieCamera;
+  globalThis.switchChangeSelfieCamera = switchChangeSelfieCamera;
+  globalThis.captureChangeSelfie = captureChangeSelfie;
+  globalThis.retakeChangeSelfie = retakeChangeSelfie;
+  globalThis.submitTechChangeSelfie = submitTechChangeSelfie;
+  globalThis.notifyAdminSelfieChangeRequest = notifyAdminSelfieChangeRequest;
+  globalThis.loadPendingSelfiesAdmin = loadPendingSelfiesAdmin;
+  globalThis.acceptTechSelfie = acceptTechSelfie;
+  globalThis.declineTechSelfie = declineTechSelfie;
+}
+
+
 

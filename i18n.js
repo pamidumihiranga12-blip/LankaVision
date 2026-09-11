@@ -348,7 +348,18 @@ const I18N = {
     update_btn_later: 'පසුව කරන්න (Later)',
     update_mandatory_alert: '⚠️ මෙම Update එක අනිවාර්ය වේ. සේවාවන් දිගටම ලබාගැනීමට කරුණාකර Update කරන්න.',
     adm_update_title: 'App Version & APK කළමනාකරණය',
-    adm_update_save_btn: 'Update එක සක්‍රීය කරන්න 🚀'
+    adm_update_save_btn: 'Update එක සක්‍රීය කරන්න 🚀',
+
+    // Technician Selfie Change & Approval
+    btn_change_selfie: '📸 Selfie ඡායාරූපය වෙනස් කරන්න',
+    modal_change_selfie_title: '📸 Live Camera Selfie යාවත්කාලීන කිරීම',
+    modal_change_selfie_desc: 'කරුණාකර ඔබගේ මුහුණ පැහැදිලිව පෙනෙන පරිදි Camera එකෙන් සජීවී ඡායාරූපයක් ලබාගන්න. Admin අනුමත කළ පසු Profile එකට එක්වේ.',
+    selfie_pending_review_banner: '⏳ නව Selfie ඡායාරූපය Admin අනුමැතිය අපේක්ෂාවෙන් (Under Review)',
+    adm_pending_selfies_title: '📸 Technician Selfie වෙනස්කිරීම් අනුමැතිය',
+    adm_current_selfie: 'පවතින ඡායාරූපය (Current)',
+    adm_new_selfie: 'ඉල්ලුම් කළ නව ඡායාරූපය (New Request)',
+    adm_btn_accept_selfie: 'අනුමත කර මාරු කරන්න ✅',
+    adm_btn_decline_selfie: 'ප්‍රතික්ෂේප කරන්න ❌'
   },
 
   // ── ENGLISH 🇬🇧 ───────────────────────────────────────────────
@@ -695,7 +706,18 @@ const I18N = {
     update_btn_later: 'Later',
     update_mandatory_alert: '⚠️ This update is required to continue using LankaVision Pro.',
     adm_update_title: 'App Version & APK Manager',
-    adm_update_save_btn: 'Publish App Update 🚀'
+    adm_update_save_btn: 'Publish App Update 🚀',
+
+    // Technician Selfie Change & Approval
+    btn_change_selfie: '📸 Change Verification Selfie',
+    modal_change_selfie_title: '📸 Update Verification Selfie',
+    modal_change_selfie_desc: 'Please capture a clear live selfie using your camera. It will update your profile once approved by Admin.',
+    selfie_pending_review_banner: '⏳ New Selfie Pending Admin Review',
+    adm_pending_selfies_title: '📸 Technician Selfie Change Requests',
+    adm_current_selfie: 'Current Approved Selfie',
+    adm_new_selfie: 'New Requested Selfie',
+    adm_btn_accept_selfie: 'Accept & Replace ✅',
+    adm_btn_decline_selfie: 'Decline Request ❌'
   },
 
   // ── TAMIL 🇱🇰 ─────────────────────────────────────────────────
@@ -1042,7 +1064,18 @@ const I18N = {
     update_btn_later: 'பின்னர் (Later)',
     update_mandatory_alert: '⚠️ சேவைகளைத் தொடர இந்த புதுப்பிப்பு கட்டாயமாகும்.',
     adm_update_title: 'App பதிப்பு மற்றும் APK மேலாளர்',
-    adm_update_save_btn: 'புதுப்பிப்பை வெளியிடவும் 🚀'
+    adm_update_save_btn: 'புதுப்பிப்பை வெளியிடவும் 🚀',
+
+    // Technician Selfie Change & Approval
+    btn_change_selfie: '📸 செல்பி புகைப்படத்தை மாற்றவும்',
+    modal_change_selfie_title: '📸 சரிபார்ப்பு செல்பியைப் புதுப்பிக்கவும்',
+    modal_change_selfie_desc: 'உங்கள் கேமராவைப் பயன்படுத்தி நேரடி செல்பி எடுக்கவும். நிர்வாகி அனுமதித்த பிறகு சுயவிவரத்தில் புதுப்பிக்கப்படும்.',
+    selfie_pending_review_banner: '⏳ புதிய செல்பி நிர்வாகியின் அனுமதிக்காக காத்திருக்கிறது',
+    adm_pending_selfies_title: '📸 தொழில்நுட்பவியலாளர் செல்பி மாற்ற கோரிக்கைகள்',
+    adm_current_selfie: 'தற்போதைய செல்பி',
+    adm_new_selfie: 'புதிய கோரப்பட்ட செல்பி',
+    adm_btn_accept_selfie: 'ஏற்றுக்கொண்டு மாற்றவும் ✅',
+    adm_btn_decline_selfie: 'நிராகரிக்கவும் ❌'
   }
 };
 

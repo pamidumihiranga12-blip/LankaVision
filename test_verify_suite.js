@@ -39,7 +39,15 @@ const requiredHtmlElements = [
   'id="app-update-notes-content"',
   'id="app-update-mandatory-msg"',
   'id="btn-close-app-update"',
-  'id="btn-later-app-update"'
+  'id="btn-later-app-update"',
+  // Technician Selfie Change & Admin Approval elements
+  'id="pending-selfies-section"',
+  'id="pending-selfies-list"',
+  'id="pending-selfies-count"',
+  'id="modal-change-selfie"',
+  'id="change-selfie-video"',
+  'id="change-selfie-canvas"',
+  'id="btn-submit-change-selfie"'
 ];
 
 console.log('--- 1. Testing HTML Elements ---');
@@ -67,7 +75,13 @@ const requiredCssClasses = [
   '.app-update-pill',
   '.app-update-notes-card',
   '.app-update-btn-dl',
-  '.app-version-pill'
+  '.app-version-pill',
+  // Technician Selfie Change & Comparison classes
+  '.selfie-comparison-card',
+  '.selfie-compare-grid',
+  '.sc-photo-box',
+  '.sc-live-badge',
+  '.pending-selfie-alert-banner'
 ];
 
 console.log('\n--- 2. Testing CSS Classes ---');
@@ -95,14 +109,23 @@ const updateI18nKeys = [
   'update_btn_later',
   'update_mandatory_alert',
   'adm_update_title',
-  'adm_update_save_btn'
+  'adm_update_save_btn',
+  // Technician Selfie Change i18n keys
+  'btn_change_selfie',
+  'modal_change_selfie_title',
+  'selfie_pending_review_banner',
+  'adm_pending_selfies_title',
+  'adm_current_selfie',
+  'adm_new_selfie',
+  'adm_btn_accept_selfie',
+  'adm_btn_decline_selfie'
 ];
 updateI18nKeys.forEach(k => {
   assert(i18nCode.includes(k), 'Missing i18n key: ' + k);
   console.log('✔ Found in i18n.js: ' + k);
 });
 console.log('✔ Default language set to Sinhala (si)');
-console.log('✔ All translations for Features & App Updates verified');
+console.log('✔ All translations for Features, App Updates & Selfie Change verified');
 
 // 4. Check app.js function definitions & constants
 console.log('\n--- 4. Testing app.js Logic & Updates ---');
@@ -131,7 +154,18 @@ const requiredFunctions = [
   'previewAppUpdateModal',
   'openDownloadAppUpdate',
   'loadAppUpdateConfigAdmin',
-  'saveAppUpdateConfigAdmin'
+  'saveAppUpdateConfigAdmin',
+  // Technician Selfie Change functions
+  'openTechChangeSelfieModal',
+  'closeChangeSelfieModal',
+  'startChangeSelfieCamera',
+  'captureChangeSelfie',
+  'retakeChangeSelfie',
+  'submitTechChangeSelfie',
+  'notifyAdminSelfieChangeRequest',
+  'loadPendingSelfiesAdmin',
+  'acceptTechSelfie',
+  'declineTechSelfie'
 ];
 
 requiredFunctions.forEach(fn => {

@@ -380,7 +380,7 @@
           </div>
 
           <!-- Quick Problem Selector Chips -->
-          <div class="form-group" id="quick-problem-container">
+          <div class="form-group hidden" id="quick-problem-container">
             <label style="display:flex;align-items:center;gap:6px">
               <i class="fas fa-bolt" style="color:#fbbf24"></i>
               <span data-i18n="quick_issues_title">⚡ නිතර ඇතිවන ගැටලු (එක Click එකකින් තෝරන්න):</span>
@@ -478,7 +478,11 @@
         </div>
       </div>
     </nav>
-    <div class="dash-tabs" id="dash-tabs"></div>
+    <div class="tabs-scroll-wrap" id="dash-tabs-scroll-wrap">
+      <button type="button" class="tab-scroll-arrow tab-scroll-left hidden" onclick="scrollTabsLeft('dash-tabs')" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
+      <div class="dash-tabs" id="dash-tabs" onscroll="updateTabsScrollIndicators('dash-tabs')"></div>
+      <button type="button" class="tab-scroll-arrow tab-scroll-right" onclick="scrollTabsRight('dash-tabs')" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
+    </div>
     <div class="dash-content" id="dash-content"></div>
     <button class="fab hidden" id="fab-post" onclick="showScreen('screen-post-job')"><i class="fas fa-plus"></i></button>
   </div>
@@ -491,21 +495,25 @@
         <div class="lang-switcher lang-switcher-compact">
           <button type="button" class="lang-btn active" onclick="setLanguage('en')" title="English"><span class="lang-full">English</span><span class="lang-short">EN</span></button>
           <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala"><span class="lang-full">සිංහල</span><span class="lang-short">සිං</span></button>
-          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil"><span class="lang-full">தமிழ்</span><span class="lang-short">தம</span></button>
+          <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil"><span class="lang-full">தமிழ்</span><span class="lang-short">தම</span></button>
         </div>
         <button type="button" class="icon-btn notif-bell-btn" onclick="toggleNotificationPanel()" title="Notifications" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-badge hidden" id="notif-badge-admin">0</span></button>
         <span class="admin-pill" id="adm-nav-pill"><i class="fas fa-shield-alt"></i> <span data-i18n="adm_pill_sub" class="adm-pill-txt">Admin</span></span>
         <button class="btn btn-ghost btn-sm btn-logout" onclick="handleLogout()" title="Logout"><i class="fas fa-sign-out-alt"></i> <span data-i18n="nav_logout" class="logout-txt">Logout</span></button>
       </div>
     </nav>
-    <div class="admin-tabs">
-      <button class="tab-btn active" data-tab="overview" onclick="showAdminTab('overview')"><i class="fas fa-chart-pie"></i> <span data-i18n="adm_tab_overview">Overview</span></button>
-      <button class="tab-btn" data-tab="pending" onclick="showAdminTab('pending')"><i class="fas fa-clock"></i> <span data-i18n="adm_tab_pending">Pending</span> <span class="badge" id="pending-count">0</span></button>
-      <button class="tab-btn" data-tab="jobs" onclick="showAdminTab('jobs')"><i class="fas fa-briefcase"></i> <span data-i18n="adm_tab_jobs">All Jobs</span></button>
-      <button class="tab-btn" data-tab="technicians" onclick="showAdminTab('technicians')"><i class="fas fa-users"></i> <span data-i18n="adm_tab_techs">Technicians</span></button>
-      <button class="tab-btn" data-tab="customers" onclick="showAdminTab('customers')"><i class="fas fa-user-friends"></i> <span data-i18n="adm_tab_customers">Customers</span> <span class="badge" id="cust-count">0</span></button>
-      <button class="tab-btn" data-tab="admins" onclick="showAdminTab('admins')" id="adm-tab-admins"><i class="fas fa-user-shield"></i> <span data-i18n="adm_tab_admins">Admins</span></button>
-      <button class="tab-btn" data-tab="app-updates" onclick="showAdminTab('app-updates')" id="adm-tab-app-updates"><i class="fas fa-cloud-upload-alt"></i> <span data-i18n="adm_tab_updates">App Updates</span></button>
+    <div class="tabs-scroll-wrap" id="admin-tabs-scroll-wrap">
+      <button type="button" class="tab-scroll-arrow tab-scroll-left hidden" onclick="scrollTabsLeft('admin-tabs')" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
+      <div class="admin-tabs" id="admin-tabs" onscroll="updateTabsScrollIndicators('admin-tabs')">
+        <button class="tab-btn active" data-tab="overview" onclick="showAdminTab('overview')"><i class="fas fa-chart-pie"></i> <span data-i18n="adm_tab_overview">Overview</span></button>
+        <button class="tab-btn" data-tab="pending" onclick="showAdminTab('pending')"><i class="fas fa-clock"></i> <span data-i18n="adm_tab_pending">Pending</span> <span class="badge" id="pending-count">0</span></button>
+        <button class="tab-btn" data-tab="jobs" onclick="showAdminTab('jobs')"><i class="fas fa-briefcase"></i> <span data-i18n="adm_tab_jobs">All Jobs</span></button>
+        <button class="tab-btn" data-tab="technicians" onclick="showAdminTab('technicians')"><i class="fas fa-users"></i> <span data-i18n="adm_tab_techs">Technicians</span></button>
+        <button class="tab-btn" data-tab="customers" onclick="showAdminTab('customers')"><i class="fas fa-user-friends"></i> <span data-i18n="adm_tab_customers">Customers</span> <span class="badge" id="cust-count">0</span></button>
+        <button class="tab-btn" data-tab="admins" onclick="showAdminTab('admins')" id="adm-tab-admins"><i class="fas fa-user-shield"></i> <span data-i18n="adm_tab_admins">Admins</span></button>
+        <button class="tab-btn" data-tab="app-updates" onclick="showAdminTab('app-updates')" id="adm-tab-app-updates"><i class="fas fa-cloud-upload-alt"></i> <span data-i18n="adm_tab_updates">App Updates</span></button>
+      </div>
+      <button type="button" class="tab-scroll-arrow tab-scroll-right" onclick="scrollTabsRight('admin-tabs')" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
     </div>
     <div class="admin-content">
 
@@ -522,7 +530,33 @@
 
       <!-- Pending -->
       <div id="atab-pending" class="atab">
-        <div id="pending-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div></div>
+        <!-- New Selfie Change Approval Section -->
+        <div class="pending-section" id="pending-selfies-section" style="margin-bottom:28px">
+          <div class="pending-section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px;flex-wrap:wrap;gap:8px">
+            <h3 style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:8px">
+              <i class="fas fa-camera" style="color:var(--accent)"></i>
+              <span data-i18n="adm_pending_selfies_title">Technician Selfie වෙනස්කිරීම් අනුමැතිය</span>
+              <span class="badge" id="pending-selfies-count" style="background:#0284c7">0</span>
+            </h3>
+            <span style="font-size:0.75rem;color:var(--txt3)">Live Camera එකෙන් ගත් නව ඡායාරූප</span>
+          </div>
+          <div id="pending-selfies-list">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div>
+          </div>
+        </div>
+
+        <!-- New Technician Registrations Section -->
+        <div class="pending-section">
+          <div class="pending-section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px;flex-wrap:wrap;gap:8px">
+            <h3 style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:8px">
+              <i class="fas fa-user-clock" style="color:#f59e0b"></i>
+              <span>නව Technician ලියාපදිංචි අයදුම්පත්</span>
+              <span class="badge" id="pending-techs-sub-count">0</span>
+            </h3>
+            <span style="font-size:0.75rem;color:var(--txt3)">Awaiting verification</span>
+          </div>
+          <div id="pending-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div></div>
+        </div>
       </div>
 
       <!-- All Jobs -->
@@ -1402,6 +1436,73 @@
         <button type="button" class="btn btn-outline btn-full" id="btn-later-app-update" onclick="dismissAppUpdateModal()" style="margin-top:8px">
           <span data-i18n="update_btn_later">පසුව කරන්න (Later)</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 📸 TECHNICIAN LIVE SELFIE UPDATE MODAL ====== -->
+  <div id="modal-change-selfie" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeChangeSelfieModal()"></div>
+    <div class="modal-box" style="max-width:440px">
+      <button class="modal-close" onclick="closeChangeSelfieModal()"><i class="fas fa-times"></i></button>
+
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="width:48px;height:48px;border-radius:12px;background:rgba(56,189,248,0.15);border:1px solid #38bdf8;color:#38bdf8;display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:8px">
+          <i class="fas fa-camera"></i>
+        </div>
+        <h3 style="margin:0 0 4px 0;font-size:1.15rem;font-weight:800" data-i18n="modal_change_selfie_title">📸 Live Camera Selfie යාවත්කාලීන කිරීම</h3>
+        <p style="font-size:0.78rem;color:var(--txt2);margin:0;line-height:1.4" data-i18n="modal_change_selfie_desc">
+          කරුණාකර ඔබගේ මුහුණ පැහැදිලිව පෙනෙන පරිදි Camera එකෙන් සජීවී ඡායාරූපයක් ලබාගන්න. Admin අනුමත කළ පසු Profile එකට එක්වේ.
+        </p>
+      </div>
+
+      <div class="form-group selfie-form-group">
+        <div id="change-selfie-box" class="selfie-box">
+          <!-- Idle State -->
+          <div id="change-selfie-idle" class="selfie-idle-state">
+            <div class="selfie-idle-icon"><i class="fas fa-camera"></i></div>
+            <p class="selfie-idle-text">Phone Camera එක On කර සජීවී ඡායාරූපයක් ගන්න (Gallery upload අවහිර කර ඇත)</p>
+            <button type="button" class="btn btn-primary btn-sm" onclick="startChangeSelfieCamera()">
+              <i class="fas fa-video"></i> <span>Camera On කරන්න</span>
+            </button>
+          </div>
+
+          <!-- Live Camera Stream -->
+          <div id="change-selfie-camera-wrap" class="selfie-camera-wrap hidden">
+            <div class="selfie-viewport">
+              <video id="change-selfie-video" autoplay playsinline muted></video>
+              <div class="selfie-guide-frame">
+                <div class="selfie-guide-oval"></div>
+                <div class="selfie-guide-text">මුහුණ කේන්ද්‍රගත කරගන්න</div>
+              </div>
+              <div class="live-rec-badge"><span class="rec-dot"></span> LIVE CAM</div>
+            </div>
+            <div class="selfie-controls">
+              <button type="button" class="btn btn-warning btn-sm" onclick="switchChangeSelfieCamera()" title="Switch Camera">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+              <button type="button" class="btn btn-success btn-sm" onclick="captureChangeSelfie()">
+                <i class="fas fa-circle"></i> <span>ඡායාරූපය ගන්න (Capture)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Preview Wrap -->
+          <div id="change-selfie-preview-wrap" class="selfie-preview-wrap hidden">
+            <img id="change-selfie-preview-img" class="selfie-preview-img" alt="Captured Selfie Preview" />
+            <div class="selfie-controls">
+              <button type="button" class="btn btn-outline btn-sm" onclick="retakeChangeSelfie()">
+                <i class="fas fa-redo"></i> <span>නැවත ගන්න (Retake)</span>
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-submit-change-selfie" onclick="submitTechChangeSelfie()">
+                <i class="fas fa-paper-plane"></i> <span>Admin අනුමැතියට යවන්න 🚀</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <canvas id="change-selfie-canvas" class="hidden"></canvas>
+        <div id="change-selfie-error" class="error-msg hidden" style="margin-top:8px"></div>
       </div>
     </div>
   </div>

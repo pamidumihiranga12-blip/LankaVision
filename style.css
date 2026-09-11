@@ -252,13 +252,126 @@ html,body{min-height:100%;height:auto;font-family:var(--font);background:var(--b
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.7);
 }
 
-/* ── TABS ── */
-.dash-tabs,.admin-tabs{display:flex;gap:4px;padding:12px 16px 0;background:var(--bg);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
-.dash-tabs::-webkit-scrollbar,.admin-tabs::-webkit-scrollbar{display:none}
-.tab-btn{display:flex;align-items:center;gap:6px;padding:9px 16px;border:none;background:transparent;color:var(--txt3);border-radius:var(--r-m) var(--r-m) 0 0;cursor:pointer;font-family:var(--font);font-size:.84rem;font-weight:600;transition:var(--ease);white-space:nowrap;border-bottom:2px solid transparent}
-.tab-btn:hover{color:var(--txt);background:rgba(255,255,255,0.04)}
-.tab-btn.active{color:var(--primary-l);border-bottom-color:var(--primary-l);background:rgba(37,99,235,0.06)}
-.badge{background:var(--danger);color:#fff;border-radius:999px;font-size:.7rem;padding:2px 6px;font-weight:700}
+/* ── TABS SCROLL WRAPPER & HORIZONTAL INDICATOR ── */
+.tabs-scroll-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.dash-tabs, .admin-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px 6px;
+  background: transparent;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  box-sizing: border-box;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) rgba(255, 255, 255, 0.05);
+}
+
+/* Subtle Glowing Slim Scrollbar - Visually proves horizontal scroll exists */
+.dash-tabs::-webkit-scrollbar,
+.admin-tabs::-webkit-scrollbar {
+  height: 3px !important;
+  display: block !important;
+}
+.dash-tabs::-webkit-scrollbar-track,
+.admin-tabs::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+}
+.dash-tabs::-webkit-scrollbar-thumb,
+.admin-tabs::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 4px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--txt3);
+  border-radius: var(--r-m) var(--r-m) 0 0;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: .84rem;
+  font-weight: 600;
+  transition: var(--ease);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+.tab-btn:hover {
+  color: var(--txt);
+  background: rgba(255, 255, 255, 0.07);
+}
+.tab-btn.active {
+  color: #fff;
+  border-bottom-color: var(--accent);
+  background: rgba(37, 99, 235, 0.16);
+  font-weight: 700;
+}
+
+/* Floating Navigation Arrows on Left and Right edges */
+.tab-scroll-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.74rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
+}
+.tab-scroll-arrow:hover {
+  background: var(--primary);
+  transform: translateY(-50%) scale(1.12);
+}
+.tab-scroll-arrow:active {
+  transform: translateY(-50%) scale(0.95);
+}
+.tab-scroll-arrow.tab-scroll-left {
+  left: 4px;
+}
+.tab-scroll-arrow.tab-scroll-right {
+  right: 4px;
+}
+.tab-scroll-arrow.hidden {
+  display: none !important;
+}
+
+.badge {
+  background: var(--danger);
+  color: #fff;
+  border-radius: 999px;
+  font-size: .7rem;
+  padding: 2px 6px;
+  font-weight: 700;
+}
 
 /* ── DASH CONTENT ── */
 .dash-content{padding:16px;padding-bottom:80px}
@@ -2874,6 +2987,227 @@ body.modal-open {
   font-size: 0.76rem;
   font-weight: 700;
 }
+
+/* ── 📸 TECHNICIAN SELFIE COMPARISON & REVIEW (ADMIN PANEL) ── */
+.selfie-comparison-card {
+  background: var(--bg2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-l);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  transition: var(--ease);
+}
+.selfie-comparison-card:hover {
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.sc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.sc-tech-name {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: var(--txt);
+}
+.sc-tech-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.78rem;
+  color: var(--txt2);
+  margin-top: 6px;
+}
+.sc-tech-sub span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sc-tech-sub i {
+  color: var(--accent);
+}
+.sc-status-badge {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.selfie-compare-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin: 18px 0;
+  flex-wrap: wrap;
+}
+.sc-photo-box {
+  flex: 1;
+  min-width: 170px;
+  max-width: 260px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-m);
+  padding: 16px 12px;
+  text-align: center;
+  transition: all 0.25s ease;
+}
+.sc-photo-box.sc-box-new {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.05);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.12);
+}
+.sc-box-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--txt2);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.sc-box-label.highlight {
+  color: #38bdf8;
+}
+.sc-img-wrap {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  margin: 0 auto 10px auto;
+  overflow: hidden;
+  position: relative;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  background: #0b101b;
+}
+.sc-box-new .sc-img-wrap {
+  border-color: #38bdf8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+}
+.sc-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.sc-img-wrap img:hover {
+  transform: scale(1.06);
+}
+.sc-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt3);
+  font-size: 0.75rem;
+  gap: 6px;
+}
+.sc-img-placeholder i {
+  font-size: 2.4rem;
+}
+.sc-live-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(11, 16, 27, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(56, 189, 248, 0.7);
+  color: #38bdf8;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.5px;
+}
+.sc-vs-divider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.sc-vs-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--txt2);
+}
+.sc-vs-arrow {
+  color: var(--primary-l);
+  font-size: 1.1rem;
+}
+.sc-photo-note {
+  font-size: 0.72rem;
+  color: var(--txt3);
+  font-weight: 600;
+}
+.sc-note-success {
+  color: #34d399;
+}
+
+.sc-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  flex-wrap: wrap;
+}
+.sc-actions .btn {
+  font-size: 0.88rem;
+  padding: 9px 18px;
+  font-weight: 700;
+  border-radius: var(--r-m);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Pending Selfie Alert Banner in Profile */
+.pending-selfie-alert-banner {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--r-m);
+  padding: 10px 14px;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: #f59e0b;
+  font-weight: 600;
+  animation: fadeIn 0.3s ease;
+}
+
 
 
 
