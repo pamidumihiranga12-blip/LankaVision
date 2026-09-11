@@ -901,6 +901,7 @@ function switchDashTab(tab) {
     showScreen('screen-dashboard');
     if (tab === 'jobs' || tab === 'avail') showTechTab('avail');
     else if (tab === 'claims') showTechTab('claims');
+    else if (tab === 'completed') showTechTab('completed');
     else if (tab === 'profile') showTechTab('profile');
     else if (tab === 'post') showScreen('screen-post-job');
   } else {
@@ -1878,7 +1879,7 @@ function updateMobileNavState(id) {
     const activeDashTab = document.querySelector('#dash-tabs .tab-btn.active')?.dataset.tab;
     if (activeDashTab === 'profile') {
       if (loginBtn) loginBtn.classList.add('active');
-    } else if (activeDashTab === 'claims' || (currentUserData?.role === 'customer' && activeDashTab === 'jobs')) {
+    } else if (activeDashTab === 'claims' || activeDashTab === 'completed' || (currentUserData?.role === 'customer' && activeDashTab === 'jobs')) {
       if (techBtn) techBtn.classList.add('active');
     } else {
       if (homeBtn) homeBtn.classList.add('active');
@@ -3281,10 +3282,11 @@ async function confirmJobCompletion() {
       }
     }
 
-    showToast('Job Complete කළා! ✅ Work proof photo සුරක්ෂිත විය.', 'success');
+    showToast('Job Complete කළා! ✅ "Completed Jobs" පිටුවට එක්විය.', 'success');
     closeCompleteJobModal();
 
-    if (document.getElementById('tech-claims')) loadTechClaims();
+    // Automatically navigate to Completed Jobs tab
+    showTechTab('completed');
 
     if (jobData) {
       notifyJobCompleted({
@@ -3381,13 +3383,26 @@ function resetStarPreview() {
 
 async function submitFeedback() {
   const jobId = document.getElementById('feedback-job-id')?.value;
-  const techId = document.getElementById('feedback-tech-id')?.value;
+  let techId = document.getElementById('feedback-tech-id')?.value;
   const rating = Number(document.getElementById('selected-rating-val')?.value || 5);
   const comment = document.getElementById('feedback-comment')?.value.trim() || '';
   const errEl = document.getElementById('feedback-error');
   if (errEl) errEl.classList.add('hidden');
 
   if (!jobId) return;
+
+  // Ensure techId is properly detected if missing from hidden input
+  if (!techId && window._jobsMap && window._jobsMap[jobId]) {
+    techId = window._jobsMap[jobId].claimedBy || '';
+  }
+  if (!techId) {
+    try {
+      const jDoc = await db.collection('jobs').doc(jobId).get();
+      if (jDoc.exists) {
+        techId = jDoc.data().claimedBy || '';
+      }
+    } catch (e) {}
+  }
 
   const btn = document.getElementById('btn-submit-feedback');
   if (btn) {
@@ -3396,14 +3411,46 @@ async function submitFeedback() {
   }
 
   try {
-    // 1. Update Job Document with Rating
+    // 1. Update Job Document with Rating (all standard field names for 100% compatibility)
     await db.collection('jobs').doc(jobId).update({
       rating: rating,
+      techRating: rating,
+      customerRating: rating,
       feedback: comment,
+      claimedByRating: rating,
       ratedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    // 2. Update Technician aggregate stats
+    // Update in-memory job cache
+    if (window._jobsMap && window._jobsMap[jobId]) {
+      window._jobsMap[jobId].rating = rating;
+      window._jobsMap[jobId].techRating = rating;
+      window._jobsMap[jobId].customerRating = rating;
+      window._jobsMap[jobId].feedback = comment;
+      window._jobsMap[jobId].claimedByRating = rating;
+    }
+    if (typeof allJobs !== 'undefined' && Array.isArray(allJobs)) {
+      const aj = allJobs.find(x => x.id === jobId);
+      if (aj) {
+        aj.rating = rating;
+        aj.techRating = rating;
+        aj.customerRating = rating;
+        aj.feedback = comment;
+        aj.claimedByRating = rating;
+      }
+    }
+    if (typeof allAdminJobs !== 'undefined' && Array.isArray(allAdminJobs)) {
+      const aaj = allAdminJobs.find(x => x.id === jobId);
+      if (aaj) {
+        aaj.rating = rating;
+        aaj.techRating = rating;
+        aaj.customerRating = rating;
+        aaj.feedback = comment;
+        aaj.claimedByRating = rating;
+      }
+    }
+
+    // 2. Attempt to update Technician aggregate stats directly if permitted
     if (techId) {
       try {
         const techRef = db.collection('users').doc(techId);
@@ -3423,11 +3470,11 @@ async function submitFeedback() {
           });
         }
       } catch (e) {
-        console.warn('Could not update tech rating profile:', e);
+        console.warn('Could not update tech rating profile directly (requires technician or admin auth):', e);
       }
     }
 
-    // 3. Save to reviews collection
+    // 3. Save to reviews collection as additional record
     try {
       await db.collection('reviews').add({
         jobId,
@@ -3644,10 +3691,16 @@ function initTechDashboard() {
   document.getElementById('nav-user-name').textContent = currentUserData.name;
   document.getElementById('fab-post').classList.remove('hidden');
 
+  // Trigger live background sync of completed jobs count & rating stats
+  if (currentUser?.uid) {
+    syncTechnicianLiveStats(currentUser.uid);
+  }
+
   const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
   document.getElementById('dash-tabs').innerHTML = `
     <button class="tab-btn active" data-tab="avail" onclick="showTechTab('avail')"><i class="fas fa-list"></i> ${tFn('tab_available', 'Available Jobs')}</button>
     <button class="tab-btn" data-tab="claims" onclick="showTechTab('claims')"><i class="fas fa-handshake"></i> ${tFn('tab_claimed', 'My Claimed')}</button>
+    <button class="tab-btn" data-tab="completed" onclick="showTechTab('completed')"><i class="fas fa-check-circle" style="color:#34d399"></i> ${tFn('tab_completed', 'Completed')}</button>
     <button class="tab-btn" data-tab="post" onclick="showTechTab('post')"><i class="fas fa-plus"></i> ${tFn('tab_post_job', 'Post Job')}</button>
     <button class="tab-btn" data-tab="profile" onclick="showTechTab('profile')"><i class="fas fa-user"></i> ${tFn('tab_profile', 'Profile')}</button>`;
   showTechTab('avail');
@@ -4054,12 +4107,41 @@ function showTechTab(tab) {
       </div>`;
     loadTechJobs();
   } else if (tab === 'claims') {
-    c.innerHTML = `<div class="filter-bar"><h2 style="font-size:1rem;font-weight:800;margin:0"><i class="fas fa-handshake" style="color:var(--success)"></i> My Claimed Jobs</h2></div><div id="tech-claims" class="jobs-grid"><div class="empty-state" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>`;
+    c.innerHTML = `
+      <div class="filter-bar" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <h2 style="font-size:1rem;font-weight:800;margin:0"><i class="fas fa-handshake" style="color:var(--warning)"></i> ක්‍රියාකාරී Claimed Jobs (Active)</h2>
+        <button type="button" class="btn btn-outline btn-sm" onclick="showTechTab('completed')" style="font-size:.78rem;font-weight:700">
+          <i class="fas fa-check-circle" style="color:var(--success)"></i> නිමකළ Jobs බලන්න (Completed)
+        </button>
+      </div>
+      <div id="tech-claims" class="jobs-grid">
+        <div class="empty-state" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Loading active claims...</p></div>
+      </div>`;
     loadTechClaims();
+  } else if (tab === 'completed') {
+    c.innerHTML = `
+      <div class="filter-bar" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <h2 style="font-size:1rem;font-weight:800;margin:0"><i class="fas fa-check-circle" style="color:var(--success)"></i> සාර්ථකව නිමකළ Jobs (Completed)</h2>
+        <button type="button" class="btn btn-outline btn-sm" onclick="showTechTab('claims')" style="font-size:.78rem;font-weight:700">
+          <i class="fas fa-handshake" style="color:var(--warning)"></i> Active Claimed Jobs
+        </button>
+      </div>
+      <div id="tech-completed" class="jobs-grid">
+        <div class="empty-state" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Loading completed jobs...</p></div>
+      </div>`;
+    loadTechCompleted();
   } else if (tab === 'post') {
     showScreen('screen-post-job');
   } else {
     c.innerHTML = renderProfileCard();
+    if (currentUser?.uid) {
+      syncTechnicianLiveStats(currentUser.uid).then(() => {
+        const profWrap = document.querySelector('.profile-wrap');
+        if (profWrap && c) {
+          c.innerHTML = renderProfileCard();
+        }
+      });
+    }
   }
   updateMobileNavState('screen-dashboard');
 }
@@ -4217,16 +4299,67 @@ async function loadTechClaims() {
       }
     }
     const snap = await withTimeout(db.collection('jobs').where('claimedBy', '==', currentUser.uid).get(), 8000);
-    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    // ONLY show active/in-progress claimed jobs here! (status !== 'completed')
+    const docs = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(j => (j.status || '').toLowerCase() !== 'completed')
+      .sort((a, b) => (b.claimedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0) - (a.claimedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0));
+
     if (!docs.length) {
-      el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-handshake"></i><p>Claimed jobs නැත.</p></div>`;
+      el.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <i class="fas fa-handshake" style="color:var(--txt3);font-size:2.5rem;margin-bottom:8px"></i>
+          <p style="font-weight:700">දැනට ක්‍රියාකාරී (Active) Claimed jobs නොමැත.</p>
+          <p style="font-size:0.8rem;color:var(--txt3);margin-bottom:14px">ඔබ විසින් භාරගත් සියලුම Jobs සාර්ථකව අවසන් කර ඇත, නැතහොත් නව Jobs භාරගෙන නොමැත.</p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button type="button" class="btn btn-primary btn-sm" onclick="showTechTab('avail')"><i class="fas fa-list"></i> නව Jobs බලන්න (Available)</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="showTechTab('completed')"><i class="fas fa-check-circle" style="color:var(--success)"></i> නිමකළ Jobs (Completed)</button>
+          </div>
+        </div>`;
       return;
     }
     el.innerHTML = docs.map(j => jobCard(j.id, j, 'tech-claimed')).join('');
   } catch (err) {
     console.error('loadTechClaims error:', err);
     if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Jobs load කිරීමේදී දෝෂයක් ඇති විය. <a href="#" onclick="loadTechClaims()" style="color:var(--primary-l)">නැවත උත්සාහ කරන්න (Retry)</a></p></div>`;
+  }
+}
+
+async function loadTechCompleted() {
+  const el = document.getElementById('tech-completed');
+  if (!el) return;
+  try {
+    if (!currentUser) {
+      await new Promise(r => setTimeout(r, 400));
+      if (!currentUser) {
+        el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-lock"></i><p>කරුණාකර පළමුව Log in වන්න.</p></div>`;
+        return;
+      }
+    }
+    const snap = await withTimeout(db.collection('jobs').where('claimedBy', '==', currentUser.uid).get(), 8000);
+    // ONLY show completed jobs here! (status === 'completed')
+    const docs = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(j => (j.status || '').toLowerCase() === 'completed')
+      .sort((a, b) => (b.completedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0) - (a.completedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0));
+
+    if (!docs.length) {
+      el.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <i class="fas fa-check-circle" style="color:var(--success);font-size:2.5rem;margin-bottom:8px"></i>
+          <p style="font-weight:700">තවමත් සම්පූර්ණ කළ Jobs (Completed) නොමැත.</p>
+          <p style="font-size:0.8rem;color:var(--txt3);margin-bottom:14px">ඔබ භාරගත් Jobs වල වැඩ නිමකර Work Proof Photo සමග "Complete Job" කළ පසු ඒවා මෙහි සුරක්ෂිත වේ.</p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button type="button" class="btn btn-primary btn-sm" onclick="showTechTab('claims')"><i class="fas fa-handshake"></i> ක්‍රියාකාරී Jobs බලන්න (Active Claims)</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="showTechTab('avail')"><i class="fas fa-list"></i> නව Jobs සොයන්න (Available)</button>
+          </div>
+        </div>`;
+      return;
+    }
+    el.innerHTML = docs.map(j => jobCard(j.id, j, 'tech-claimed')).join('');
+  } catch (err) {
+    console.error('loadTechCompleted error:', err);
+    if (el) el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Completed jobs load කිරීමේදී දෝෂයක් ඇති විය. <a href="#" onclick="loadTechCompleted()" style="color:var(--primary-l)">නැවත උත්සාහ කරන්න (Retry)</a></p></div>`;
   }
 }
 
@@ -4303,7 +4436,8 @@ function jobCard(id, job, view) {
   // Work completion & rating prompts for Customer
   let customerCompletionExtraHtml = '';
   if (view === 'customer' && job.status === 'completed') {
-    if (!job.rating) {
+    const jobRatingNum = Number(job.rating || job.techRating || job.customerRating || job.claimedByRating || 0);
+    if (!jobRatingNum) {
       customerCompletionExtraHtml = `
         <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:var(--r-m);padding:10px 12px;margin:8px 0;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <div style="font-size:.78rem;font-weight:700;color:var(--accent)"><i class="fas fa-star"></i> Technician සඳහා Feedback දෙන්න</div>
@@ -4313,7 +4447,7 @@ function jobCard(id, job, view) {
       customerCompletionExtraHtml = `
         <div class="customer-review-card" style="margin:8px 0;padding:8px 12px">
           <div style="font-size:.78rem;font-weight:800;color:#fbbf24;display:flex;align-items:center;gap:6px">
-            <span>${'⭐'.repeat(job.rating)} (${job.rating}/5)</span>
+            <span>${'⭐'.repeat(Math.min(5, Math.max(1, jobRatingNum)))} (${jobRatingNum}/5)</span>
             <span style="font-size:.7rem;color:var(--txt3);font-weight:500">ඔබගේ Feedback</span>
           </div>
           ${job.feedback ? `<div style="font-size:.8rem;color:var(--txt2);margin-top:3px;font-style:italic">"${esc(job.feedback)}"</div>` : ''}
@@ -4373,7 +4507,7 @@ function jobCard(id, job, view) {
     }
   } else if (view === 'customer') {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'View Map')}</button>` : '';
-    const rateBtn = (job.status === 'completed' && !job.rating)
+    const rateBtn = (job.status === 'completed' && !Number(job.rating || job.techRating || job.customerRating || job.claimedByRating || 0))
       ? `<button class="btn btn-rate-tech btn-sm" onclick="openFeedbackModal('${id}')"><i class="fas fa-star"></i> ${tFn('btn_rate_tech', 'Rate')}</button>`
       : '';
     const invBtn = (job.status === 'completed' && job.invoice)
@@ -4834,11 +4968,12 @@ async function openJobModal(jobId) {
     // Customer review or rating prompt
     let customerFeedbackModalHtml = '';
     if (job.status === 'completed') {
-      if (job.rating) {
+      const modalRatingVal = Number(job.rating || job.techRating || job.customerRating || job.claimedByRating || 0);
+      if (modalRatingVal > 0) {
         customerFeedbackModalHtml = `
           <div class="customer-review-card">
             <div class="customer-review-header">
-              <span style="color:#fbbf24;font-weight:800;font-size:.95rem">${'⭐'.repeat(job.rating)} (${job.rating}/5.0)</span>
+              <span style="color:#fbbf24;font-weight:800;font-size:.95rem">${'⭐'.repeat(Math.min(5, Math.max(1, modalRatingVal)))} (${modalRatingVal}/5.0)</span>
               <span style="font-size:.74rem;color:var(--txt3)">Customer Feedback</span>
             </div>
             ${job.feedback ? `<div class="customer-review-comment">"${esc(job.feedback)}"</div>` : '<div style="color:var(--txt3);font-size:.8rem;font-style:italic">No written comment provided.</div>'}
@@ -5743,44 +5878,17 @@ async function openTechDigitalId(techId) {
     const s = Array.isArray(techData.services) ? techData.services.join(' · ') : (techData.serviceType || 'CCTV & Satellite');
     servEl.textContent = s;
   }
-  if (ratingEl) {
-    const r = (techData.avgRating || techData.rating || 5.0).toFixed(1);
-    const c = techData.ratingCount || techData.reviewsCount || 0;
-    ratingEl.innerHTML = `⭐⭐⭐⭐⭐ <strong>${r}</strong> / 5.0 (${c} reviews)`;
-  }
+  // Initial placeholders
+  let initialAvg = Number(techData.avgRating || techData.rating || 5.0).toFixed(1);
+  let initialReviews = Number(techData.ratingCount || techData.reviewsCount || 0);
+  let completedCount = Number(techData.completedJobsCount || 0);
 
-  // Display initial completed jobs count from profile
-  let completedCount = techData.completedJobsCount || 0;
+  if (ratingEl) {
+    const stars = '⭐'.repeat(Math.min(5, Math.max(1, Math.round(Number(initialAvg)))));
+    ratingEl.innerHTML = `${stars} <strong>${initialAvg}</strong> / 5.0 (${initialReviews} ${initialReviews === 1 ? 'review' : 'reviews'})`;
+  }
   if (completedCountEl) {
     completedCountEl.textContent = completedCount;
-  }
-
-  // Fetch real-time completed jobs count to guarantee 100% accuracy
-  try {
-    const completedSnap = await withTimeout(
-      db.collection('jobs')
-        .where('claimedBy', '==', techId)
-        .where('status', '==', 'completed')
-        .get(),
-      6000
-    );
-    if (completedSnap && typeof completedSnap.size === 'number') {
-      completedCount = completedSnap.size;
-      if (completedCountEl) {
-        completedCountEl.textContent = completedCount;
-      }
-      if (techData.completedJobsCount !== completedCount) {
-        techData.completedJobsCount = completedCount;
-        db.collection('users').doc(techId).update({
-          completedJobsCount: completedCount
-        }).catch(e => console.warn('Sync completedJobsCount error:', e));
-        if (currentUser && currentUser.uid === techId && currentUserData) {
-          currentUserData.completedJobsCount = completedCount;
-        }
-      }
-    }
-  } catch (eLiveCount) {
-    console.warn('Live completed jobs count fetch warning:', eLiveCount);
   }
 
   if (avatarImg) {
@@ -5791,7 +5899,165 @@ async function openTechDigitalId(techId) {
     }
   }
 
+  // Open modal immediately so UI is responsive
   openModal('modal-tech-id-card');
+
+  // Fetch real-time completed jobs count AND reviews to guarantee 100% accuracy
+  try {
+    let totalRating = 0;
+    let reviewCount = 0;
+
+    // Single-field equality query (never requires Firestore composite index)
+    const techJobsSnap = await withTimeout(
+      db.collection('jobs')
+        .where('claimedBy', '==', techId)
+        .get(),
+      6000
+    );
+
+    if (techJobsSnap && !techJobsSnap.empty) {
+      completedCount = 0;
+      techJobsSnap.docs.forEach(d => {
+        const j = d.data();
+        const st = (j.status || '').toLowerCase();
+        if (st === 'completed') {
+          completedCount++;
+        }
+        const r = Number(j.rating || j.techRating || j.claimedByRating || j.customerRating || 0);
+        if (r > 0) {
+          totalRating += r;
+          reviewCount++;
+        }
+      });
+    }
+
+    // Also check reviews collection as backup
+    if (reviewCount === 0) {
+      try {
+        const revSnap = await withTimeout(
+          db.collection('reviews')
+            .where('techId', '==', techId)
+            .get(),
+          4000
+        );
+        if (revSnap && !revSnap.empty) {
+          revSnap.docs.forEach(d => {
+            const rev = d.data();
+            const r = Number(rev.rating || 0);
+            if (r > 0) {
+              totalRating += r;
+              reviewCount++;
+            }
+          });
+        }
+      } catch (eRev) {
+        console.warn('Fallback reviews check warning:', eRev);
+      }
+    }
+
+    // Fallback to cached stats on techData if higher
+    if (reviewCount === 0 && Number(techData.ratingCount || 0) > 0) {
+      reviewCount = Number(techData.ratingCount);
+      totalRating = Number(techData.ratingTotal || (reviewCount * Number(techData.avgRating || 5.0)));
+    }
+    if (completedCount === 0 && Number(techData.completedJobsCount || 0) > 0) {
+      completedCount = Number(techData.completedJobsCount);
+    }
+
+    if (completedCountEl) {
+      completedCountEl.textContent = completedCount;
+    }
+
+    let calculatedAvg = 5.0;
+    if (reviewCount > 0) {
+      calculatedAvg = Number((totalRating / reviewCount).toFixed(1));
+      const stars = '⭐'.repeat(Math.min(5, Math.max(1, Math.round(calculatedAvg))));
+      if (ratingEl) {
+        ratingEl.innerHTML = `${stars} <strong>${calculatedAvg.toFixed(1)}</strong> / 5.0 (${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'})`;
+      }
+    } else {
+      if (ratingEl) {
+        ratingEl.innerHTML = `⭐⭐⭐⭐⭐ <strong>5.0</strong> / 5.0 (0 reviews)`;
+      }
+    }
+
+    // Sync to technician document
+    if (currentUser && currentUser.uid === techId) {
+      db.collection('users').doc(techId).update({
+        completedJobsCount: completedCount,
+        ratingCount: reviewCount,
+        ratingTotal: totalRating,
+        avgRating: calculatedAvg,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(e => console.warn('Sync completedJobsCount/rating error:', e));
+
+      if (currentUserData) {
+        currentUserData.completedJobsCount = completedCount;
+        currentUserData.ratingCount = reviewCount;
+        currentUserData.ratingTotal = totalRating;
+        currentUserData.avgRating = calculatedAvg;
+      }
+    }
+  } catch (eLiveCount) {
+    console.warn('Live completed jobs & reviews count fetch warning:', eLiveCount);
+  }
+}
+
+// Background sync for technician stats
+async function syncTechnicianLiveStats(techId) {
+  if (!techId) return;
+  try {
+    const techJobsSnap = await withTimeout(
+      db.collection('jobs')
+        .where('claimedBy', '==', techId)
+        .get(),
+      6000
+    );
+    let completedCount = 0;
+    let totalRating = 0;
+    let reviewCount = 0;
+
+    if (techJobsSnap && !techJobsSnap.empty) {
+      techJobsSnap.docs.forEach(d => {
+        const j = d.data();
+        const st = (j.status || '').toLowerCase();
+        if (st === 'completed') completedCount++;
+        const r = Number(j.rating || j.techRating || j.claimedByRating || j.customerRating || 0);
+        if (r > 0) {
+          totalRating += r;
+          reviewCount++;
+        }
+      });
+    }
+
+    if (reviewCount === 0 && Number(currentUserData?.ratingCount || 0) > 0) {
+      reviewCount = Number(currentUserData.ratingCount);
+      totalRating = Number(currentUserData.ratingTotal || (reviewCount * Number(currentUserData.avgRating || 5.0)));
+    }
+    if (completedCount === 0 && Number(currentUserData?.completedJobsCount || 0) > 0) {
+      completedCount = Number(currentUserData.completedJobsCount);
+    }
+
+    const calculatedAvg = reviewCount > 0 ? Number((totalRating / reviewCount).toFixed(1)) : 5.0;
+
+    if (currentUser && currentUser.uid === techId) {
+      if (currentUserData) {
+        currentUserData.completedJobsCount = completedCount;
+        currentUserData.ratingCount = reviewCount;
+        currentUserData.ratingTotal = totalRating;
+        currentUserData.avgRating = calculatedAvg;
+      }
+      db.collection('users').doc(techId).update({
+        completedJobsCount: completedCount,
+        ratingCount: reviewCount,
+        ratingTotal: totalRating,
+        avgRating: calculatedAvg,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(e => console.warn('Sync tech stats err:', e));
+    }
+  } catch (e) {
+    console.warn('syncTechnicianLiveStats error:', e);
+  }
 }
 
 // Digital Invoice Logic
@@ -6050,6 +6316,9 @@ window.calculateInvoiceTotal = calculateInvoiceTotal;
 window.saveDigitalInvoice = saveDigitalInvoice;
 window.sendInvoiceToCustomerWhatsApp = sendInvoiceToCustomerWhatsApp;
 window.shareExistingInvoiceWhatsApp = shareExistingInvoiceWhatsApp;
+window.showTechTab = showTechTab;
+window.loadTechClaims = loadTechClaims;
+window.loadTechCompleted = loadTechCompleted;
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────
 function initAdminDashboard() {
@@ -7034,7 +7303,10 @@ function renderProfileCard() {
       ${u.district ? `<div class="profile-row"><label><i class="fas fa-map-marker-alt"></i> District / City</label><span>${esc(u.city ? `${u.district}, ${u.city}` : u.district)}</span></div>` : ''}
       ${u.serviceType ? `<div class="profile-row"><label><i class="fas fa-tools"></i> Service</label><span class="type-badge ${esc(u.serviceType)}" style="font-size:.85rem">${esc(u.serviceType)}</span></div>` : ''}
       ${u.status ? `<div class="profile-row"><label><i class="fas fa-circle"></i> Status</label><span style="color:${statusColor};font-weight:700">${u.status}</span></div>` : ''}
-      ${u.role === 'technician' ? `<div class="profile-row"><label><i class="fas fa-check-circle" style="color:var(--success)"></i> සම්පූර්ණ කළ Jobs</label><span style="color:#34d399;font-weight:800">${u.completedJobsCount || 0} Jobs Completed</span></div>` : ''}
+      ${u.role === 'technician' ? `
+        <div class="profile-row"><label><i class="fas fa-check-circle" style="color:var(--success)"></i> සම්පූර්ණ කළ Jobs</label><span style="color:#34d399;font-weight:800">${u.completedJobsCount || 0} Jobs Completed</span></div>
+        <div class="profile-row"><label><i class="fas fa-star" style="color:#f59e0b"></i> Rating</label><span>⭐ <strong>${Number(u.avgRating || 5.0).toFixed(1)}</strong> / 5.0 (${u.ratingCount || 0} reviews)</span></div>
+      ` : ''}
       ${u.photoUrl ? `<div class="profile-row"><label><i class="fas fa-camera"></i> Live Selfie</label><span style="color:var(--success);font-weight:700;cursor:pointer" onclick="previewPhoto('${u.photoUrl}','${esc(u.name)}')"><i class="fas fa-check-circle"></i> Verified (View)</span></div>` : ''}
       ${u.role === 'technician' && u.pendingPhotoUrl ? `
       <div class="pending-selfie-alert-banner">

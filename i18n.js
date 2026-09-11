@@ -112,6 +112,7 @@ const I18N = {
     // Dashboard Tabs
     tab_available: 'Available Jobs',
     tab_claimed: 'My Claimed Jobs',
+    tab_completed: 'සම්පූර්ණ කළ (Completed)',
     tab_my_jobs: 'My Posted Jobs',
     tab_post_job: 'Post Job',
     tab_profile: 'Profile',
@@ -471,6 +472,7 @@ const I18N = {
     // Dashboard Tabs
     tab_available: 'Available Jobs',
     tab_claimed: 'My Claimed Jobs',
+    tab_completed: 'Completed Jobs',
     tab_my_jobs: 'My Posted Jobs',
     tab_post_job: 'Post Job',
     tab_profile: 'Profile',
@@ -830,6 +832,7 @@ const I18N = {
     // Dashboard Tabs
     tab_available: 'கிடைக்கும் வேலைகள்',
     tab_claimed: 'ஏற்றுக்கொண்ட வேலைகள்',
+    tab_completed: 'முடிக்கப்பட்டவை (Completed)',
     tab_my_jobs: 'என் வேலைகள்',
     tab_post_job: 'வேலை பதிவிடுக',
     tab_profile: 'சுயவிவரம்',
