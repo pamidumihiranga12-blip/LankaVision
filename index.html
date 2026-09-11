@@ -70,6 +70,7 @@
             <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
             <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
           </div>
+          <button type="button" class="btn btn-outline btn-sm btn-help-nav" onclick="openHelpGuide()" title="How to use"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> <span data-i18n="btn_help_guide">💡 භාවිතා කරන හැටි</span></button>
           <button type="button" class="icon-btn notif-bell-btn" onclick="toggleNotificationPanel()" title="Notifications" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-badge hidden" id="notif-badge-landing">0</span></button>
           <button class="btn btn-ghost btn-sm nav-login-btn" onclick="showScreen('screen-login')"><i class="fas fa-sign-in-alt"></i> <span data-i18n="nav_login">Login</span></button>
           <button class="btn btn-primary btn-sm nav-reg-btn" onclick="showRegisterOptions()"><i class="fas fa-user-plus"></i> <span data-i18n="nav_register">Register</span></button>
@@ -81,6 +82,7 @@
           <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
           <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
         </div>
+        <button type="button" class="btn btn-outline btn-sm btn-help-mobile" onclick="openHelpGuide()"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> <span data-i18n="btn_help_guide">භාවිතා කරන හැටි</span></button>
       </div>
     </nav>
     <section class="hero-section">
@@ -107,6 +109,21 @@
         </div>
       </div>
     </section>
+
+    <!-- ====== DIRECT HOTLINE BANNER (NON-TECH USERS) ====== -->
+    <div class="landing-hotline-bar">
+      <div class="lhb-content">
+        <div class="lhb-icon-wrap"><i class="fas fa-headset"></i></div>
+        <div class="lhb-text">
+          <strong data-i18n="hotline_text">App එකෙන් Job එකක් දාන්න අමාරුද? අපට කෙලින්ම කතා කරන්න</strong>
+          <span>CCTV, Satellite &amp; Wi-Fi Router ක්ෂණික සහාය සහ උපදෙස්</span>
+        </div>
+      </div>
+      <div class="lhb-actions">
+        <a href="tel:+94786800086" class="btn btn-success btn-sm"><i class="fas fa-phone-alt"></i> 078 680 0086</a>
+        <a href="https://wa.me/94786800086?text=Hello%20LankaVision%20Support%20මට%20Job%20එකක්%20දාන්න%20උදව්%20ඕනේ" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp btn-sm"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+      </div>
+    </div>
     <section class="features-section">
       <div class="feature-card"><div class="feature-icon"><i class="fas fa-map-marked-alt"></i></div><h3 data-i18n="feat_dist">District Smart Matching</h3><p data-i18n="feat_dist_desc">Technicians instantly see jobs available only within their home district or nearby regions.</p></div>
       <div class="feature-card"><div class="feature-icon"><i class="fas fa-shield-alt"></i></div><h3 data-i18n="feat_priv">Phone Privacy Protected</h3><p data-i18n="feat_priv_desc">Customer phone number is hidden until a technician accepts the job.</p></div>
@@ -310,9 +327,15 @@
     <div class="centered-screen">
       <div class="big-icon pulsing" style="color:var(--warning)"><i class="fas fa-clock"></i></div>
       <h2 data-i18n="pending_review_title">Under Review (Pending)</h2>
-      <p style="color:var(--txt2);max-width:320px" data-i18n="pending_review_desc">Your technician application is currently under review by our admin team. You can log in once approved. (24–48 hrs)</p>
-      <div class="info-pill"><i class="fas fa-envelope"></i> <span data-i18n="pending_wait_admin">Awaiting admin approval</span></div>
-      <button class="btn btn-outline" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> <span data-i18n="nav_logout">Logout</span></button>
+      <p style="color:var(--txt2);max-width:340px;line-height:1.5" data-i18n="pending_review_desc">ඔබගේ Technician අයදුම්පත මේ වන විට අපගේ පරිපාලක කණ්ඩායම විසින් පරීක්ෂා කරමින් පවතී. අනුමත වූ පසු ඔබට ලොග් විය හැක.</p>
+      <div class="info-pill"><i class="fas fa-shield-alt"></i> <span data-i18n="pending_wait_admin">Awaiting admin approval (24–48 hrs)</span></div>
+      
+      <!-- Instant Admin WhatsApp Approval Button -->
+      <a href="https://wa.me/94786800086?text=Hello%20Admin,%20මම%20LankaVision%20Technician%20කෙනෙක්%20ලෙස%20Register%20වුණා.%20කරුණාකර%20මගේ%20Account%20එක%20Approve%20කරන්න." target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp" style="margin-top:14px;padding:12px 18px;font-size:0.88rem">
+        <i class="fab fa-whatsapp" style="font-size:1.1rem"></i> <span>ඉක්මන් අනුමැතිය සඳහා Admin ට WhatsApp කරන්න 📲</span>
+      </a>
+
+      <button class="btn btn-outline btn-sm" onclick="handleLogout()" style="margin-top:10px"><i class="fas fa-sign-out-alt"></i> <span data-i18n="nav_logout">Logout</span></button>
     </div>
   </div>
 
@@ -326,7 +349,16 @@
     </div>
     <div class="page-content">
       <div class="form-card">
-        <h2><i class="fas fa-briefcase" style="color:var(--primary-l)"></i> <span data-i18n="post_job_title">New Job Request</span></h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <h2 style="margin:0"><i class="fas fa-briefcase" style="color:var(--primary-l)"></i> <span data-i18n="post_job_title">New Job Request</span></h2>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openHelpGuide('customer')"><i class="fas fa-question-circle"></i> <span data-i18n="btn_help_guide">භාවිතා කරන හැටි</span></button>
+        </div>
+
+        <div class="post-job-hotline-tip">
+          <i class="fas fa-phone-alt" style="color:var(--success)"></i>
+          <span>Job එක දාන්න අපහසු නම් කෙලින්ම කතා කරන්න: <a href="tel:+94786800086" style="color:var(--primary-l);font-weight:700">078 680 0086</a></span>
+        </div>
+
         <form id="post-job-form" onsubmit="handlePostJob(event)">
 
           <!-- Guest info -->
@@ -341,11 +373,35 @@
           <div class="form-group">
             <label><i class="fas fa-tools"></i> <span data-i18n="job_type_label">Job Type</span></label>
             <div class="type-select">
-              <label class="type-opt"><input type="radio" name="job-type" value="CCTV" required /><span><i class="fas fa-video"></i> CCTV</span></label>
-              <label class="type-opt"><input type="radio" name="job-type" value="Satellite" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
-              <label class="type-opt"><input type="radio" name="job-type" value="Router" /><span><i class="fas fa-wifi"></i> Router Installation</span></label>
+              <label class="type-opt"><input type="radio" name="job-type" value="CCTV" required onchange="renderQuickIssuesForType('CCTV')" /><span><i class="fas fa-video"></i> CCTV</span></label>
+              <label class="type-opt"><input type="radio" name="job-type" value="Satellite" onchange="renderQuickIssuesForType('Satellite')" /><span><i class="fas fa-satellite-dish"></i> Satellite</span></label>
+              <label class="type-opt"><input type="radio" name="job-type" value="Router" onchange="renderQuickIssuesForType('Router')" /><span><i class="fas fa-wifi"></i> Router Installation</span></label>
             </div>
           </div>
+
+          <!-- Quick Problem Selector Chips -->
+          <div class="form-group" id="quick-problem-container">
+            <label style="display:flex;align-items:center;gap:6px">
+              <i class="fas fa-bolt" style="color:#fbbf24"></i>
+              <span data-i18n="quick_issues_title">⚡ නිතර ඇතිවන ගැටලු (එක Click එකකින් තෝරන්න):</span>
+            </label>
+            <div class="quick-issue-chips" id="quick-problem-chips">
+              <!-- Rendered dynamically on load or radio change -->
+            </div>
+          </div>
+
+          <!-- Urgent / Express Job Toggle -->
+          <div class="form-group urgent-job-group">
+            <label class="urgent-toggle-card">
+              <input type="checkbox" id="job-is-urgent" />
+              <div class="urgent-icon"><i class="fas fa-fire-alt"></i></div>
+              <div class="urgent-text-block">
+                <div class="urgent-title" data-i18n="lbl_urgent_job">🔴 හදිසි සේවාවක් (අදම අවශ්‍යයි - Urgent)</div>
+                <div class="urgent-desc" data-i18n="urgent_job_hint">හදිසි breakdown හෝ security ගැටලුවක් නම් මෙය තෝරන්න. අවට Technicians ලාට ක්ෂණික Alert ලැබේ.</div>
+              </div>
+            </label>
+          </div>
+
           <div class="form-group"><label><i class="fas fa-heading"></i> <span data-i18n="job_title_label">Job Title</span></label><input type="text" id="job-title" placeholder="e.g. CCTV installation at my shop" required /></div>
           <div class="form-group"><label><i class="fas fa-align-left"></i> <span data-i18n="job_desc_label">Description</span></label><textarea id="job-desc" rows="3" placeholder="Describe the job in detail..." required></textarea></div>
           <div class="form-group">
@@ -408,6 +464,7 @@
           <button type="button" class="lang-btn" onclick="setLanguage('si')" title="Sinhala">සිංහල</button>
           <button type="button" class="lang-btn" onclick="setLanguage('ta')" title="Tamil">தமிழ்</button>
         </div>
+        <button type="button" class="btn btn-outline btn-sm btn-help-nav" onclick="openHelpGuide()" title="How to use"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> <span data-i18n="btn_help_guide">💡 භාවිතා කරන හැටි</span></button>
         <span id="nav-user-name" class="nav-name"></span>
         <button type="button" class="icon-btn notif-bell-btn" onclick="toggleNotificationPanel()" title="Notifications" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-badge hidden" id="notif-badge-dash">0</span></button>
         <div class="menu-wrap">
@@ -415,6 +472,7 @@
           <div id="nav-dropdown" class="nav-dropdown hidden">
             <a id="dd-my-jobs" onclick="goToMyJobs()"><i class="fas fa-briefcase"></i> <span data-i18n="nav_my_jobs">My Jobs</span></a>
             <a onclick="goToProfile()"><i class="fas fa-user"></i> <span data-i18n="nav_profile">Profile</span></a>
+            <a onclick="openHelpGuide()"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> <span data-i18n="btn_help_guide">💡 භාවිතා කරන හැටි</span></a>
             <a onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> <span data-i18n="nav_logout">Logout</span></a>
           </div>
         </div>
@@ -980,6 +1038,267 @@
       </div>
       <div id="modal-photo-caption" class="photo-modal-caption"></div>
       <button type="button" class="btn btn-ghost btn-sm btn-full" onclick="closeModal('modal-photo-preview')" style="margin-top:14px;border:1px solid rgba(255,255,255,0.12)">
+        <i class="fas fa-times"></i> Close (වසන්න)
+      </button>
+    </div>
+  </div>
+
+  <!-- ====== 💡 HOW TO USE / HELP GUIDE MODAL ====== -->
+  <div id="modal-help-guide" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('modal-help-guide')"></div>
+    <div class="modal-box help-guide-modal-box">
+      <button class="modal-close" onclick="closeModal('modal-help-guide')"><i class="fas fa-times"></i></button>
+      
+      <div style="text-align:center;margin-bottom:16px">
+        <div class="help-modal-icon-badge">
+          <i class="fas fa-lightbulb"></i>
+        </div>
+        <h2 style="font-size:1.25rem;font-weight:800;margin:0 0 6px 0" data-i18n="help_modal_title">LankaVision Pro භාවිතා කරන ආකාරය</h2>
+        <p style="font-size:0.84rem;color:var(--txt2);margin:0;line-height:1.4" data-i18n="help_modal_sub">පාරිභෝගිකයින්ට සහ Technicians ලාට පහසුවෙන්ම වැඩ කිරීමට සරල උපදෙස්</p>
+      </div>
+
+      <!-- Guide Role Tabs -->
+      <div class="help-role-tabs">
+        <button type="button" class="help-role-btn active" id="tab-help-cust" onclick="switchHelpTab('customer')">
+          <i class="fas fa-user"></i> <span data-i18n="help_tab_customer">👤 පාරිභෝගිකයින්ට (Customer)</span>
+        </button>
+        <button type="button" class="help-role-btn" id="tab-help-tech" onclick="switchHelpTab('technician')">
+          <i class="fas fa-tools"></i> <span data-i18n="help_tab_tech">🔧 Technicians ලාට</span>
+        </button>
+      </div>
+
+      <!-- Customer Guide Steps -->
+      <div id="help-content-cust" class="help-guide-content">
+        <div class="help-step-card">
+          <div class="hsc-num">1</div>
+          <div class="hsc-body">
+            <h4 data-i18n="help_cust_step1_t">1. සරලව Job එකක් දාන්න</h4>
+            <p data-i18n="help_cust_step1_d">ඔබේ නම, දුරකථන අංකය, අවශ්‍ය සේවාව (CCTV / Satellite / Router) සහ දිස්ත්‍රික්කය තෝරා Job එක Post කරන්න. අවශ්‍ය නම් නිතර ඇතිවන ගැටලු (Quick Problem) එක ක්ලික් එකෙන් තෝරන්න.</p>
+          </div>
+        </div>
+
+        <div class="help-step-card">
+          <div class="hsc-num">2</div>
+          <div class="hsc-body">
+            <h4 data-i18n="help_cust_step2_t">2. Technician කෙනෙක් භාරගැනීම</h4>
+            <p data-i18n="help_cust_step2_d">ඔබේ ප්‍රදේශයේ ලියාපදිංචි verified technician කෙනෙක් ඔබේ Job එක භාරගත් සැණින් ඔබට දැනුම්දීමක් ලැබේ. Technician ගේ නම, Photo එක සහ දුරකථන අංකය දිස්වේ.</p>
+          </div>
+        </div>
+
+        <div class="help-step-card">
+          <div class="hsc-num">3</div>
+          <div class="hsc-body">
+            <h4 data-i18n="help_cust_step3_t">3. පැමිණෙන වේලාව සහ හැඳුනුම්පත</h4>
+            <p data-i18n="help_cust_step3_d">Technician ඔබ අමතා පැමිණෙන වේලාව තහවුරු කරනු ඇත. නිවසට පැමිණි විට LankaVision Verified Digital ID කාඩ්පත පරීක්ෂා කර බැලිය හැක.</p>
+          </div>
+        </div>
+
+        <div class="help-step-card">
+          <div class="hsc-num">4</div>
+          <div class="hsc-body">
+            <h4 data-i18n="help_cust_step4_t">4. වැඩ අවසන් වීම සහ ඩිජිටල් බිල</h4>
+            <p data-i18n="help_cust_step4_d">වැඩ අවසන් වූ පසු Technician විසින් Live Photo එකක් දමා තහවුරු කරයි. ඉන්පසු WhatsApp හරහා නිල ඩිජිටල් බිල (Invoice) ලබාගෙන, ඔබගේ තරු 5 Rating එක ලබා දෙන්න.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Technician Guide Steps -->
+      <div id="help-content-tech" class="help-guide-content hidden">
+        <div class="help-step-card">
+          <div class="hsc-num" style="background:linear-gradient(135deg,#f59e0b,#d97706)">1</div>
+          <div class="hsc-body">
+            <h4 data-i18n="help_tech_step1_t">1. ළඟම ඇති Jobs බලන්න (36 km)</h4>
+            <p data-i18n="help_tech_step1_d">ඔබ සිටින ස්ථානයේ සිට 36 km ඇතුළත ඇති නව Jobs ඔබට පෙනේ. සිතියම (Map) මඟින් Job එක ඇති ස්ථානය පහසුවෙන් බලාගත හැක.</p>
+          </div>
+        </div>
+
+        <div class="help-step-card">
+          <div class="hsc-num" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">2</div>
+          <div class="hsc-body">
+            <h4 data-i18n="help_tech_step2_t">2. Job එකක් භාරගැනීම (Accept)</h4>
+            <p data-i18n="help_tech_step2_d">Job එක භාරගත් සැණින් Customer ගේ දුරකථන අංකය සහ WhatsApp Unlock වේ. පාරිභෝගිකයාට කතා කර පැමිණෙන දිනය/වේලාව Schedule කරන්න.</p>
+          </div>
+        </div>
+
+        <div class="help-step-card">
+          <div class="hsc-num" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">3</div>
+          <div class="hsc-body">
+            <h4 data-i18n="help_tech_step3_t">3. Active Job අගුල (Next Job Unlock)</h4>
+            <p data-i18n="help_tech_step3_d">ඔබ භාරගත් Job එකට Visit එකක් Schedule කළ පසු හෝ Complete කළ පසු ඔබට ඊළඟ Jobs භාරගැනීමට ඉඩ ලැබේ.</p>
+          </div>
+        </div>
+
+        <div class="help-step-card">
+          <div class="hsc-num" style="background:linear-gradient(135deg,#10b981,#059669)">4</div>
+          <div class="hsc-body">
+            <h4 data-i18n="help_tech_step4_t">4. Live Photo එකෙන් Complete කර බිල යවන්න</h4>
+            <p data-i18n="help_tech_step4_d">වැඩ අවසන් වූ ස්ථානයේ Live Photo එකක් ගෙන Job එක Complete කරන්න. ඉන්පසු Digital Invoice එක සකසා Customer ගේ WhatsApp එකට කෙලින්ම බිල යවන්න.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Hotline inside guide -->
+      <div class="help-footer-contact">
+        <i class="fas fa-headset" style="color:var(--primary-l);font-size:1.2rem"></i>
+        <span>වැඩිදුර විමසීම් සඳහා: <a href="https://wa.me/94786800086" target="_blank" rel="noopener noreferrer" style="color:var(--success);font-weight:700"><i class="fab fa-whatsapp"></i> +94 78 680 0086</a></span>
+      </div>
+
+      <button type="button" class="btn btn-primary btn-full" onclick="closeModal('modal-help-guide')" style="margin-top:14px">
+        <i class="fas fa-check"></i> <span>හරි, මට තේරුණා (Got it)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ====== 🧾 DIGITAL INVOICE & BILL MODAL ====== -->
+  <div id="modal-digital-invoice" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('modal-digital-invoice')"></div>
+    <div class="modal-box invoice-modal-box">
+      <button class="modal-close" onclick="closeModal('modal-digital-invoice')"><i class="fas fa-times"></i></button>
+      
+      <div class="invoice-header-strip">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="inv-logo-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+          <div>
+            <h3 style="margin:0;font-size:1.15rem;font-weight:800" data-i18n="modal_invoice_title">LankaVision සේවා බිල (Digital Invoice)</h3>
+            <span style="font-size:0.75rem;color:var(--txt3)" id="inv-job-number">INV-#0000</span>
+          </div>
+        </div>
+        <div class="inv-verified-seal"><i class="fas fa-check-circle"></i> Official Invoice</div>
+      </div>
+
+      <!-- Invoice Form (Technician Edit Mode) -->
+      <form id="invoice-edit-form" class="hidden" onsubmit="saveDigitalInvoice(event)">
+        <input type="hidden" id="inv-edit-job-id" />
+        
+        <div class="form-group">
+          <label><i class="fas fa-wrench"></i> <span data-i18n="inv_labour_fee">සේවා ගාස්තුව / වැඩ කුලිය (Labour Fee - රු.)</span> <span style="color:var(--danger)">*</span></label>
+          <input type="number" id="inv-input-labour" min="0" step="50" placeholder="e.g. 2500" required oninput="calculateInvoiceTotal()" />
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-boxes"></i> <span data-i18n="inv_parts_cost">අමතර කොටස් / උපකරණ වියදම (Parts Cost - රු.)</span></label>
+          <input type="number" id="inv-input-parts" min="0" step="50" placeholder="e.g. 4500" value="0" oninput="calculateInvoiceTotal()" />
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-clipboard-list"></i> <span data-i18n="inv_parts_desc">යෙදූ උපකරණ විස්තර (Parts Details)</span></label>
+          <textarea id="inv-input-parts-desc" rows="2" placeholder="e.g. RG6 Cable 25m, 4x BNC Connectors, 12V Power Adapter"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-shield-alt"></i> <span data-i18n="inv_warranty">වගකීම් කාලය (Warranty Period)</span></label>
+          <select id="inv-input-warranty">
+            <option value="No Warranty" data-i18n="inv_opt_no_warranty">වගකීමක් නැත (No Warranty)</option>
+            <option value="1 Month" data-i18n="inv_opt_1m">මාස 1ක Service Warranty</option>
+            <option value="3 Months" selected data-i18n="inv_opt_3m">මාස 3ක Service Warranty</option>
+            <option value="6 Months" data-i18n="inv_opt_6m">මාස 6ක Service Warranty</option>
+            <option value="1 Year" data-i18n="inv_opt_1y">අවුරුදු 1ක Warranty</option>
+          </select>
+        </div>
+
+        <div class="inv-total-banner">
+          <span style="font-size:0.92rem;font-weight:700" data-i18n="inv_total">මුළු මුදල (Total Amount):</span>
+          <span class="inv-total-amount" id="inv-calc-total">රු. 0.00</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+          <button type="submit" class="btn btn-primary" id="btn-save-inv">
+            <i class="fas fa-save"></i> <span data-i18n="btn_save_invoice">බිල Save කරන්න 💾</span>
+          </button>
+          <button type="button" class="btn btn-whatsapp" id="btn-wa-inv" onclick="sendInvoiceToCustomerWhatsApp()">
+            <i class="fab fa-whatsapp"></i> <span>WhatsApp යවන්න 📲</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Invoice View Mode (Read-Only Printable Receipt for Customer / Tech) -->
+      <div id="invoice-view-card" class="invoice-receipt-paper hidden">
+        <div class="irp-brand">
+          <i class="fas fa-satellite-dish" style="color:var(--primary-l);font-size:1.6rem"></i>
+          <div>
+            <div style="font-weight:900;font-size:1.15rem">LankaVision Pro</div>
+            <div style="font-size:0.72rem;color:var(--txt3)">Certified CCTV &amp; Satellite Service Receipt</div>
+          </div>
+        </div>
+        <hr class="irp-divider" />
+        <div class="irp-grid">
+          <div><small>Job:</small> <strong id="irp-job-title">Job Title</strong></div>
+          <div><small>Date:</small> <span id="irp-job-date">2026-09-11</span></div>
+          <div><small>Customer:</small> <span id="irp-cust-name">-</span></div>
+          <div><small>Technician:</small> <span id="irp-tech-name">-</span></div>
+        </div>
+        <div class="irp-table">
+          <div class="irp-row"><span data-i18n="inv_labour_fee">Service / Labour Fee:</span><strong id="irp-labour">රු. 0</strong></div>
+          <div class="irp-row"><span data-i18n="inv_parts_cost">Materials / Parts:</span><strong id="irp-parts">රු. 0</strong></div>
+          <div class="irp-parts-note" id="irp-parts-note"></div>
+          <div class="irp-row irp-warranty-row"><span><i class="fas fa-shield-alt"></i> Warranty:</span><span class="irp-warranty-badge" id="irp-warranty">-</span></div>
+          <div class="irp-row irp-total-row"><span>Total Amount:</span><span class="irp-grand-total" id="irp-total">රු. 0</span></div>
+        </div>
+        <div class="irp-footer-note">
+          <i class="fas fa-check-circle" style="color:var(--success)"></i> Payment confirmed &amp; verified via LankaVision Pro
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button type="button" class="btn btn-outline btn-sm btn-full" onclick="window.print()"><i class="fas fa-print"></i> Print / Save PDF</button>
+          <button type="button" class="btn btn-whatsapp btn-sm btn-full" id="btn-irp-share-wa" onclick="shareExistingInvoiceWhatsApp()"><i class="fab fa-whatsapp"></i> WhatsApp Share</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ====== 🪪 TECHNICIAN DIGITAL ID PASS MODAL ====== -->
+  <div id="modal-tech-id-card" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('modal-tech-id-card')"></div>
+    <div class="modal-box tech-id-modal-box">
+      <button class="modal-close" onclick="closeModal('modal-tech-id-card')"><i class="fas fa-times"></i></button>
+      
+      <!-- Official Digital ID Card Container -->
+      <div class="digital-id-pass" id="digital-id-pass">
+        <!-- Top Hologram Banner -->
+        <div class="dip-top-banner">
+          <div class="dip-brand">
+            <i class="fas fa-satellite-dish"></i> <span>LANKAVISION PRO</span>
+          </div>
+          <div class="dip-certified-chip">
+            <i class="fas fa-shield-alt"></i> VERIFIED
+          </div>
+        </div>
+
+        <!-- ID Card Body -->
+        <div class="dip-body">
+          <div class="dip-avatar-wrap">
+            <img id="dip-avatar-img" src="" alt="Technician" />
+            <div class="dip-badge-icon"><i class="fas fa-check"></i></div>
+          </div>
+          <div class="dip-info">
+            <div class="dip-name" id="dip-tech-name">Technician Name</div>
+            <div class="dip-role" data-i18n="tech_id_badge_verified">CERTIFIED &amp; VERIFIED TECHNICIAN</div>
+            <div class="dip-meta-row">
+              <span class="dip-id-num" id="dip-tech-id">LV-PRO-0000</span>
+              <span class="dip-district" id="dip-tech-district">Colombo</span>
+            </div>
+            <div class="dip-services" id="dip-tech-services">CCTV, Satellite</div>
+            <div class="dip-rating" id="dip-tech-rating">⭐⭐⭐⭐⭐ 5.0 / 5</div>
+          </div>
+        </div>
+
+        <!-- QR & Security Strip -->
+        <div class="dip-security-strip">
+          <div class="dip-sec-left">
+            <div style="font-size:0.72rem;font-weight:700;color:#38bdf8"><i class="fas fa-fingerprint"></i> SECURE DIGITAL CREDENTIAL</div>
+            <div style="font-size:0.65rem;color:var(--txt3)" data-i18n="tech_id_issued_by">LankaVision Pro Island-wide Network</div>
+          </div>
+          <div class="dip-qr-fake">
+            <i class="fas fa-qrcode"></i>
+          </div>
+        </div>
+      </div>
+
+      <p class="dip-help-hint" data-i18n="tech_id_show_hint">
+        💡 පාරිභෝගික නිවසට පැමිණි පසු මෙම ඩිජිටල් හැඳුනුම්පත පෙන්වා අනන්‍යතාවය තහවුරු කරන්න.
+      </p>
+
+      <button type="button" class="btn btn-outline btn-full" onclick="closeModal('modal-tech-id-card')" style="margin-top:12px">
         <i class="fas fa-times"></i> Close (වසන්න)
       </button>
     </div>

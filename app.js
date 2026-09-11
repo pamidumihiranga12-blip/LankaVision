@@ -1782,6 +1782,8 @@ function showScreen(id) {
   if (id === 'screen-post-job') {
     setTimeout(initPostJobMap, 200);
     updatePostJobScreen();
+    const checkedType = document.querySelector('input[name="job-type"]:checked')?.value || 'CCTV';
+    if (typeof renderQuickIssuesForType === 'function') renderQuickIssuesForType(checkedType);
   }
   updateMobileNavState(id);
 }
@@ -3815,11 +3817,12 @@ function jobCard(id, job, view) {
           ${techRatingHtml}
         </div>
         <div class="assigned-tech-name">${esc(techName)}</div>
-        ${techPhone ? `
         <div class="assigned-tech-actions">
+          ${techPhone ? `
           <a href="tel:${esc(techPhone)}" class="btn btn-success btn-sm" onclick="event.stopPropagation()"><i class="fas fa-phone"></i> Call</a>
-          <a href="https://wa.me/94${cleanTechPhone}" target="_blank" class="btn btn-whatsapp btn-sm" onclick="event.stopPropagation()"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-        </div>` : ''}
+          <a href="https://wa.me/94${cleanTechPhone}" target="_blank" class="btn btn-whatsapp btn-sm" onclick="event.stopPropagation()"><i class="fab fa-whatsapp"></i> WhatsApp</a>` : ''}
+          ${job.claimedBy ? `<button type="button" class="btn btn-outline btn-sm" onclick="event.stopPropagation();openTechDigitalId('${job.claimedBy}')" style="font-size:0.74rem;padding:3px 8px;border:1px solid rgba(255,255,255,0.2)" title="Technician Verified Digital ID"><i class="fas fa-id-card"></i> ${tFn('btn_view_id', 'Digital ID')}</button>` : ''}
+        </div>
       </div>
     </div>`;
   }
@@ -3882,17 +3885,31 @@ function jobCard(id, job, view) {
     }
   } else if (view === 'tech-claimed' || (myJob && view !== 'customer')) {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'Map')}</button>` : '';
-    const schedBtn = `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openScheduleModal('${id}')"><i class="fas fa-calendar-alt"></i> ${job.scheduledDate ? tFn('btn_reschedule', 'Reschedule') : tFn('btn_schedule', 'Schedule')}</button>`;
-    actions = `${schedBtn}<button class="btn btn-success btn-sm" onclick="openCompleteJobModal('${id}')"><i class="fas fa-camera"></i> ${tFn('btn_complete_job', 'Complete Job')}</button>${mapBtn}`;
+    if (job.status === 'completed') {
+      const invBtn = job.invoice
+        ? `<button class="btn btn-invoice btn-sm" onclick="event.stopPropagation();viewDigitalInvoice('${id}')"><i class="fas fa-file-invoice"></i> ${tFn('btn_view_invoice', 'Bill')}</button>`
+        : `<button class="btn btn-invoice btn-sm" onclick="event.stopPropagation();openDigitalInvoiceModal('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${tFn('btn_make_invoice', 'Bill හදන්න')}</button>`;
+      actions = `${invBtn}<button class="btn btn-ghost btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-eye"></i> View</button>${mapBtn}`;
+    } else {
+      const schedBtn = `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openScheduleModal('${id}')"><i class="fas fa-calendar-alt"></i> ${job.scheduledDate ? tFn('btn_reschedule', 'Reschedule') : tFn('btn_schedule', 'Schedule')}</button>`;
+      actions = `${schedBtn}<button class="btn btn-success btn-sm" onclick="openCompleteJobModal('${id}')"><i class="fas fa-camera"></i> ${tFn('btn_complete_job', 'Complete Job')}</button>${mapBtn}`;
+    }
   } else if (view === 'customer') {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> ${tFn('btn_view_map', 'View Map')}</button>` : '';
     const rateBtn = (job.status === 'completed' && !job.rating)
       ? `<button class="btn btn-rate-tech btn-sm" onclick="openFeedbackModal('${id}')"><i class="fas fa-star"></i> ${tFn('btn_rate_tech', 'Rate')}</button>`
       : '';
-    actions = `<button class="btn btn-ghost btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-eye"></i> View</button>${rateBtn}${mapBtn}`;
+    const invBtn = (job.status === 'completed' && job.invoice)
+      ? `<button class="btn btn-invoice btn-sm" onclick="event.stopPropagation();viewDigitalInvoice('${id}')"><i class="fas fa-file-invoice"></i> ${tFn('btn_view_invoice', 'Bill')}</button>`
+      : '';
+    actions = `<button class="btn btn-ghost btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-eye"></i> View</button>${invBtn}${rateBtn}${mapBtn}`;
   } else if (view === 'admin') {
     const mapBtn = job.location?.lat ? `<button class="btn btn-maps btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-map-marker-alt"></i> Map</button>` : '';
+    const invBtn = job.invoice
+      ? `<button class="btn btn-invoice btn-sm" onclick="event.stopPropagation();viewDigitalInvoice('${id}')"><i class="fas fa-file-invoice"></i> Bill</button>`
+      : '';
     actions = `<button class="btn btn-ghost btn-sm" onclick="openJobModal('${id}')"><i class="fas fa-eye"></i> View</button>
+               ${invBtn}
                <button class="btn btn-warning btn-sm" onclick="openEditJobModal('${id}')"><i class="fas fa-edit"></i> Edit</button>
                <button class="btn btn-danger btn-sm" onclick="deleteJob('${id}')"><i class="fas fa-trash"></i></button>
                ${mapBtn}`;
@@ -3905,12 +3922,14 @@ function jobCard(id, job, view) {
     <div class="jc-header">
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <span class="type-badge ${esc(job.type)}"><i class="fas fa-${jobTypeIcon}"></i> ${esc(job.type)}</span>
+        ${job.isUrgent ? `<span class="badge-urgent"><i class="fas fa-bolt"></i> ${tFn('badge_urgent', 'URGENT')}</span>` : ''}
         ${locationBadge}
       </div>
       <span class="status-badge s-${esc(job.status)}">${statusLabel(job.status)}</span>
     </div>
     <div class="jc-title">${esc(job.title)}</div>
     <div class="jc-desc">${esc(job.description)}</div>
+    ${typeof renderJobStepTracker === 'function' ? renderJobStepTracker(job) : ''}
     <div class="jc-meta">
       <span class="meta-item"><i class="fas fa-map-marker-alt"></i>${esc(job.city ? `${job.district}, ${job.city}` : job.district)}</span>
       ${job._distanceKm && (!currentUserData || job.district !== currentUserData.district) ? `<span class="meta-item" style="color:var(--primary-l)"><i class="fas fa-route"></i>~${job._distanceKm} km දුර</span>` : ''}
@@ -3919,6 +3938,7 @@ function jobCard(id, job, view) {
       ${job.claimedByName ? `<span class="meta-item"><i class="fas fa-tools"></i>${esc(job.claimedByName)}</span>` : ''}
       ${job.scheduledDate ? `<span class="meta-item" style="color:var(--primary-l);font-weight:700"><i class="fas fa-calendar-check"></i> ${esc(job.scheduledDate)} ${job.scheduledTime ? esc(job.scheduledTime) : ''}</span>` : ''}
       ${job.completionPhoto ? `<span class="meta-item" style="color:#34d399;font-weight:700"><i class="fas fa-camera"></i> Proof Verified</span>` : ''}
+      ${job.invoice ? `<span class="meta-item" style="color:#38bdf8;font-weight:700"><i class="fas fa-file-invoice"></i> Bill Rs. ${(job.invoice.totalAmount || 0).toLocaleString()}</span>` : ''}
     </div>
     ${view === 'customer' && assignedTechCardHtml ? assignedTechCardHtml : phoneHtml}
     ${scheduleVisitCardHtml}
@@ -4312,6 +4332,7 @@ async function openJobModal(jobId) {
             <a href="tel:${esc(techPhone)}" class="btn btn-success btn-sm"><i class="fas fa-phone"></i> Call Technician</a>
             <a href="https://wa.me/94${cleanTechPhone}" target="_blank" class="btn btn-whatsapp btn-sm"><i class="fab fa-whatsapp"></i> WhatsApp Chat</a>
           </div>` : ''}
+          ${job.claimedBy ? `<div style="display:flex;justify-content:center;width:100%;margin-top:4px"><button type="button" class="btn btn-outline btn-sm" onclick="openTechDigitalId('${job.claimedBy}')" style="border:1px solid rgba(255,255,255,0.2)"><i class="fas fa-id-card"></i> ${tFn('btn_view_id', 'Technician Official Digital ID බලන්න')}</button></div>` : ''}
           <div style="font-size:.78rem;color:var(--txt2);background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:8px 12px;width:100%">
             <i class="fas fa-info-circle" style="color:var(--primary-l)"></i> මෙම Technician ඔබගේ Job එක භාරගෙන ඇති අතර ඉතා ඉක්මනින් ඔබව සම්බන්ධ කරගනු ඇත.
           </div>
@@ -4390,17 +4411,43 @@ async function openJobModal(jobId) {
         </div>`;
     }
 
+    let invoiceModalBannerHtml = '';
+    if (job.status === 'completed') {
+      if (job.invoice) {
+        invoiceModalBannerHtml = `
+          <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:var(--r-m);padding:12px 14px;margin:12px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <div>
+              <div style="font-size:0.75rem;color:var(--txt3);font-weight:700">LankaVision Digital Invoice (#${esc(job.invoice.invoiceNumber || 'INV')})</div>
+              <div style="font-size:1.1rem;font-weight:900;color:var(--success)">රු. ${(job.invoice.totalAmount || 0).toLocaleString()}</div>
+            </div>
+            <button type="button" class="btn btn-success btn-sm" onclick="closeModal('modal-job');viewDigitalInvoice('${jobId}')"><i class="fas fa-file-invoice"></i> ${tFn('btn_view_invoice', 'බිල (Invoice) බලන්න')}</button>
+          </div>`;
+      } else if (isMine || isAdmin) {
+        invoiceModalBannerHtml = `
+          <div style="background:rgba(14,165,233,0.08);border:1px dashed rgba(14,165,233,0.35);border-radius:var(--r-m);padding:12px 14px;margin:12px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <div style="font-size:0.82rem;color:var(--txt2);font-weight:600">
+              <i class="fas fa-file-invoice-dollar" style="color:var(--primary-l)"></i> පාරිභෝගිකයාට Official බිලක් (Digital Invoice) සාදා යවන්න.
+            </div>
+            <button type="button" class="btn btn-invoice btn-sm" onclick="closeModal('modal-job');openDigitalInvoiceModal('${jobId}')"><i class="fas fa-plus"></i> ${tFn('btn_make_invoice', 'Bill හදන්න')}</button>
+          </div>`;
+      }
+    }
+
     document.getElementById('modal-job-body').innerHTML = `
       <h2 style="margin-bottom:8px;padding-right:28px">${esc(job.title)}</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
-        <span class="type-badge ${esc(job.type)}"><i class="fas fa-${job.type === 'CCTV' ? 'video' : 'satellite-dish'}"></i> ${esc(job.type)}</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+        <span class="type-badge ${esc(job.type)}"><i class="fas fa-${job.type === 'CCTV' ? 'video' : (job.type === 'Router' ? 'wifi' : 'satellite-dish')}"></i> ${esc(job.type)}</span>
+        ${job.isUrgent ? `<span class="badge-urgent"><i class="fas fa-bolt"></i> ${tFn('badge_urgent', 'URGENT')}</span>` : ''}
         <span class="status-badge s-${esc(job.status)}">${statusLabel(job.status)}</span>
       </div>
+      ${job.isUrgent ? `<div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;padding:8px 12px;border-radius:var(--r-m);font-weight:700;font-size:0.82rem;margin-bottom:14px;display:flex;align-items:center;gap:8px"><i class="fas fa-bolt" style="color:#ef4444"></i> ${tFn('urgent_job_notice', 'හදිසි අවශ්‍යතාවයක් (Express / Urgent Job - පැය 2-4ක් ඇතුළත පැමිණීම අපේක්ෂා කරයි)')}</div>` : ''}
+      ${typeof renderJobStepTracker === 'function' ? renderJobStepTracker(job) : ''}
       ${mapHtml}
       ${techCardModalHtml}
       ${scheduledVisitModalHtml}
       ${completionProofModalHtml}
       ${customerFeedbackModalHtml}
+      ${invoiceModalBannerHtml}
       <div style="display:grid;gap:10px">
         <div class="detail-box"><div class="dl">Description</div><div class="dv">${esc(job.description)}</div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -4415,6 +4462,8 @@ async function openJobModal(jobId) {
         ${isAdmin ? `<button class="btn btn-warning btn-full" onclick="closeModal('modal-job');openEditJobModal('${jobId}')"><i class="fas fa-edit"></i> Edit This Job</button>` : ''}
         ${(isMine && job.status === 'claimed') ? `<button class="btn btn-primary btn-full" onclick="closeModal('modal-job');openScheduleModal('${jobId}')" style="margin-top:4px"><i class="fas fa-calendar-alt"></i> ${job.scheduledDate ? tFn('btn_reschedule', 'Reschedule Visit') : tFn('btn_schedule', 'Schedule Visit')} (දිනය/වේලාව)</button>` : ''}
         ${(isMine && job.status === 'claimed') ? `<button class="btn btn-success btn-full" onclick="closeModal('modal-job');openCompleteJobModal('${jobId}')" style="margin-top:4px"><i class="fas fa-camera"></i> Complete Job (වැඩ අවසන් කර Photo එක ගන්න)</button>` : ''}
+        ${(job.status === 'completed' && job.invoice) ? `<button class="btn btn-invoice btn-full" onclick="closeModal('modal-job');viewDigitalInvoice('${jobId}')" style="margin-top:4px"><i class="fas fa-file-invoice"></i> ${tFn('btn_view_invoice', 'Digital Invoice / Bill එක බලන්න')}</button>` : ''}
+        ${(isMine && job.status === 'completed' && !job.invoice) ? `<button class="btn btn-invoice btn-full" onclick="closeModal('modal-job');openDigitalInvoiceModal('${jobId}')" style="margin-top:4px"><i class="fas fa-file-invoice-dollar"></i> ${tFn('btn_make_invoice', 'Digital Invoice / Bill එක හදන්න')}</button>` : ''}
         <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('modal-job')" style="margin-top:8px;border:1px solid rgba(255,255,255,0.12)">
           <i class="fas fa-times"></i> <span data-i18n="btn_close">Close (වසන්න)</span>
         </button>
@@ -4672,6 +4721,17 @@ async function handleEditTechSubmit(e) {
 function updatePostJobScreen() {
   const gs = document.getElementById('guest-section');
   if (gs) gs.classList.toggle('hidden', !!(currentUser && currentUserData));
+  
+  document.querySelectorAll('input[name="job-type"]').forEach(r => {
+    r.removeEventListener('change', _onJobTypeChangeHandler);
+    r.addEventListener('change', _onJobTypeChangeHandler);
+  });
+}
+
+function _onJobTypeChangeHandler(e) {
+  if (e.target.checked && typeof renderQuickIssuesForType === 'function') {
+    renderQuickIssuesForType(e.target.value);
+  }
 }
 
 function initPostJobMap() {
@@ -4969,6 +5029,7 @@ async function handlePostJob(e) {
   const preferredDate = document.getElementById('job-pref-date')?.value || '';
   const preferredTime = document.getElementById('job-pref-time')?.value || '';
   const preferredNotes = document.getElementById('job-pref-notes')?.value.trim() || '';
+  const isUrgent = !!document.getElementById('job-is-urgent')?.checked;
 
   const btn = document.getElementById('post-job-btn');
   btn.disabled = true;
@@ -4986,6 +5047,7 @@ async function handlePostJob(e) {
       postedBy, postedByName: posterName,
       status: 'open',
       claimedBy: null, claimedByName: null,
+      isUrgent: isUrgent,
       preferredDate: preferredDate || null,
       preferredTime: preferredTime || null,
       preferredNotes: preferredNotes || null,
@@ -5011,6 +5073,8 @@ async function handlePostJob(e) {
     notifyNewJobPosted(newJobData);
     e.target.reset();
     selectedLoc = null;
+    if (document.getElementById('job-is-urgent')) document.getElementById('job-is-urgent').checked = false;
+    document.querySelectorAll('#quick-problem-chips .q-chip').forEach(c => c.classList.remove('active'));
     document.getElementById('job-city-group')?.classList.add('hidden');
     document.getElementById('job-city-custom')?.classList.add('hidden');
     document.getElementById('loc-display')?.classList.add('hidden');
@@ -5028,6 +5092,437 @@ async function handlePostJob(e) {
     btn.innerHTML = '<i class="fas fa-paper-plane"></i> Job Post කරන්න';
   }
 }
+
+// ── 💡 QUICK PROBLEMS & HELP GUIDE & DIGITAL INVOICE & TECH ID ───
+const QUICK_ISSUES_MAP = {
+  CCTV: [
+    { key: 'quick_cctv_1', default: '🔴 Cameras Offline / No Display' },
+    { key: 'quick_cctv_2', default: '⚠️ Hard Disk Error / Beeping' },
+    { key: 'quick_cctv_3', default: '📹 New CCTV Setup & Installation' },
+    { key: 'quick_cctv_4', default: '📱 Configure Phone App Online' },
+    { key: 'quick_cctv_5', default: '🔌 Broken Wiring / Power Issue' }
+  ],
+  Satellite: [
+    { key: 'quick_sat_1', default: '📡 No Signal / Dish Error' },
+    { key: 'quick_sat_2', default: '🎯 Dish Alignment / Tuning' },
+    { key: 'quick_sat_3', default: '🛰️ New Satellite Dish Setup' },
+    { key: 'quick_sat_4', default: '📺 Receiver Box or LNB Repair' }
+  ],
+  Router: [
+    { key: 'quick_router_1', default: '📶 Poor Wi-Fi Range / Weak Signal' },
+    { key: 'quick_router_2', default: '🐢 Internet Disconnections' },
+    { key: 'quick_router_3', default: '⚙️ New Wi-Fi Router Setup' }
+  ]
+};
+
+function renderQuickIssuesForType(serviceType) {
+  const container = document.getElementById('quick-problem-chips');
+  if (!container) return;
+  const list = QUICK_ISSUES_MAP[serviceType] || QUICK_ISSUES_MAP.CCTV;
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+
+  container.innerHTML = list.map(item => {
+    const text = tFn(item.key, item.default);
+    return `<button type="button" class="q-chip" onclick="selectQuickIssue(this, '${esc(text)}')">${esc(text)}</button>`;
+  }).join('');
+}
+
+function selectQuickIssue(btn, text) {
+  const titleInput = document.getElementById('job-title');
+  const descInput = document.getElementById('job-desc');
+  if (!titleInput) return;
+
+  titleInput.value = text;
+  document.querySelectorAll('#quick-problem-chips .q-chip').forEach(c => c.classList.remove('active'));
+  btn?.classList.add('active');
+
+  if (descInput && !descInput.value.trim()) {
+    const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+    descInput.value = text + ' - ' + tFn('quick_desc_placeholder', 'කරුණාකර හැකි ඉක්මනින් පැමිණ පරීක්ෂා කර සාදා දෙන්න.');
+  }
+}
+
+function renderJobStepTracker(job) {
+  const tFn = (typeof t === 'function') ? t : (k, fb) => fb;
+  if (!job) return '';
+  if (job.status === 'cancelled') {
+    return `<div style="padding:6px 12px;border-radius:var(--r-m);background:rgba(239,68,68,0.1);color:#fca5a5;font-size:0.75rem;font-weight:700;margin:6px 0;display:inline-flex;align-items:center;gap:6px"><i class="fas fa-ban"></i> ${tFn('status_cancelled', 'Job Cancelled')}</div>`;
+  }
+
+  let activeStep = 1;
+  if (job.status === 'open') {
+    activeStep = 1;
+  } else if (job.status === 'claimed') {
+    activeStep = job.scheduledDate ? 3 : 2;
+  } else if (job.status === 'completed') {
+    activeStep = job.rating ? 5 : 4;
+  }
+
+  const steps = [
+    { num: 1, icon: 'fa-paper-plane', label: tFn('step_posted', 'Job දැම්මා') },
+    { num: 2, icon: 'fa-user-check',  label: tFn('step_claimed', 'භාරගත්තා') },
+    { num: 3, icon: 'fa-calendar-alt',label: tFn('step_scheduled', 'දිනය තහවුරුයි') },
+    { num: 4, icon: 'fa-tools',       label: tFn('step_completed', 'වැඩ නිමයි') },
+    { num: 5, icon: 'fa-star',        label: tFn('step_rated', 'Rating') }
+  ];
+
+  const fillPct = Math.round(((activeStep - 1) / (steps.length - 1)) * 100);
+
+  const stepsHtml = steps.map(s => {
+    const isDone = s.num < activeStep;
+    const isCurrent = s.num === activeStep;
+    const cls = isDone ? 'jst-step done' : (isCurrent ? 'jst-step active' : 'jst-step');
+    const icon = isDone ? 'fa-check' : s.icon;
+    return `
+      <div class="${cls}">
+        <div class="jst-dot"><i class="fas ${icon}"></i></div>
+        <div class="jst-lbl">${esc(s.label)}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="job-step-tracker">
+      <div class="jst-line"><div class="jst-line-fill" style="width:${fillPct}%"></div></div>
+      ${stepsHtml}
+    </div>`;
+}
+
+// Help Guide Modal
+function openHelpGuide(defaultRole = 'customer') {
+  switchHelpTab(defaultRole);
+  openModal('modal-help-guide');
+}
+
+function switchHelpTab(role) {
+  const custBtn = document.getElementById('tab-help-cust');
+  const techBtn = document.getElementById('tab-help-tech');
+  const custContent = document.getElementById('help-content-cust');
+  const techContent = document.getElementById('help-content-tech');
+
+  const isTech = (role === 'tech' || role === 'technician');
+  if (isTech) {
+    custBtn?.classList.remove('active');
+    techBtn?.classList.add('active');
+    custContent?.classList.add('hidden');
+    techContent?.classList.remove('hidden');
+  } else {
+    techBtn?.classList.remove('active');
+    custBtn?.classList.add('active');
+    techContent?.classList.add('hidden');
+    custContent?.classList.remove('hidden');
+  }
+}
+
+// Technician Digital ID Pass
+async function openTechDigitalId(techId) {
+  if (!techId) {
+    showToast('Technician ID not found', 'error');
+    return;
+  }
+
+  let techData = null;
+  if (currentUser?.uid === techId && currentUserData) {
+    techData = currentUserData;
+  } else {
+    try {
+      const doc = await db.collection('users').doc(techId).get();
+      if (doc.exists) techData = doc.data();
+    } catch (e) {
+      console.warn('Error fetching tech data:', e);
+    }
+  }
+
+  if (!techData) {
+    showToast('Technician profile not found', 'error');
+    return;
+  }
+
+  const nameEl = document.getElementById('dip-tech-name');
+  const idEl = document.getElementById('dip-tech-id');
+  const distEl = document.getElementById('dip-tech-district');
+  const servEl = document.getElementById('dip-tech-services');
+  const ratingEl = document.getElementById('dip-tech-rating');
+  const avatarImg = document.getElementById('dip-avatar-img');
+
+  if (nameEl) nameEl.textContent = techData.name || 'Technician';
+  if (idEl) idEl.textContent = 'LV-PRO-' + techId.slice(0, 5).toUpperCase();
+  if (distEl) distEl.textContent = techData.district ? (techData.city ? `${techData.district}, ${techData.city}` : techData.district) : 'Sri Lanka';
+  if (servEl) {
+    const s = Array.isArray(techData.services) ? techData.services.join(' · ') : (techData.serviceType || 'CCTV & Satellite');
+    servEl.textContent = s;
+  }
+  if (ratingEl) {
+    const r = (techData.avgRating || techData.rating || 5.0).toFixed(1);
+    const c = techData.ratingCount || techData.reviewsCount || 0;
+    ratingEl.innerHTML = `⭐⭐⭐⭐⭐ <strong>${r}</strong> / 5.0 (${c} jobs)`;
+  }
+  if (avatarImg) {
+    if (techData.photoUrl) {
+      avatarImg.src = techData.photoUrl;
+    } else {
+      avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(techData.name || 'Tech')}&background=0284c7&color=fff&bold=true`;
+    }
+  }
+
+  openModal('modal-tech-id-card');
+}
+
+// Digital Invoice Logic
+let currentInvoiceJob = null;
+
+function calculateInvoiceTotal() {
+  const labour = parseFloat(document.getElementById('inv-input-labour')?.value || 0) || 0;
+  const parts = parseFloat(document.getElementById('inv-input-parts')?.value || 0) || 0;
+  const total = labour + parts;
+  const totalEl = document.getElementById('inv-calc-total');
+  if (totalEl) totalEl.textContent = 'රු. ' + total.toLocaleString();
+  return total;
+}
+
+async function openDigitalInvoiceModal(jobId) {
+  let job = (window._jobsMap && window._jobsMap[jobId]) ||
+            (typeof allJobs !== 'undefined' && allJobs && allJobs.find(x => x.id === jobId)) ||
+            (typeof allAdminJobs !== 'undefined' && allAdminJobs && allAdminJobs.find(x => x.id === jobId));
+
+  if (!job) {
+    try {
+      const doc = await db.collection('jobs').doc(jobId).get();
+      if (doc.exists) {
+        job = { id: doc.id, ...doc.data() };
+        window._jobsMap = window._jobsMap || {};
+        window._jobsMap[jobId] = job;
+      }
+    } catch (e) {}
+  }
+
+  if (!job) {
+    showToast('Job details not found', 'error');
+    return;
+  }
+
+  currentInvoiceJob = job;
+
+  const invNumEl = document.getElementById('inv-job-number');
+  const invId = job.invoice?.invoiceNumber || ('INV-#' + (job.id || '').slice(0, 6).toUpperCase());
+  if (invNumEl) invNumEl.textContent = invId;
+
+  const editForm = document.getElementById('invoice-edit-form');
+  const viewCard = document.getElementById('invoice-view-card');
+
+  const isTechOwner = (currentUser && job.claimedBy === currentUser.uid) || currentUserData?.role === 'admin';
+
+  if (job.invoice) {
+    populateInvoiceViewCard(job);
+    editForm?.classList.add('hidden');
+    viewCard?.classList.remove('hidden');
+  } else {
+    if (!isTechOwner) {
+      showToast('Technician විසින් තවම බිල සාදා නැත (Invoice not generated yet)', 'info');
+      return;
+    }
+
+    const editJobIdEl = document.getElementById('inv-edit-job-id');
+    if (editJobIdEl) editJobIdEl.value = jobId;
+
+    const labourInput = document.getElementById('inv-input-labour');
+    const partsInput = document.getElementById('inv-input-parts');
+    const partsDescInput = document.getElementById('inv-input-parts-desc');
+    const warrantySelect = document.getElementById('inv-input-warranty');
+
+    if (labourInput) labourInput.value = '';
+    if (partsInput) partsInput.value = '0';
+    if (partsDescInput) partsDescInput.value = '';
+    if (warrantySelect) warrantySelect.value = '3 Months';
+
+    calculateInvoiceTotal();
+
+    viewCard?.classList.add('hidden');
+    editForm?.classList.remove('hidden');
+  }
+
+  openModal('modal-digital-invoice');
+}
+
+function viewDigitalInvoice(jobId) {
+  openDigitalInvoiceModal(jobId);
+}
+
+function populateInvoiceViewCard(job) {
+  const inv = job.invoice || {};
+  const tTitle = document.getElementById('irp-job-title');
+  const tDate = document.getElementById('irp-job-date');
+  const tCust = document.getElementById('irp-cust-name');
+  const tTech = document.getElementById('irp-tech-name');
+  const tLabour = document.getElementById('irp-labour');
+  const tParts = document.getElementById('irp-parts');
+  const tNote = document.getElementById('irp-parts-note');
+  const tWarranty = document.getElementById('irp-warranty');
+  const tTotal = document.getElementById('irp-total');
+
+  if (tTitle) tTitle.textContent = `${job.title || 'Service'} (${job.type || 'CCTV'})`;
+  if (tDate) tDate.textContent = inv.dateStr || (new Date().toISOString().slice(0, 10));
+  if (tCust) tCust.textContent = `${job.customerName || 'Customer'} - ${job.customerPhone || ''}`;
+  if (tTech) tTech.textContent = `${job.claimedByName || 'Verified Technician'}`;
+  if (tLabour) tLabour.textContent = 'රු. ' + (inv.labourFee || 0).toLocaleString();
+  if (tParts) tParts.textContent = 'රු. ' + (inv.partsCost || 0).toLocaleString();
+  if (tNote) {
+    if (inv.partsDesc) {
+      tNote.textContent = '📝 ' + inv.partsDesc;
+      tNote.style.display = 'block';
+    } else {
+      tNote.style.display = 'none';
+    }
+  }
+  if (tWarranty) tWarranty.textContent = inv.warranty || '3 Months Warranty';
+  if (tTotal) tTotal.textContent = 'රු. ' + (inv.totalAmount || 0).toLocaleString();
+}
+
+async function saveDigitalInvoice(e) {
+  if (e) e.preventDefault();
+  const jobId = document.getElementById('inv-edit-job-id')?.value;
+  if (!jobId) return;
+
+  const labour = parseFloat(document.getElementById('inv-input-labour')?.value || 0) || 0;
+  const parts = parseFloat(document.getElementById('inv-input-parts')?.value || 0) || 0;
+  const partsDesc = document.getElementById('inv-input-parts-desc')?.value.trim() || '';
+  const warranty = document.getElementById('inv-input-warranty')?.value || '3 Months';
+  const total = labour + parts;
+
+  if (labour <= 0 && parts <= 0) {
+    showToast('කරුණාකර ගාස්තුවක් ඇතුළත් කරන්න (Enter valid fee)', 'warning');
+    return;
+  }
+
+  const invNumber = 'INV-' + Math.floor(100000 + Math.random() * 900000);
+  const dateStr = new Date().toISOString().slice(0, 10);
+
+  const invoiceData = {
+    invoiceNumber: invNumber,
+    labourFee: labour,
+    partsCost: parts,
+    partsDesc: partsDesc,
+    warranty: warranty,
+    totalAmount: total,
+    dateStr: dateStr,
+    issuedBy: currentUser?.uid || '',
+    issuedByName: currentUserData?.name || 'Technician',
+    createdAt: new Date().toISOString()
+  };
+
+  const btn = document.getElementById('btn-save-inv');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+  }
+
+  try {
+    await db.collection('jobs').doc(jobId).update({
+      invoice: invoiceData,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    if (window._jobsMap && window._jobsMap[jobId]) {
+      window._jobsMap[jobId].invoice = invoiceData;
+    }
+    if (currentInvoiceJob) {
+      currentInvoiceJob.invoice = invoiceData;
+    }
+
+    showToast('Invoice සාර්ථකව සකස් කළා! 🧾', 'success');
+    populateInvoiceViewCard(currentInvoiceJob || { id: jobId, invoice: invoiceData });
+    document.getElementById('invoice-edit-form')?.classList.add('hidden');
+    document.getElementById('invoice-view-card')?.classList.remove('hidden');
+
+    if (typeof refreshCurrentTab === 'function') refreshCurrentTab();
+  } catch (err) {
+    console.error('Invoice save error:', err);
+    showToast('Invoice save failed: ' + (err.message || 'Error'), 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> <span data-i18n="btn_save_invoice">බිල Save කරන්න 💾</span>';
+    }
+  }
+}
+
+function shareExistingInvoiceWhatsApp() {
+  const job = currentInvoiceJob;
+  if (!job || !job.invoice) {
+    showToast('Invoice විස්තර සොයාගත නොහැක', 'error');
+    return;
+  }
+  sendInvoiceWhatsAppFormatted(job, job.invoice);
+}
+
+function sendInvoiceToCustomerWhatsApp() {
+  const job = currentInvoiceJob;
+  if (!job) {
+    showToast('Job තොරතුරු නැත', 'error');
+    return;
+  }
+  const labour = parseFloat(document.getElementById('inv-input-labour')?.value || 0) || 0;
+  const parts = parseFloat(document.getElementById('inv-input-parts')?.value || 0) || 0;
+  const partsDesc = document.getElementById('inv-input-parts-desc')?.value.trim() || '';
+  const warranty = document.getElementById('inv-input-warranty')?.value || '3 Months';
+  const total = labour + parts;
+
+  const invoiceData = job.invoice || {
+    invoiceNumber: 'INV-' + Math.floor(100000 + Math.random() * 900000),
+    labourFee: labour,
+    partsCost: parts,
+    partsDesc: partsDesc,
+    warranty: warranty,
+    totalAmount: total,
+    dateStr: new Date().toISOString().slice(0, 10)
+  };
+
+  sendInvoiceWhatsAppFormatted(job, invoiceData);
+}
+
+function sendInvoiceWhatsAppFormatted(job, inv) {
+  const cleanPhoneNum = cleanPhone(job.customerPhone || '');
+  const techName = job.claimedByName || currentUserData?.name || 'Technician';
+
+  let msg = `🧾 *LANKAVISION PRO - OFFICIAL SERVICE BILL*\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `📄 *Invoice No:* ${inv.invoiceNumber || 'INV-001'}\n`;
+  msg += `📅 *Date:* ${inv.dateStr || new Date().toISOString().slice(0, 10)}\n`;
+  msg += `👤 *Customer:* ${job.customerName || 'Customer'}\n`;
+  msg += `📍 *Area:* ${job.city ? `${job.district}, ${job.city}` : job.district}\n`;
+  msg += `🔧 *Service:* ${job.title} (${job.type || 'Service'})\n`;
+  msg += `👨‍🔧 *Technician:* ${techName}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `🛠️ *Labour Fee:* Rs. ${(inv.labourFee || 0).toLocaleString()}\n`;
+  if (inv.partsCost > 0) {
+    msg += `🔩 *Parts & Materials:* Rs. ${(inv.partsCost || 0).toLocaleString()}${inv.partsDesc ? ` (${inv.partsDesc})` : ''}\n`;
+  }
+  msg += `💰 *TOTAL AMOUNT:* Rs. ${(inv.totalAmount || 0).toLocaleString()}\n`;
+  msg += `🛡️ *Warranty:* ${inv.warranty || '3 Months'}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `✅ *Certified by LankaVision Pro LK*\n`;
+  msg += `📞 Support Hotline: +94 78 680 0086 (Smart Zone LK)`;
+
+  const encoded = encodeURIComponent(msg);
+  if (cleanPhoneNum) {
+    window.open(`https://wa.me/94${cleanPhoneNum}?text=${encoded}`, '_blank');
+  } else {
+    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+  }
+}
+
+// Global window exposures for event attributes
+window.renderQuickIssuesForType = renderQuickIssuesForType;
+window.selectQuickIssue = selectQuickIssue;
+window.renderJobStepTracker = renderJobStepTracker;
+window.openHelpGuide = openHelpGuide;
+window.switchHelpTab = switchHelpTab;
+window.openTechDigitalId = openTechDigitalId;
+window.openDigitalInvoiceModal = openDigitalInvoiceModal;
+window.viewDigitalInvoice = viewDigitalInvoice;
+window.calculateInvoiceTotal = calculateInvoiceTotal;
+window.saveDigitalInvoice = saveDigitalInvoice;
+window.sendInvoiceToCustomerWhatsApp = sendInvoiceToCustomerWhatsApp;
+window.shareExistingInvoiceWhatsApp = shareExistingInvoiceWhatsApp;
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────
 function initAdminDashboard() {
@@ -5765,7 +6260,11 @@ function renderProfileCard() {
       ${u.serviceType ? `<div class="profile-row"><label><i class="fas fa-tools"></i> Service</label><span class="type-badge ${esc(u.serviceType)}" style="font-size:.85rem">${esc(u.serviceType)}</span></div>` : ''}
       ${u.status ? `<div class="profile-row"><label><i class="fas fa-circle"></i> Status</label><span style="color:${statusColor};font-weight:700">${u.status}</span></div>` : ''}
       ${u.photoUrl ? `<div class="profile-row"><label><i class="fas fa-camera"></i> Live Selfie</label><span style="color:var(--success);font-weight:700;cursor:pointer" onclick="previewPhoto('${u.photoUrl}','${esc(u.name)}')"><i class="fas fa-check-circle"></i> Verified (View)</span></div>` : ''}
-      <div style="margin-top:20px"><button class="btn btn-outline btn-full" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+        ${u.role === 'technician' ? `<button type="button" class="btn btn-primary btn-full" onclick="openTechDigitalId('${currentUser?.uid}')"><i class="fas fa-id-card"></i> ${typeof t === 'function' ? t('btn_view_id', 'මගේ Official Digital ID Pass එක') : 'මගේ Official Digital ID Pass එක'}</button>` : ''}
+        <button type="button" class="btn btn-ghost btn-full" onclick="openHelpGuide('${u.role === 'technician' ? 'technician' : 'customer'}')" style="border:1px solid rgba(255,255,255,0.15)"><i class="fas fa-lightbulb" style="color:#fbbf24"></i> ${typeof t === 'function' ? t('btn_help_guide', '💡 භාවිතා කරන හැටි (Help Guide)') : '💡 භාවිතා කරන හැටි (Help Guide)'}</button>
+      </div>
+      <div style="margin-top:10px"><button class="btn btn-outline btn-full" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
       <div style="text-align:center;margin-top:22px;font-size:0.76rem;color:var(--txt3);border-top:1px solid var(--border);padding-top:16px">
         Developed by <strong style="color:var(--primary-l)">SMARTZONE LK</strong> · <a href="https://wa.me/94786800086?text=Hello%20SMARTZONE%20LK" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:none;font-weight:700"><i class="fab fa-whatsapp"></i> +94 78 680 0086</a>
       </div>

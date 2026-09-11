@@ -256,7 +256,88 @@ const I18N = {
     offline_action_error: '⚠️ ඔබ Offline සිටී. මෙම ක්‍රියාව සඳහා Internet සම්බන්ධතාවයක් අවශ්‍ය වේ.',
     notif_center_title: 'දැනුම්දීම් (Notifications)',
     clear_all: 'මකන්න',
-    no_notifs: 'දැනුම්දීම් නොමැත'
+    no_notifs: 'දැනුම්දීම් නොමැත',
+
+    // Help & Visual Guide
+    btn_help_guide: '💡 භාවිතා කරන හැටි',
+    help_modal_title: 'LankaVision Pro භාවිතා කරන ආකාරය',
+    help_modal_sub: 'පාරිභෝගිකයින්ට සහ Technicians ලාට පහසුවෙන්ම වැඩ කිරීමට සරල උපදෙස්',
+    help_tab_customer: '👤 මම Customer කෙනෙක් (පාරිභෝගික)',
+    help_tab_tech: '🔧 මම Technician කෙනෙක් (කාර්මික)',
+    help_cust_step1_t: '1. සරලව Job එකක් දාන්න',
+    help_cust_step1_d: 'ඔබේ නම, දුරකථන අංකය, අවශ්‍ය සේවාව (CCTV / Satellite / Router) සහ දිස්ත්‍රික්කය තෝරා Job එක Post කරන්න. අවශ්‍ය නම් නිතර ඇතිවන ගැටලු (Quick Problem) එක ක්ලික් එකෙන් තෝරන්න.',
+    help_cust_step2_t: '2. Technician කෙනෙක් භාරගැනීම',
+    help_cust_step2_d: 'ඔබේ ප්‍රදේශයේ ලියාපදිංචි verified technician කෙනෙක් ඔබේ Job එක භාරගත් සැණින් ඔබට දැනුම්දීමක් ලැබේ. Technician ගේ නම, Photo එක සහ දුරකථන අංකය දිස්වේ.',
+    help_cust_step3_t: '3. පැමිණෙන වේලාව සහ හැඳුනුම්පත',
+    help_cust_step3_d: 'Technician ඔබ අමතා පැමිණෙන වේලාව තහවුරු කරනු ඇත. නිවසට පැමිණි විට LankaVision Verified Digital ID කාඩ්පත පරීක්ෂා කර බැලිය හැක.',
+    help_cust_step4_t: '4. වැඩ අවසන් වීම සහ ඩිජිටල් බිල',
+    help_cust_step4_d: 'වැඩ අවසන් වූ පසු Technician විසින් Live Photo එකක් දමා තහවුරු කරයි. ඉන්පසු WhatsApp හරහා නිල ඩිජිටල් බිල (Invoice) ලබාගෙන, ඔබගේ තරු 5 Rating එක ලබා දෙන්න.',
+    help_tech_step1_t: '1. ළඟම ඇති Jobs බලන්න (36 km)',
+    help_tech_step1_d: 'ඔබ සිටින ස්ථානයේ සිට 36 km ඇතුළත ඇති නව Jobs ඔබට පෙනේ. සිතියම (Map) මඟින් Job එක ඇති ස්ථානය පහසුවෙන් බලාගත හැක.',
+    help_tech_step2_t: '2. Job එකක් භාරගැනීම (Accept)',
+    help_tech_step2_d: 'Job එක භාරගත් සැණින් Customer ගේ දුරකථන අංකය සහ WhatsApp Unlock වේ. පාරිභෝගිකයාට කතා කර පැමිණෙන දිනය/වේලාව Schedule කරන්න.',
+    help_tech_step3_t: '3. Active Job අගුල (Next Job Unlock)',
+    help_tech_step3_d: 'ඔබ භාරගත් Job එකට Visit එකක් Schedule කළ පසු හෝ Complete කළ පසු ඔබට ඊළඟ Jobs භාරගැනීමට ඉඩ ලැබේ.',
+    help_tech_step4_t: '4. Live Photo එකෙන් Complete කර බිල යවන්න',
+    help_tech_step4_d: 'වැඩ අවසන් වූ ස්ථානයේ Live Photo එකක් ගෙන Job එක Complete කරන්න. ඉන්පසු Digital Invoice එක සකසා Customer ගේ WhatsApp එකට කෙලින්ම බිල යවන්න.',
+
+    // Digital Invoice / Bill
+    btn_create_invoice: 'ඩිජිටල් බිල සාදන්න (Invoice)',
+    btn_view_invoice: 'ඩිජිටල් බිල බලන්න (View Invoice)',
+    modal_invoice_title: 'LankaVision ඩිජිටල් සේවා බිල (Invoice)',
+    modal_invoice_sub: 'පාරිභෝගිකයාට ලබා දෙන නිල ගාස්තු විස්තරය සහ රිසිට්පත',
+    inv_job_details: 'Job විස්තර',
+    inv_labour_fee: 'සේවා ගාස්තුව / වැඩ කුලිය (Labour Fee - රු.)',
+    inv_parts_cost: 'අමතර කොටස් / උපකරණ වියදම (Parts Cost - රු.)',
+    inv_parts_desc: 'යෙදූ උපකරණ විස්තර (උදා: Wire 20m, BNC, Power Supply)',
+    inv_warranty: 'වගකීම් කාලය (Warranty Period)',
+    inv_opt_no_warranty: 'වගකීමක් නැත (No Warranty)',
+    inv_opt_1m: 'මාස 1ක Service Warranty',
+    inv_opt_3m: 'මාස 3ක Service Warranty',
+    inv_opt_6m: 'මාස 6ක Service Warranty',
+    inv_opt_1y: 'අවුරුදු 1ක Warranty',
+    inv_total: 'මුළු මුදල (Total Amount - රු.)',
+    btn_send_invoice_wa: 'WhatsApp හරහා පාරිභෝගිකයාට යවන්න 📲',
+    btn_save_invoice: 'බිල Save කරන්න 💾',
+
+    // Technician Digital ID Pass
+    btn_view_tech_id: 'ඩිජිටල් හැඳුනුම්පත (Digital ID)',
+    tech_id_modal_title: 'LankaVision Pro - කාර්මික ශිල්පී හැඳුනුම්පත',
+    tech_id_badge_verified: 'CERTIFIED & VERIFIED TECHNICIAN',
+    tech_id_tagline: 'දිවයින පුරා පාරිභෝගික ආරක්ෂාව තහවුරු කළ කාර්මික ශිල්පී',
+    tech_id_issued_by: 'LankaVision Pro Network Verification',
+    tech_id_show_hint: '💡 පාරිභෝගික නිවසට පැමිණි පසු මෙම ඩිජිටල් හැඳුනුම්පත පෙන්වා අනන්‍යතාවය තහවුරු කරන්න.',
+
+    // Quick Problem Selector
+    quick_issues_title: '⚡ නිතර ඇතිවන ගැටලු (එක Click එකකින් තෝරන්න):',
+    quick_cctv_1: 'කැමරා පේන්නේ නෑ (No Display)',
+    quick_cctv_2: 'Hard Disk Error (රෙකෝඩ් වෙන්නේ නෑ)',
+    quick_cctv_3: 'අලුතින් CCTV සවිකිරීමට (New Setup)',
+    quick_cctv_4: 'Mobile App එකට Online දාගන්න',
+    quick_cctv_5: 'Wire කැඩිලා / Power Issue',
+    quick_sat_1: 'No Signal (සිග්නල් නෑ)',
+    quick_sat_2: 'Dish එක හෙලවිලා (Alignment)',
+    quick_sat_3: 'අලුත් Dish එකක් සවිකිරීම',
+    quick_sat_4: 'Receiver එකේ ප්‍රශ්නයක්',
+    quick_router_1: 'Wi-Fi Range මදි (Coverage)',
+    quick_router_2: 'Internet නිතර Disconnect වෙනවා',
+    quick_router_3: 'අලුත් Wi-Fi Router එකක් සවිකිරීම',
+
+    // Urgent Job Request
+    lbl_urgent_job: '🔴 හදිසි සේවාවක් (අදම අවශ්‍යයි - Urgent)',
+    urgent_job_hint: 'හදිසි breakdown හෝ security ගැටලුවක් නම් මෙය තෝරන්න. අවට Technicians ලාට ක්ෂණික Alert ලැබේ.',
+    badge_urgent: '🔴 හදිසි (URGENT)',
+
+    // Progress Steps Tracker
+    step_posted: 'Job දැම්මා',
+    step_claimed: 'භාරගත්තා',
+    step_scheduled: 'දිනය දැම්මා',
+    step_completed: 'වැඩ අවසන්',
+    step_rated: 'Review කළා',
+
+    // Direct Hotline
+    hotline_text: 'App එකෙන් Job එකක් දාන්න අමාරුද? අපට කෙලින්ම කතා කරන්න (Hotline)',
+    btn_call_hotline: 'Hotline: 078 680 0086'
   },
 
   // ── ENGLISH 🇬🇧 ───────────────────────────────────────────────
@@ -511,7 +592,88 @@ const I18N = {
     offline_action_error: '⚠️ You are offline. Internet connection is required for this action.',
     notif_center_title: 'Notifications',
     clear_all: 'Clear All',
-    no_notifs: 'No notifications yet'
+    no_notifs: 'No notifications yet',
+
+    // Help & Visual Guide
+    btn_help_guide: '💡 How to Use',
+    help_modal_title: 'How to Use LankaVision Pro',
+    help_modal_sub: 'Easy visual guide for customers and field technicians',
+    help_tab_customer: '👤 I am a Customer',
+    help_tab_tech: '🔧 I am a Technician',
+    help_cust_step1_t: '1. Post a Job Easily',
+    help_cust_step1_d: 'Fill in your name, contact phone, service type (CCTV / Satellite / Router) and district. You can also tap a common quick issue to auto-fill description.',
+    help_cust_step2_t: '2. Certified Technician Accepts',
+    help_cust_step2_d: 'A verified technician in your district accepts your job. You instantly receive notification with technician photo, name, and phone number.',
+    help_cust_step3_t: '3. Visit Scheduling & Verification',
+    help_cust_step3_d: 'The technician contacts you to schedule an exact arrival time. Upon arrival, you can inspect their official LankaVision Verified Digital ID Pass.',
+    help_cust_step4_t: '4. Completion & Digital Invoice',
+    help_cust_step4_d: 'Technician takes live camera photo proof to verify completion. You receive an official Digital Invoice on WhatsApp and can submit a 5-star review.',
+    help_tech_step1_t: '1. View Nearby Jobs (36 km Radius)',
+    help_tech_step1_d: 'You see jobs within 36 km of your location on a live interactive map. Nearest jobs appear first.',
+    help_tech_step2_t: '2. Accept Job & Contact Customer',
+    help_tech_step2_d: 'Accepting unlocks customer phone and WhatsApp. Call customer right away to coordinate and schedule the visit.',
+    help_tech_step3_t: '3. Schedule to Unlock Next Jobs',
+    help_tech_step3_d: 'Once you schedule your visit date/time or complete the job, your active job lock clears and you can accept more jobs.',
+    help_tech_step4_t: '4. Live Photo Proof & Digital Bill',
+    help_tech_step4_d: 'Capture a live camera snapshot of the completed installation, generate a professional Digital Invoice, and send it to customer on WhatsApp.',
+
+    // Digital Invoice / Bill
+    btn_create_invoice: 'Create Digital Invoice',
+    btn_view_invoice: 'View Digital Invoice',
+    modal_invoice_title: 'LankaVision Pro - Digital Service Invoice',
+    modal_invoice_sub: 'Official itemized bill and warranty receipt for customer',
+    inv_job_details: 'Job Details',
+    inv_labour_fee: 'Labour / Service Fee (Rs.)',
+    inv_parts_cost: 'Spare Parts & Materials (Rs.)',
+    inv_parts_desc: 'Parts Used (e.g. 20m RG6 Cable, BNC Connectors, 12V Adapter)',
+    inv_warranty: 'Warranty Period',
+    inv_opt_no_warranty: 'No Warranty',
+    inv_opt_1m: '1 Month Service Warranty',
+    inv_opt_3m: '3 Months Service Warranty',
+    inv_opt_6m: '6 Months Service Warranty',
+    inv_opt_1y: '1 Year Warranty',
+    inv_total: 'Total Amount (Rs.)',
+    btn_send_invoice_wa: 'Send Invoice to Customer on WhatsApp 📲',
+    btn_save_invoice: 'Save Invoice 💾',
+
+    // Technician Digital ID Pass
+    btn_view_tech_id: 'Digital ID Pass',
+    tech_id_modal_title: 'LankaVision Pro - Technician Digital ID',
+    tech_id_badge_verified: 'CERTIFIED & VERIFIED TECHNICIAN',
+    tech_id_tagline: 'Island-wide Certified CCTV & Satellite Professional',
+    tech_id_issued_by: 'LankaVision Pro Network Verification',
+    tech_id_show_hint: '💡 Show this verified digital credential to the customer upon arrival.',
+
+    // Quick Problem Selector
+    quick_issues_title: '⚡ Common Issues (Tap to select):',
+    quick_cctv_1: 'No Display on Monitor / Cameras Blank',
+    quick_cctv_2: 'Hard Disk Error / Not Recording',
+    quick_cctv_3: 'New CCTV Setup & Installation',
+    quick_cctv_4: 'Configure Mobile Phone App View',
+    quick_cctv_5: 'Broken Wiring / Power Supply Issue',
+    quick_sat_1: 'No Signal / Dish Misaligned',
+    quick_sat_2: 'Dish Moved due to Wind / Rain',
+    quick_sat_3: 'New Satellite Dish Installation',
+    quick_sat_4: 'Receiver Box or LNB Repair',
+    quick_router_1: 'Poor Wi-Fi Range / Weak Signal',
+    quick_router_2: 'Frequent Internet Disconnections',
+    quick_router_3: 'New Wi-Fi Router Setup',
+
+    // Urgent Job Request
+    lbl_urgent_job: '🔴 Urgent Service Request (Needed today)',
+    urgent_job_hint: 'Select if you have a security breakdown or urgent issue. Nearby technicians receive high-priority alert.',
+    badge_urgent: '🔴 URGENT',
+
+    // Progress Steps Tracker
+    step_posted: 'Job Posted',
+    step_claimed: 'Claimed',
+    step_scheduled: 'Scheduled',
+    step_completed: 'Completed',
+    step_rated: 'Reviewed',
+
+    // Direct Hotline
+    hotline_text: 'Need help posting a job? Call our customer hotline directly',
+    btn_call_hotline: 'Hotline: +94 78 680 0086'
   },
 
   // ── TAMIL 🇱🇰 ─────────────────────────────────────────────────
@@ -766,26 +928,104 @@ const I18N = {
     offline_action_error: '⚠️ நீங்கள் ஆஃப்லைனில் உள்ளீர்கள். இந்தச் செயலுக்கு இணையம் தேவை.',
     notif_center_title: 'அறிவிப்புகள்',
     clear_all: 'அனைத்தையும் அழிக்கவும்',
-    no_notifs: 'அறிவிப்புகள் எதுவும் இல்லை'
+    no_notifs: 'அறிவிப்புகள் எதுவும் இல்லை',
+
+    // Help & Visual Guide
+    btn_help_guide: '💡 எப்படி பயன்படுத்துவது',
+    help_modal_title: 'LankaVision Pro - பயன்பாட்டு வழிகாட்டி',
+    help_modal_sub: 'வாடிக்கையாளர்கள் மற்றும் தொழில்நுட்ப வல்லுநர்களுக்கான எளிய வழிகாட்டி',
+    help_tab_customer: '👤 நான் ஒரு வாடிக்கையாளர்',
+    help_tab_tech: '🔧 நான் ஒரு தொழில்நுட்ப வல்லுநர்',
+    help_cust_step1_t: '1. எளிதாக பணியை இடுகையிடவும்',
+    help_cust_step1_d: 'உங்கள் பெயர், தொலைபேசி எண், சேவை வகை மற்றும் மாவட்டத்தைத் தேர்ந்தெடுத்து பணியை இடுகையிடவும்.',
+    help_cust_step2_t: '2. தொழில்நுட்ப வல்லுநர் ஏற்றுக்கொள்வார்',
+    help_cust_step2_d: 'சான்றளிக்கப்பட்ட தொழில்நுட்ப வல்லுநர் உங்கள் பணியை ஏற்றவுடன் அறிவிப்பு கிடைக்கும்.',
+    help_cust_step3_t: '3. வருகை நேரம் மற்றும் சரிபார்ப்பு',
+    help_cust_step3_d: 'தொழில்நுட்ப வல்லுநரின் டிஜிட்டல் அடையாள அட்டையை நீங்கள் சரிபார்க்கலாம்.',
+    help_cust_step4_t: '4. பணி நிறைவு மற்றும் டிஜிட்டல் பில்',
+    help_cust_step4_d: 'பணி முடிந்ததும் WhatsApp மூலம் அதிகாரப்பூர்வ பில் பெற்று 5-நட்சத்திர மதிப்பீடு வழங்கவும்.',
+    help_tech_step1_t: '1. அருகிலுள்ள பணிகளைப் பார்க்கவும் (36 km)',
+    help_tech_step1_d: 'உங்கள் இடத்திலிருந்து 36 கிமீக்குள் உள்ள பணிகளை வரைபடத்தில் பார்க்கலாம்.',
+    help_tech_step2_t: '2. பணியை ஏற்றுக்கொண்டு வாடிக்கையாளரை தொடர்பு கொள்ளவும்',
+    help_tech_step2_d: 'ஏற்றுக்கொண்டவுடன் WhatsApp மற்றும் தொலைபேசி எண் திறக்கப்படும்.',
+    help_tech_step3_t: '3. வருகை நேரத்தை திட்டமிடவும்',
+    help_tech_step3_d: 'வருகை நேரத்தை உள்ளிட்ட பிறகு அடுத்த பணிகளை ஏற்கலாம்.',
+    help_tech_step4_t: '4. லைவ் புகைப்படத்துடன் பில் அனுப்பவும்',
+    help_tech_step4_d: 'நிறைவு செய்த புகைப்படத்தை எடுத்து டிஜிட்டல் பில்லை WhatsApp-இல் அனுப்பவும்.',
+
+    // Digital Invoice / Bill
+    btn_create_invoice: 'டிஜிட்டல் பில் உருவாக்கவும்',
+    btn_view_invoice: 'டிஜிட்டல் பில் பார்க்கவும்',
+    modal_invoice_title: 'LankaVision Pro - டிஜிட்டல் சேவை பில்',
+    modal_invoice_sub: 'வாடிக்கையாளருக்கான அதிகாரப்பூர்வ கட்டண விவரம் மற்றும் ரசீது',
+    inv_job_details: 'பணி விவரங்கள்',
+    inv_labour_fee: 'சேவை கட்டணம் (ரூ.)',
+    inv_parts_cost: 'உதிரி பாகங்கள் கட்டணம் (ரூ.)',
+    inv_parts_desc: 'பயன்படுத்தப்பட்ட பாகங்கள் விவரம்',
+    inv_warranty: 'உத்தரவாத காலம்',
+    inv_opt_no_warranty: 'உத்தரவாதம் இல்லை',
+    inv_opt_1m: '1 மாத உத்தரவாதம்',
+    inv_opt_3m: '3 மாத உத்தரவாதம்',
+    inv_opt_6m: '6 மாத உத்தரவாதம்',
+    inv_opt_1y: '1 வருட உத்தரவாதம்',
+    inv_total: 'மொத்த தொகை (ரூ.)',
+    btn_send_invoice_wa: 'வாட்ஸ்அப்பில் வாடிக்கையாளருக்கு அனுப்பவும் 📲',
+    btn_save_invoice: 'பில் சேமிக்கவும் 💾',
+
+    // Technician Digital ID Pass
+    btn_view_tech_id: 'டிஜிட்டல் அடையாள அட்டை',
+    tech_id_modal_title: 'LankaVision Pro - தொழில்நுட்ப வல்லுநர் அடையாள அட்டை',
+    tech_id_badge_verified: 'CERTIFIED & VERIFIED TECHNICIAN',
+    tech_id_tagline: 'தீவு முழுவதும் சரிபார்க்கப்பட்ட தொழில்நுட்ப வல்லுநர்',
+    tech_id_issued_by: 'LankaVision Pro Network Verification',
+    tech_id_show_hint: '💡 வாடிக்கையாளரிடம் உங்கள் அடையாளத்தை உறுதிப்படுத்த இந்த அட்டையைக் காட்டுங்கள்.',
+
+    // Quick Problem Selector
+    quick_issues_title: '⚡ பொதுவான சிக்கல்கள்:',
+    quick_cctv_1: 'கேமரா வேலை செய்யவில்லை (No Display)',
+    quick_cctv_2: 'Hard Disk Error (பதிவாகவில்லை)',
+    quick_cctv_3: 'புதிய CCTV பொருத்துதல் (New Setup)',
+    quick_cctv_4: 'மொபைல் போனில் ஆன்லைனில் பார்ப்பது',
+    quick_cctv_5: 'வயர் பிரச்சனை / Power Issue',
+    quick_sat_1: 'சிக்னல் இல்லை (No Signal)',
+    quick_sat_2: 'டிஷ் நகர்ந்துள்ளது (Alignment)',
+    quick_sat_3: 'புதிய டிஷ் பொருத்துதல்',
+    quick_sat_4: 'ரிசீவர் பிரச்சனை',
+    quick_router_1: 'Wi-Fi சிக்னல் பலவீனமாக உள்ளது',
+    quick_router_2: 'இணையம் அடிக்கடி துண்டிக்கப்படுகிறது',
+    quick_router_3: 'புதிய Wi-Fi Router பொருத்துதல்',
+
+    // Urgent Job Request
+    lbl_urgent_job: '🔴 அவசர சேவை (இன்றே தேவை - Urgent)',
+    urgent_job_hint: 'அவசர சிக்கல் என்றால் இதைத் தேர்ந்தெடுக்கவும். அருகிலுள்ள வல்லுநர்களுக்கு அறிவிப்பு செல்லும்.',
+    badge_urgent: '🔴 அவசரம் (URGENT)',
+
+    // Progress Steps Tracker
+    step_posted: 'பதிவிடப்பட்டது',
+    step_claimed: 'ஏற்கப்பட்டது',
+    step_scheduled: 'திட்டமிடப்பட்டது',
+    step_completed: 'நிறைவுற்றது',
+    step_rated: 'மதிப்பிடப்பட்டது',
+
+    // Direct Hotline
+    hotline_text: 'உதவி தேவையா? எங்கள் வாடிக்கையாளர் சேவைக்கு அழைக்கவும்',
+    btn_call_hotline: 'Hotline: +94 78 680 0086'
   }
 };
 
-// Current active language - defaults to 'en' (English)
+// Current active language - defaults to 'si' (Sinhala) for Sri Lankan users
 let currentLang = (function() {
   try {
-    // If user explicitly chose a language, use that
     const explicit = localStorage.getItem('app_user_lang');
     if (explicit && I18N[explicit]) return explicit;
-    // Clear old legacy 'si' default if user hasn't explicitly chosen
-    if (localStorage.getItem('app_lang') === 'si') {
-      localStorage.removeItem('app_lang');
-    }
-    return localStorage.getItem('app_lang') || 'en';
+    const legacy = localStorage.getItem('app_lang');
+    if (legacy && I18N[legacy]) return legacy;
+    return 'si'; // Default to Sinhala for Sri Lankan audience
   } catch (e) {
-    return 'en';
+    return 'si';
   }
 })();
-if (!I18N[currentLang]) currentLang = 'en';
+if (!I18N[currentLang]) currentLang = 'si';
 
 /**
  * Returns translated string for a given key in current active language
