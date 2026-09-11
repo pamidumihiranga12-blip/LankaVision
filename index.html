@@ -505,6 +505,7 @@
       <button class="tab-btn" data-tab="technicians" onclick="showAdminTab('technicians')"><i class="fas fa-users"></i> <span data-i18n="adm_tab_techs">Technicians</span></button>
       <button class="tab-btn" data-tab="customers" onclick="showAdminTab('customers')"><i class="fas fa-user-friends"></i> <span data-i18n="adm_tab_customers">Customers</span> <span class="badge" id="cust-count">0</span></button>
       <button class="tab-btn" data-tab="admins" onclick="showAdminTab('admins')" id="adm-tab-admins"><i class="fas fa-user-shield"></i> <span data-i18n="adm_tab_admins">Admins</span></button>
+      <button class="tab-btn" data-tab="app-updates" onclick="showAdminTab('app-updates')" id="adm-tab-app-updates"><i class="fas fa-cloud-upload-alt"></i> <span data-i18n="adm_tab_updates">App Updates</span></button>
     </div>
     <div class="admin-content">
 
@@ -617,6 +618,70 @@
           </div>
         </div>
         <div id="admins-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loading">Loading...</p></div></div>
+      </div>
+
+      <!-- App Updates Management Tab -->
+      <div id="atab-app-updates" class="atab">
+        <div class="panel" style="max-width:860px;margin:0 auto">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#0284c7,#38bdf8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;box-shadow:0 4px 12px rgba(2,132,199,0.35)">
+                <i class="fas fa-cloud-upload-alt"></i>
+              </div>
+              <div>
+                <h3 style="margin:0;font-size:1.25rem;font-weight:800" data-i18n="adm_update_title">App Version &amp; APK කළමනාකරණය</h3>
+                <span style="font-size:0.78rem;color:var(--txt3)">පරණ App එක ඇති අයට නව Update එක බාගත කරගැනීමට Popup එකක් පෙන්වීම</span>
+              </div>
+            </div>
+            <div id="adm-current-live-badge" class="app-version-pill">
+              <i class="fas fa-signal"></i> Active Live: <strong id="adm-live-version-text">v1.0.0</strong> (Code: <span id="adm-live-code-text">1</span>)
+            </div>
+          </div>
+
+          <form id="form-app-update" onsubmit="saveAppUpdateConfigAdmin(event)">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div class="form-group">
+                <label>අලුත් Version Name (උදා: v1.1.0) <span style="color:var(--danger)">*</span></label>
+                <input type="text" id="adm-update-version-name" placeholder="v1.1.0" required />
+              </div>
+              <div class="form-group">
+                <label>Version Code (අංකය, උදා: 2) <span style="color:var(--danger)">*</span></label>
+                <input type="number" id="adm-update-version-code" min="1" step="1" placeholder="2" required />
+                <small style="font-size:0.72rem;color:var(--txt3);margin-top:2px">මෙම අංකය පරණ අංකයට වඩා වැඩි වූ විට පරණ අයට Update එක පෙනේ.</small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label><i class="fas fa-download"></i> නව APK Download Link එක (Google Drive / Direct URL) <span style="color:var(--danger)">*</span></label>
+              <input type="url" id="adm-update-apk-url" placeholder="https://drive.google.com/... හෝ http://.../LankaVision_Pro_v1.0.0.apk" required />
+              <small style="font-size:0.72rem;color:var(--txt3);margin-top:2px">පාරිභෝගිකයා Download Update එබූ විට මෙම ලින්ක් එකෙන් අලුත් APK එක Download වේ.</small>
+            </div>
+
+            <div class="form-group">
+              <label><i class="fas fa-list-ul"></i> අලුතින් එක්කළ දේවල් (What's New in this Version - Release Notes)</label>
+              <textarea id="adm-update-notes" rows="4" placeholder="• නව පහසුකම්: Digital Invoice සාදා WhatsApp යැවීම&#10;• පියවර 5ක Visual Progress Tracker&#10;• Technician Digital ID Pass සහ Help Guide එකතු කළා"></textarea>
+            </div>
+
+            <div class="form-group" style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--r-m);padding:12px 14px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:0">
+                <input type="checkbox" id="adm-update-is-mandatory" style="width:18px;height:18px;accent-color:var(--primary)" />
+                <div>
+                  <div style="font-weight:700;color:var(--txt)">අනිවාර්ය Update එකක් (Mandatory / Force Update)</div>
+                  <div style="font-size:0.75rem;color:var(--txt3)">මෙය තේරූ විට Update එක Close කිරීමට ඉඩ නොලැබෙන අතර, අලුත් එක Download කරගත යුතුම වේ.</div>
+                </div>
+              </label>
+            </div>
+
+            <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
+              <button type="submit" class="btn btn-primary" id="btn-save-app-update" style="min-width:200px">
+                <i class="fas fa-save"></i> <span data-i18n="adm_update_save_btn">Update එක සක්‍රීය කරන්න 🚀</span>
+              </button>
+              <button type="button" class="btn btn-outline" onclick="previewAppUpdateModal()">
+                <i class="fas fa-eye"></i> Popup එක පෙනෙන හැටි බලන්න (Preview)
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -1301,6 +1366,43 @@
       <button type="button" class="btn btn-outline btn-full" onclick="closeModal('modal-tech-id-card')" style="margin-top:12px">
         <i class="fas fa-times"></i> Close (වසන්න)
       </button>
+    </div>
+  </div>
+
+  <!-- ====== 🚀 IN-APP UPDATE NOTIFICATION MODAL ====== -->
+  <div id="modal-app-update" class="modal hidden">
+    <div class="modal-backdrop" id="modal-app-update-backdrop" onclick="dismissAppUpdateModal()"></div>
+    <div class="modal-box app-update-modal-box">
+      <button class="modal-close" id="btn-close-app-update" onclick="dismissAppUpdateModal()"><i class="fas fa-times"></i></button>
+
+      <div class="app-update-header">
+        <div class="app-update-icon-wrap">
+          <i class="fas fa-cloud-download-alt"></i>
+        </div>
+        <div class="app-update-pill" id="app-update-version-tag">v1.1.0 Available</div>
+        <h2 class="app-update-title" data-i18n="update_modal_title">🚀 නව App Update එකක් ඇත!</h2>
+        <p class="app-update-sub" data-i18n="update_modal_sub">වඩාත් හොඳ සේවාවක් සහ නව පහසුකම් ලබාගැනීමට කරුණාකර අලුත්ම Version එක Install කරගන්න.</p>
+      </div>
+
+      <div class="app-update-notes-card">
+        <div class="aun-title"><i class="fas fa-star" style="color:#fbbf24"></i> <span data-i18n="update_whats_new">අලුතින් එක්කළ දේවල් (What's New):</span></div>
+        <div class="aun-body" id="app-update-notes-content">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div id="app-update-mandatory-msg" class="app-update-mandatory-warning hidden" data-i18n="update_mandatory_alert">
+        ⚠️ මෙම Update එක අනිවාර්ය වේ. සේවාවන් දිගටම ලබාගැනීමට කරුණාකර Update කරන්න.
+      </div>
+
+      <div class="app-update-actions">
+        <button type="button" class="btn btn-primary btn-full app-update-btn-dl" onclick="openDownloadAppUpdate()">
+          <i class="fas fa-download"></i> <span data-i18n="update_btn_download">📲 දැන්ම Update එක Download කරන්න</span>
+        </button>
+        <button type="button" class="btn btn-outline btn-full" id="btn-later-app-update" onclick="dismissAppUpdateModal()" style="margin-top:8px">
+          <span data-i18n="update_btn_later">පසුව කරන්න (Later)</span>
+        </button>
+      </div>
     </div>
   </div>
 

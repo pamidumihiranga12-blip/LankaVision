@@ -8,6 +8,14 @@ const APP_BASE_URL = (typeof window !== 'undefined' && window.location && window
   ? window.location.origin
   : 'https://lanka-vision.vercel.app';
 
+// Application Version Information
+const APP_VERSION = '1.0.0';
+const APP_VERSION_CODE = 1;
+window._currentAppVersion = APP_VERSION;
+window._currentAppVersionCode = APP_VERSION_CODE;
+let _cachedRemoteAppUpdate = null;
+let _updateDismissedThisSession = false;
+
 // Global i18n translation fallback helper
 function tFn(k, fb) {
   return (typeof t === 'function') ? t(k, fb) : fb;
@@ -1614,6 +1622,9 @@ function initApp() {
     // If no cached user, prepare landing screen
     showScreen('screen-landing');
   }
+
+  // Automatic In-App Update Check on every app launch / open
+  checkForAppUpdates();
 
   // Safety fallback if network or auth hangs
   setTimeout(() => {
@@ -5920,6 +5931,8 @@ function showAdminTab(tab) {
   } else if (tab === 'technicians') {
     populateAdminCityDatalist();
     if (!allTechs.length) loadAllTechs();
+  } else if (tab === 'app-updates') {
+    loadAppUpdateConfigAdmin();
   }
   updateMobileNavState('screen-admin');
 }
@@ -6334,3 +6347,257 @@ function authErr(code) {
   };
   return m[code] || 'An error occurred. Please try again.';
 }
+
+// =============================================================
+// 🚀 IN-APP UPDATE SYSTEM & ADMIN APK CONFIGURATION
+// =============================================================
+
+async function checkForAppUpdates() {
+  if (typeof db === 'undefined' || !db) return;
+  try {
+    const docRef = db.collection('system_config').doc('app_version');
+    const snap = await docRef.get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    _cachedRemoteAppUpdate = data;
+
+    const remoteCode = parseInt(data.versionCode, 10) || 0;
+    const currentCode = parseInt(APP_VERSION_CODE, 10) || 1;
+
+    if (remoteCode > currentCode) {
+      // If user hasn't dismissed it in THIS session (re-prompts on every app open)
+      if (!_updateDismissedThisSession) {
+        showAppUpdatePrompt(data);
+      }
+    }
+  } catch (err) {
+    console.warn('[checkForAppUpdates] Check failed:', err);
+  }
+}
+
+function showAppUpdatePrompt(updateData, isPreview = false) {
+  if (!updateData) return;
+  const modal = document.getElementById('modal-app-update');
+  if (!modal) return;
+
+  const versionTag = document.getElementById('app-update-version-tag');
+  const notesContent = document.getElementById('app-update-notes-content');
+  const mandatoryWarning = document.getElementById('app-update-mandatory-msg');
+  const btnClose = document.getElementById('btn-close-app-update');
+  const btnLater = document.getElementById('btn-later-app-update');
+
+  const versionName = updateData.versionName || `v${updateData.versionCode || 'New'}`;
+  if (versionTag) {
+    versionTag.textContent = `${versionName} Available`;
+  }
+
+  if (notesContent) {
+    const rawNotes = updateData.releaseNotes ? updateData.releaseNotes.trim() : '';
+    if (rawNotes) {
+      const lines = rawNotes.split('\n').map(l => l.trim()).filter(Boolean);
+      const itemsHtml = lines.map(line => {
+        const cleanLine = line.replace(/^[•\-\*]\s*/, '');
+        return `<li><i class="fas fa-check-circle" style="color:var(--accent);margin-right:8px"></i><span>${esc(cleanLine)}</span></li>`;
+      }).join('');
+      notesContent.innerHTML = `<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px">${itemsHtml}</ul>`;
+    } else {
+      notesContent.innerHTML = `<p style="margin:0;color:var(--txt2);font-size:0.86rem">✨ වඩාත් වේගවත්, ආරක්ෂිත සහ නවතම පහසුකම් රාශියක් ඇතුළත් කර ඇත.</p>`;
+    }
+  }
+
+  const isMandatory = updateData.isMandatory === true;
+  if (mandatoryWarning) {
+    if (isMandatory) {
+      mandatoryWarning.classList.remove('hidden');
+    } else {
+      mandatoryWarning.classList.add('hidden');
+    }
+  }
+
+  // If preview mode, always show close/dismiss so admin can test
+  if (isPreview) {
+    if (btnClose) btnClose.style.display = 'block';
+    if (btnLater) {
+      btnLater.style.display = 'block';
+      btnLater.textContent = 'Preview Close කරන්න';
+    }
+  } else {
+    if (isMandatory) {
+      if (btnClose) btnClose.style.display = 'none';
+      if (btnLater) btnLater.style.display = 'none';
+    } else {
+      if (btnClose) btnClose.style.display = 'block';
+      if (btnLater) {
+        btnLater.style.display = 'block';
+        btnLater.textContent = tFn('update_btn_later', 'පසුව කරන්න (Later)');
+      }
+    }
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function dismissAppUpdateModal() {
+  if (_cachedRemoteAppUpdate && _cachedRemoteAppUpdate.isMandatory && !_isPreviewModeActive) {
+    showToast(tFn('update_mandatory_alert', 'මෙම Update එක අනිවාර්ය වේ. කරුණාකර Update කරන්න.'), 'warning');
+    return;
+  }
+  _updateDismissedThisSession = true;
+  _isPreviewModeActive = false;
+  const modal = document.getElementById('modal-app-update');
+  if (modal) modal.classList.add('hidden');
+}
+
+let _isPreviewModeActive = false;
+function previewAppUpdateModal() {
+  const vName = document.getElementById('adm-update-version-name')?.value.trim() || 'v1.1.0';
+  const vCode = parseInt(document.getElementById('adm-update-version-code')?.value, 10) || 2;
+  const apkUrl = document.getElementById('adm-update-apk-url')?.value.trim() || 'https://example.com/app.apk';
+  const notes = document.getElementById('adm-update-notes')?.value.trim() || '• නව පහසුකම් සහ දෝෂ නිවැරදි කිරීම්\n• Digital Invoice සහ WhatsApp Share';
+  const isMandatory = document.getElementById('adm-update-is-mandatory')?.checked || false;
+
+  _isPreviewModeActive = true;
+  showAppUpdatePrompt({
+    versionName: vName,
+    versionCode: vCode,
+    apkUrl: apkUrl,
+    releaseNotes: notes,
+    isMandatory: isMandatory
+  }, true);
+}
+
+function openDownloadAppUpdate() {
+  const url = (_cachedRemoteAppUpdate && _cachedRemoteAppUpdate.apkUrl) ? _cachedRemoteAppUpdate.apkUrl.trim() : '';
+  if (!url) {
+    showToast('Download link එක ලබාගත නොහැක. කරුණාකර Admin අමතන්න.', 'error');
+    return;
+  }
+
+  try {
+    showToast('Update එක බාගත කිරීම ආරම්භ වේ... 📲', 'info');
+    const win = window.open(url, '_blank');
+    if (!win) {
+      window.location.href = url;
+    }
+  } catch (err) {
+    console.error('Download error:', err);
+    window.location.href = url;
+  }
+}
+
+async function loadAppUpdateConfigAdmin() {
+  const nameInp = document.getElementById('adm-update-version-name');
+  const codeInp = document.getElementById('adm-update-version-code');
+  const urlInp = document.getElementById('adm-update-apk-url');
+  const notesInp = document.getElementById('adm-update-notes');
+  const mandatoryInp = document.getElementById('adm-update-is-mandatory');
+  const liveVerEl = document.getElementById('adm-live-version-text');
+  const liveCodeEl = document.getElementById('adm-live-code-text');
+
+  if (liveVerEl) liveVerEl.textContent = `v${APP_VERSION}`;
+  if (liveCodeEl) liveCodeEl.textContent = `${APP_VERSION_CODE}`;
+
+  if (typeof db === 'undefined' || !db) return;
+  try {
+    const docRef = db.collection('system_config').doc('app_version');
+    const snap = await docRef.get();
+    if (snap.exists) {
+      const d = snap.data();
+      _cachedRemoteAppUpdate = d;
+      if (nameInp) nameInp.value = d.versionName || '';
+      if (codeInp) codeInp.value = d.versionCode || 1;
+      if (urlInp) urlInp.value = d.apkUrl || '';
+      if (notesInp) notesInp.value = d.releaseNotes || '';
+      if (mandatoryInp) mandatoryInp.checked = !!d.isMandatory;
+      if (liveVerEl && d.versionName) liveVerEl.textContent = d.versionName;
+      if (liveCodeEl && d.versionCode) liveCodeEl.textContent = d.versionCode;
+    } else {
+      if (nameInp && !nameInp.value) nameInp.value = `v${APP_VERSION}`;
+      if (codeInp && !codeInp.value) codeInp.value = APP_VERSION_CODE + 1;
+    }
+  } catch (err) {
+    console.warn('[loadAppUpdateConfigAdmin] Error:', err);
+  }
+}
+
+async function saveAppUpdateConfigAdmin(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const nameInp = document.getElementById('adm-update-version-name');
+  const codeInp = document.getElementById('adm-update-version-code');
+  const urlInp = document.getElementById('adm-update-apk-url');
+  const notesInp = document.getElementById('adm-update-notes');
+  const mandatoryInp = document.getElementById('adm-update-is-mandatory');
+  const saveBtn = document.getElementById('btn-save-app-update');
+
+  const versionName = nameInp ? nameInp.value.trim() : '';
+  const versionCode = codeInp ? parseInt(codeInp.value, 10) : 0;
+  const apkUrl = urlInp ? urlInp.value.trim() : '';
+  const releaseNotes = notesInp ? notesInp.value.trim() : '';
+  const isMandatory = mandatoryInp ? mandatoryInp.checked : false;
+
+  if (!versionName) {
+    showToast('කරුණාකර Version Name එක ඇතුළත් කරන්න (උදා: v1.1.0)', 'error');
+    return;
+  }
+  if (!versionCode || versionCode < 1) {
+    showToast('කරුණාකර වලංගු Version Code අංකයක් ඇතුළත් කරන්න (උදා: 2)', 'error');
+    return;
+  }
+  if (!apkUrl || (!apkUrl.startsWith('http://') && !apkUrl.startsWith('https://'))) {
+    showToast('කරුණාකර වලංගු APK Download Link එකක් (http:// හෝ https://) ඇතුළත් කරන්න', 'error');
+    return;
+  }
+
+  if (typeof db === 'undefined' || !db) {
+    showToast('Firebase database සම්බන්ධ වී නැත.', 'error');
+    return;
+  }
+
+  const origBtnHtml = saveBtn ? saveBtn.innerHTML : '';
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> සුරකිමින් පවතී...';
+  }
+
+  try {
+    const payload = {
+      versionName: versionName,
+      versionCode: versionCode,
+      apkUrl: apkUrl,
+      releaseNotes: releaseNotes,
+      isMandatory: isMandatory,
+      updatedAt: (typeof firebase !== 'undefined' && firebase.firestore)
+        ? firebase.firestore.FieldValue.serverTimestamp()
+        : new Date(),
+      updatedBy: (currentUser && currentUser.email) ? currentUser.email : 'admin'
+    };
+
+    await db.collection('system_config').doc('app_version').set(payload, { merge: true });
+    _cachedRemoteAppUpdate = payload;
+
+    const liveVerEl = document.getElementById('adm-live-version-text');
+    const liveCodeEl = document.getElementById('adm-live-code-text');
+    if (liveVerEl) liveVerEl.textContent = versionName;
+    if (liveCodeEl) liveCodeEl.textContent = versionCode;
+
+    showToast('App Version එක සාර්ථකව Update කරන ලදී! 🚀 සියලුම පරණ App භාවිතා කරන්නන්ට Download Prompt එක ලැබෙනු ඇත.', 'success');
+  } catch (err) {
+    console.error('Save app version error:', err);
+    showToast('සුරැකීමේදී දෝෂයක් සිදුවිය: ' + (err.message || err), 'error');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = origBtnHtml;
+    }
+  }
+}
+
+// Global exposures for HTML event handlers
+window.checkForAppUpdates = checkForAppUpdates;
+window.showAppUpdatePrompt = showAppUpdatePrompt;
+window.dismissAppUpdateModal = dismissAppUpdateModal;
+window.previewAppUpdateModal = previewAppUpdateModal;
+window.openDownloadAppUpdate = openDownloadAppUpdate;
+window.loadAppUpdateConfigAdmin = loadAppUpdateConfigAdmin;
+window.saveAppUpdateConfigAdmin = saveAppUpdateConfigAdmin;
+

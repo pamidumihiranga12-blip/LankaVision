@@ -337,7 +337,18 @@ const I18N = {
 
     // Direct Hotline
     hotline_text: 'App එකෙන් Job එකක් දාන්න අමාරුද? අපට කෙලින්ම කතා කරන්න (Hotline)',
-    btn_call_hotline: 'Hotline: 078 680 0086'
+    btn_call_hotline: 'Hotline: 078 680 0086',
+
+    // In-App Updates
+    adm_tab_updates: 'App Updates',
+    update_modal_title: '🚀 නව App Update එකක් ඇත!',
+    update_modal_sub: 'වඩාත් හොඳ සේවාවක් සහ නව පහසුකම් ලබාගැනීමට කරුණාකර අලුත්ම Version එක Install කරගන්න.',
+    update_whats_new: 'අලුතින් එක්කළ දේවල් (What\'s New):',
+    update_btn_download: '📲 දැන්ම Update එක Download කරන්න',
+    update_btn_later: 'පසුව කරන්න (Later)',
+    update_mandatory_alert: '⚠️ මෙම Update එක අනිවාර්ය වේ. සේවාවන් දිගටම ලබාගැනීමට කරුණාකර Update කරන්න.',
+    adm_update_title: 'App Version & APK කළමනාකරණය',
+    adm_update_save_btn: 'Update එක සක්‍රීය කරන්න 🚀'
   },
 
   // ── ENGLISH 🇬🇧 ───────────────────────────────────────────────
@@ -673,7 +684,18 @@ const I18N = {
 
     // Direct Hotline
     hotline_text: 'Need help posting a job? Call our customer hotline directly',
-    btn_call_hotline: 'Hotline: +94 78 680 0086'
+    btn_call_hotline: 'Hotline: +94 78 680 0086',
+
+    // In-App Updates
+    adm_tab_updates: 'App Updates',
+    update_modal_title: '🚀 New App Update Available!',
+    update_modal_sub: 'Please install the latest version for the best experience and new features.',
+    update_whats_new: 'What\'s New in this Version:',
+    update_btn_download: '📲 Download Update Now',
+    update_btn_later: 'Later',
+    update_mandatory_alert: '⚠️ This update is required to continue using LankaVision Pro.',
+    adm_update_title: 'App Version & APK Manager',
+    adm_update_save_btn: 'Publish App Update 🚀'
   },
 
   // ── TAMIL 🇱🇰 ─────────────────────────────────────────────────
@@ -1009,7 +1031,18 @@ const I18N = {
 
     // Direct Hotline
     hotline_text: 'உதவி தேவையா? எங்கள் வாடிக்கையாளர் சேவைக்கு அழைக்கவும்',
-    btn_call_hotline: 'Hotline: +94 78 680 0086'
+    btn_call_hotline: 'Hotline: +94 78 680 0086',
+
+    // In-App Updates
+    adm_tab_updates: 'App Updates',
+    update_modal_title: '🚀 புதிய புதுப்பிப்பு கிடைக்கிறது!',
+    update_modal_sub: 'சிறந்த சேவைக்கு சமீபத்திய பதிப்பை நிறுவவும்.',
+    update_whats_new: 'புதிய அம்சங்கள் (What\'s New):',
+    update_btn_download: '📲 இப்போது பதிவிறக்கவும்',
+    update_btn_later: 'பின்னர் (Later)',
+    update_mandatory_alert: '⚠️ சேவைகளைத் தொடர இந்த புதுப்பிப்பு கட்டாயமாகும்.',
+    adm_update_title: 'App பதிப்பு மற்றும் APK மேலாளர்',
+    adm_update_save_btn: 'புதுப்பிப்பை வெளியிடவும் 🚀'
   }
 };
 
